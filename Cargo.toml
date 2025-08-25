@@ -1,0 +1,18 @@
+[package]
+name = "rustormy"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.4", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_derive = "1.0"
+toml = "0.9.5"
+xdg = "3.0.0"
+anyhow = "1.0"
+async-trait = "0.1"
+tokio = { version = "1.0", features = ["full"] }
+reqwest = { version = "0.12.23", features = ["json"] }
+serde_json = "1.0"
+thiserror = "2.0.16"
+urlencoding = "2.1"

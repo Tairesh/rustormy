@@ -1,0 +1,47 @@
+name: rust-clippy analyze
+
+on:
+  push:
+    paths:
+      - '**/*.rs'
+      - 'Cargo.toml'
+    branches: [ main ]
+  pull_request:
+    paths:
+      - '**/*.rs'
+      - 'Cargo.toml'
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  rust-clippy-analyze:
+    name: Run rust-clippy analyzing
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v5
+
+      - name: "Install Rust toolchain"
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy
+
+      - name: "Install required cargo"
+        run: cargo install clippy-sarif sarif-fmt
+
+      - name: "Run rust-clippy"
+        run:
+          cargo clippy
+          --all-features
+          --message-format=json | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
+        continue-on-error: true
+
+      - name: "Upload analysis results to GitHub"
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: rust-clippy-results.sarif
+          wait-for-processing: true

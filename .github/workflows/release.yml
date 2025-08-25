@@ -1,0 +1,54 @@
+name: release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - v[0-9]+.*
+  workflow_dispatch:
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v5
+
+      - name: "Create release"
+        uses: taiki-e/create-gh-release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  upload-assets:
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            os: windows-2019
+          - name: Linux
+            os: ubuntu-latest
+          - name: OSX
+            os: macos-latest
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v4
+
+      - name: "Install Rust toolchain"
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: "Build and upload binary"
+        uses: taiki-e/upload-rust-binary-action@v1
+        with:
+          bin: midia
+          archive: $bin-$tag-${{ runner.os }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          include: LICENSE,README.md
+          leading_dir: true

@@ -1,0 +1,37 @@
+name: tests
+
+on:
+  push:
+    paths:
+      - '**/*.rs'
+      - '**/*.json'
+      - 'Cargo.toml'
+      - '.github/workflows/tests.yml'
+    branches:
+      - main
+  pull_request:
+    paths:
+      - '**/*.rs'
+      - '**/*.json'
+      - 'Cargo.toml'
+      - '.github/workflows/tests.yml'
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v5
+
+      - name: "Install Rust toolchain"
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy,rustfmt
+
+      - name: "Set up Just"
+        uses: extractions/setup-just@v3
+
+      - name: "Run checks"
+        run: just check
