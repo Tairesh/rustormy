@@ -28,7 +28,7 @@ jobs:
       matrix:
         include:
           - name: Windows
-            os: windows-2019
+            os: windows-latest
           - name: Linux
             os: ubuntu-latest
           - name: OSX
@@ -47,7 +47,7 @@ jobs:
       - name: "Build and upload binary"
         uses: taiki-e/upload-rust-binary-action@v1
         with:
-          bin: midia
+          bin: rustormy
           archive: $bin-$tag-${{ runner.os }}
           token: ${{ secrets.GITHUB_TOKEN }}
           include: LICENSE,README.md
