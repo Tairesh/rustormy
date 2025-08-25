@@ -116,7 +116,7 @@ impl OpenMeteoProvider {
 }
 
 impl WeatherCondition {
-    pub fn from_code(code: u32) -> WeatherCondition {
+    pub fn from_wmo_code(code: u32) -> WeatherCondition {
         match code {
             0 => WeatherCondition::Sunny,
             1..=2 => WeatherCondition::PartlyCloudy,
@@ -183,7 +183,7 @@ impl GetWeather for OpenMeteoProvider {
             wind_speed: data.current.wind_speed_10m,
             wind_direction: data.current.wind_direction_10m as u16,
             description: Self::weather_code_to_description(data.current.weather_code),
-            condition: WeatherCondition::from_code(data.current.weather_code),
+            condition: WeatherCondition::from_wmo_code(data.current.weather_code),
             city: config.city().map(String::from),
         })
     }

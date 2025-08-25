@@ -12,6 +12,8 @@ pub enum RustormyError {
         "Either city or both latitude and longitude must be provided. Try rustormy --help for more information."
     )]
     NoLocationProvided,
+    #[error("Missing API key for the weather provider")]
+    MissingApiKey,
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }

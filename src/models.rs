@@ -4,8 +4,10 @@ use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, ValueEnum)]
 #[serde(rename_all = "snake_case")]
+#[clap(rename_all = "snake_case")]
 pub enum Provider {
     OpenMeteo,
+    OpenWeatherMap,
 }
 
 impl Default for Provider {

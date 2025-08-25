@@ -14,13 +14,14 @@ Minimal and neofetch-like weather CLI inspired by
 ## Current features
 
 - Fetch weather data from [OpenMeteo](https://open-meteo.com/) (no API key required)
+  or [OpenWeatherMap](https://openweathermap.org/)
 - Supports ANSI colors
 - Supports JSON output
 - Supports imperial and metric units
 
 ## Planned features
 
-- Support for more weather APIs (e.g. OpenWeatherMap, WeatherAPI
+- Support for more weather APIs
 - More detailed weather information (e.g. dew point, UV index, etc.)
 - More customization options (e.g. colors, layout, etc.)
 - Live mode (e.g. update every X minutes)
@@ -51,11 +52,13 @@ city = "New York"
 lat = 40.7128
 # Default longitude (if not provided via CLI)
 lon = -74.0060
-# Weather data provider (currently only "open_meteo" is supported)
+# Weather data provider (`open_meteo` or `open_weather_map`)
 provider = "open_meteo"
-# Default units for temperature and wind speed (metric or imperial)
+# API key for OpenWeatherMap (required if provider is `open_weather_map`)
+api_key = ""
+# Default units for temperature and wind speed (`metric` or `imperial`)
 units = "metric"
-# Default output format (text or json)
+# Default output format (`text` or `json`)
 output_format = "text"
 # Show city name in output
 show_city_name = true
@@ -72,6 +75,7 @@ Options:
   -c, --city <CITY>                    City name (required if lat/lon not provided)
   -y, --lat <LAT>                      Latitude (required if city not provided)
   -x, --lon <LON>                      Longitude (required if city not provided)
+  -p, --provider <PROVIDER>            Weather data provider [possible values: open_meteo, open_weather_map]
   -u, --units <UNITS>                  Units for temperature and wind speed [possible values: metric, imperial]
   -o, --output-format <OUTPUT_FORMAT>  Output format (text or json) [possible values: text, json]
       --show-city-name                 Show city name in output

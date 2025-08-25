@@ -116,6 +116,9 @@ impl Config {
         if let Some(lon) = cli.lon {
             self.lon = Some(lon);
         }
+        if let Some(provider) = cli.provider {
+            self.provider = provider;
+        }
         if let Some(units) = cli.units {
             self.units = units;
         }
@@ -141,6 +144,7 @@ impl Config {
             return Err(RustormyError::NoLocationProvided);
         }
 
+        // Check if city name is to be shown but no city is provided
         if self.city.is_none() && self.show_city_name {
             return Err(RustormyError::Other(anyhow::anyhow!(
                 "Cannot show city name when no city is provided"
@@ -148,12 +152,13 @@ impl Config {
         }
 
         // Check if API key is provided for OpenWeatherMap
-        // if matches!(self.provider, Provider::OpenWeatherMap) && self.api_key.is_none() {
-        //     return Err(RustormyError::Other(anyhow::anyhow!(
-        //         "API key is required for OpenWeatherMap provider"
-        //     )));
-        // }
+        if matches!(self.provider, Provider::OpenWeatherMap) && self.api_key.is_none() {
+            return Err(RustormyError::Other(anyhow::anyhow!(
+                "API key is required for OpenWeatherMap provider"
+            )));
+        }
 
+        // Validate coordinates if provided
         if let Some((lat, lon)) = self.coordinates()
             && !((-90.0..=90.0).contains(&lat) && (-180.0..=180.0).contains(&lon))
         {

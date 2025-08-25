@@ -3,6 +3,7 @@ use crate::errors::RustormyError;
 use crate::models::Weather;
 use anyhow::Result;
 pub use open_meteo::OpenMeteoProvider;
+pub use open_weather_map::OpenWeatherMapProvider;
 pub use provider::WeatherProvider;
 
 #[async_trait::async_trait]
@@ -11,4 +12,5 @@ pub trait GetWeather {
 }
 
 mod open_meteo;
+mod open_weather_map;
 mod provider;
