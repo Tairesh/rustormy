@@ -35,6 +35,34 @@ cargo install rustormy
 
 Or download a precompiled binary from the [releases page](https://github.com/Tairesh/rustormy/releases).
 
+## Configuration
+
+`rustormy` uses XDG Base Directory Specification for configuration files and will create a configuration file at
+`~/.config/rustormy/config.toml` to set default options at first run.
+On Windows, the configuration file will be located at
+`%APPDATA%\rustormy\config.toml`.
+
+### Configuration options
+
+```toml
+# Default city name (if not provided via CLI)
+city = "New York"
+# Default latitude (if not provided via CLI)
+lat = 40.7128
+# Default longitude (if not provided via CLI)
+lon = -74.0060
+# Weather data provider (currently only "open_meteo" is supported)
+provider = "open_meteo"
+# Default units for temperature and wind speed (metric or imperial)
+units = "metric"
+# Default output format (text or json)
+output_format = "text"
+# Show city name in output
+show_city_name = true
+# Use colors in output
+use_colors = true
+```
+
 ## Usage
 
 ```
@@ -54,17 +82,10 @@ Options:
 
 ## Examples
 
-Fetch weather for New York City in metric units with colors
-
-```sh
-rustormy -c "New York" --units metric --use-colors --show-city-name
-```
-
-Fetch weather for coordinates (40.7128, -74.0060) in imperial units with JSON output
-
-```sh
-rustormy -y 40.7128 -x -74.0060 --units imperial --output-format json
-```
+![Basic usage: `rustormy -c London`](.github/assets/basic.png)
+![Colors: `rustormy -c Batumi --use-colors`](.github/assets/colors.png)
+![Imperial units: `rustormy -c "New York" --use-colors -u imperial`](.github/assets/imperial.png)
+![JSON output: `rustormy -c Ajax -o json`](.github/assets/json.png)
 
 ## License
 
