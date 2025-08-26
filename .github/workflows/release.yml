@@ -10,7 +10,45 @@ on:
   workflow_dispatch:
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v5
+
+      - name: "Install Rust toolchain"
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy,rustfmt
+
+      - name: "Set up Just"
+        uses: extractions/setup-just@v3
+
+      - name: "Run checks"
+        run: just check
+
+  publish:
+    needs: test
+    environment: cratesio
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v5
+
+      - name: "Install Rust toolchain"
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: "Publish to crates.io"
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run:
+          cargo publish
+
   create-release:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: "Checkout code"
