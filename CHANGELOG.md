@@ -4,11 +4,12 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Upcoming]
+## [0.1.2] - 2025-08-26
 
 ### Added
 
-- This changelog file.
+- Added this changelog file.
+- Added automatic cargo publish on new git tag via GitHub Actions.
 
 ### Fixed
 
