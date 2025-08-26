@@ -4,6 +4,11 @@ use crate::models::{Units, Weather, WeatherConditionIcon};
 use crate::weather::GetWeather;
 use serde::Deserialize;
 
+const GEO_API_URL: &str = "https://geocoding-api.open-meteo.com/v1/search";
+const WEATHER_API_URL: &str = "https://api.open-meteo.com/v1/forecast";
+const WEATHER_API_FIELDS: &str = "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,surface_pressure,wind_speed_10m,wind_direction_10m,weather_code";
+
+#[derive(Debug)]
 pub struct OpenMeteoProvider {
     client: reqwest::Client,
 }
@@ -90,6 +95,18 @@ struct GeocodingResponse {
     reason: Option<String>,
 }
 
+impl GeocodingResponse {
+    pub fn is_error(&self) -> bool {
+        self.error.unwrap_or(false)
+    }
+
+    pub fn error_reason(&self) -> String {
+        self.reason
+            .clone()
+            .unwrap_or_else(|| "Unknown error".to_string())
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct Location {
     latitude: f64,
@@ -104,27 +121,19 @@ impl OpenMeteoProvider {
     }
 
     async fn lookup_city(&self, city: &str) -> Result<(f64, f64), RustormyError> {
-        let url = format!(
-            "https://geocoding-api.open-meteo.com/v1/search?name={}&count=1",
-            urlencoding::encode(city)
-        );
-
         let response = self
             .client
-            .get(&url)
+            .get(GEO_API_URL)
+            .query(&[("name", city), ("count", "1")])
             .send()
-            .await
-            .map_err(RustormyError::RequestFailed)?;
+            .await?;
 
-        let data: GeocodingResponse = response
-            .json()
-            .await
-            .map_err(RustormyError::RequestFailed)?;
+        let data: GeocodingResponse = response.json().await?;
 
-        if data.error.unwrap_or(false) {
+        if data.is_error() {
             return Err(RustormyError::Other(anyhow::anyhow!(
                 "Geocoding API error: {}",
-                data.reason.unwrap_or_else(|| "Unknown error".to_string())
+                data.error_reason()
             )));
         }
 
@@ -154,38 +163,46 @@ impl WeatherConditionIcon {
     }
 }
 
+#[derive(Debug, serde::Serialize)]
+struct WeatherAPIRequest<'a> {
+    latitude: f64,
+    longitude: f64,
+    current: &'a str,
+    temperature_unit: &'a str,
+    wind_speed_unit: &'a str,
+    precipitation_unit: &'a str,
+}
+
 #[async_trait::async_trait]
 impl GetWeather for OpenMeteoProvider {
     async fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
-        let (lat, lon) = if let Some(coords) = config.coordinates() {
-            coords
-        } else if let Some(city) = config.city() {
-            self.lookup_city(city).await?
-        } else {
+        let (latitude, longitude) = match (config.coordinates(), config.city()) {
+            (Some(coords), _) => coords,
+            (None, Some(city)) => self.lookup_city(city).await?,
             // Should not reach here due to prior validation
-            return Err(RustormyError::NoLocationProvided);
+            (None, None) => return Err(RustormyError::NoLocationProvided),
         };
 
-        let (temp_unit, wind_unit, precip_unit) = match config.units() {
+        let (temperature_unit, wind_speed_unit, precipitation_unit) = match config.units() {
             Units::Metric => ("celsius", "ms", "mm"),
             Units::Imperial => ("fahrenheit", "mph", "inch"),
         };
 
-        let url = format!(
-            "https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,surface_pressure,wind_speed_10m,wind_direction_10m,weather_code&temperature_unit={temp_unit}&wind_speed_unit={wind_unit}&precipitation_unit={precip_unit}"
-        );
-
         let response = self
             .client
-            .get(&url)
+            .get(WEATHER_API_URL)
+            .query(&WeatherAPIRequest {
+                latitude,
+                longitude,
+                current: WEATHER_API_FIELDS,
+                temperature_unit,
+                wind_speed_unit,
+                precipitation_unit,
+            })
             .send()
-            .await
-            .map_err(RustormyError::RequestFailed)?;
+            .await?;
 
-        let data: OpenMeteoResponse = response
-            .json()
-            .await
-            .map_err(RustormyError::RequestFailed)?;
+        let data: OpenMeteoResponse = response.json().await?;
 
         if data.is_error() {
             return Err(RustormyError::Other(anyhow::anyhow!(
