@@ -18,13 +18,13 @@ Minimal and neofetch-like weather CLI inspired by
 - Supports ANSI colors
 - Supports JSON output
 - Supports imperial and metric units
+- Live mode (periodically fetch and display updated weather data)
 
 ## Planned features
 
 - Support for more weather APIs
 - More detailed weather information (e.g. dew point, UV index, etc.)
 - More customization options (e.g. colors, layout, etc.)
-- Live mode (e.g. update every X minutes)
 
 ## Installation
 
