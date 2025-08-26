@@ -1,6 +1,6 @@
-use crate::display::icons::WeatherCondition;
 use clap::ValueEnum;
 use serde_derive::{Deserialize, Serialize};
+use std::fmt::Display;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, ValueEnum)]
 #[serde(rename_all = "snake_case")]
@@ -29,6 +29,16 @@ impl Default for Units {
     }
 }
 
+impl Display for Units {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let unit_str = match self {
+            Units::Metric => "metric",
+            Units::Imperial => "imperial",
+        };
+        write!(f, "{unit_str}")
+    }
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize, Deserialize, ValueEnum)]
 #[serde(rename_all = "snake_case")]
 pub enum OutputFormat {
@@ -42,6 +52,21 @@ impl Default for OutputFormat {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WeatherConditionIcon {
+    Unknown,
+    Sunny,
+    PartlyCloudy,
+    Cloudy,
+    LightShowers,
+    HeavyShowers,
+    LightSnow,
+    HeavySnow,
+    Thunderstorm,
+    Fog,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Weather {
     pub temperature: f64,
@@ -52,6 +77,6 @@ pub struct Weather {
     pub wind_speed: f64,
     pub wind_direction: u16,
     pub description: String,
-    pub condition: WeatherCondition,
+    pub icon: WeatherConditionIcon,
     pub city: Option<String>,
 }

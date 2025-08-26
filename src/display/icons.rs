@@ -1,22 +1,8 @@
-use serde::{Deserialize, Serialize};
+use crate::models::WeatherConditionIcon;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum WeatherCondition {
-    Unknown,
-    Sunny,
-    PartlyCloudy,
-    Cloudy,
-    LightShowers,
-    HeavyShowers,
-    LightSnow,
-    HeavySnow,
-    Thunderstorm,
-    Fog,
-}
 pub type Icon = [&'static str; 7];
 
-impl WeatherCondition {
+impl WeatherConditionIcon {
     pub fn icon(self) -> Icon {
         match self {
             Self::Unknown => [

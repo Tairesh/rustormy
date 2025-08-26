@@ -2,9 +2,8 @@
 use crate::{
     cli::Cli,
     config::Config,
-    display::icons::WeatherCondition,
     errors::RustormyError,
-    models::{Units, Weather},
+    models::{Units, Weather, WeatherConditionIcon},
     weather::GetWeather,
 };
 use clap::Parser;
@@ -30,7 +29,7 @@ impl TestProvider {
             wind_speed: 5.0,
             wind_direction: 180,
             description: "Clear sky".to_string(),
-            condition: WeatherCondition::Sunny,
+            icon: WeatherConditionIcon::Sunny,
             city: Some("Test City".to_string()),
         }
     }
@@ -48,9 +47,7 @@ impl GetWeather for TestProvider {
                 return Err(RustormyError::CityNotFound(city.to_string()));
             }
         } else if config.coordinates().is_none() {
-            return Err(RustormyError::Other(anyhow::anyhow!(
-                "Neither city nor coordinates provided"
-            )));
+            return Err(RustormyError::NoLocationProvided);
         }
 
         Ok(Self::mock_weather(config))
@@ -120,7 +117,7 @@ async fn test_no_location_provided() {
 
     let result = provider.get_weather(&config).await;
     assert!(
-        matches!(result, Err(RustormyError::Other(_))),
+        matches!(result, Err(RustormyError::NoLocationProvided)),
         "No location provided should result in an error, got {:?}",
         result
     );

@@ -1,7 +1,6 @@
 use crate::config::Config;
-use crate::display::icons::WeatherCondition;
 use crate::errors::RustormyError;
-use crate::models::{OutputFormat, Units, Weather};
+use crate::models::{OutputFormat, Units, Weather, WeatherConditionIcon};
 use std::fmt::Display;
 
 pub struct WeatherFormatter {
@@ -74,9 +73,9 @@ impl WeatherFormatter {
 
     fn display_text(&self, weather: Weather) {
         let icon = if self.config.use_colors() {
-            weather.condition.colored_icon()
+            weather.icon.colored_icon()
         } else {
-            weather.condition.icon()
+            weather.icon.icon()
         };
 
         let use_colors = self.config.use_colors();
@@ -87,14 +86,14 @@ impl WeatherFormatter {
         let precip_unit = if units == Units::Metric { "mm" } else { "inch" };
 
         let color_for_desc = |cond| match cond {
-            WeatherCondition::Unknown | WeatherCondition::Fog => AnsiColor::White,
-            WeatherCondition::Sunny => AnsiColor::BrightYellow,
-            WeatherCondition::PartlyCloudy | WeatherCondition::Cloudy => AnsiColor::Magenta,
-            WeatherCondition::LightShowers | WeatherCondition::HeavyShowers => {
+            WeatherConditionIcon::Unknown | WeatherConditionIcon::Fog => AnsiColor::White,
+            WeatherConditionIcon::Sunny => AnsiColor::BrightYellow,
+            WeatherConditionIcon::PartlyCloudy | WeatherConditionIcon::Cloudy => AnsiColor::Magenta,
+            WeatherConditionIcon::LightShowers | WeatherConditionIcon::HeavyShowers => {
                 AnsiColor::BrightBlue
             }
-            WeatherCondition::LightSnow | WeatherCondition::HeavySnow => AnsiColor::Cyan,
-            WeatherCondition::Thunderstorm => AnsiColor::BrightRed,
+            WeatherConditionIcon::LightSnow | WeatherConditionIcon::HeavySnow => AnsiColor::Cyan,
+            WeatherConditionIcon::Thunderstorm => AnsiColor::BrightRed,
         };
 
         if let Some(city) = weather.city
@@ -119,7 +118,7 @@ impl WeatherFormatter {
             "Weather:",
             colored_text(
                 &weather.description,
-                color_for_desc(weather.condition),
+                color_for_desc(weather.icon),
                 use_colors,
             ),
         );

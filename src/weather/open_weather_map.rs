@@ -1,7 +1,6 @@
 use crate::config::Config;
-use crate::display::icons::WeatherCondition;
 use crate::errors::RustormyError;
-use crate::models::{Units, Weather};
+use crate::models::{Weather, WeatherConditionIcon};
 use crate::weather::GetWeather;
 
 pub struct OpenWeatherMapProvider {
@@ -19,7 +18,33 @@ struct WeatherResponse {
     weather: Vec<WeatherInfo>,
     main: MainInfo,
     wind: WindInfo,
-    rain: Option<RainInfo>,
+    rain: Option<PrecipitationInfo>,
+    snow: Option<PrecipitationInfo>,
+    name: Option<String>,
+}
+
+impl WeatherResponse {
+    pub fn precipitation(&self) -> f64 {
+        let rain = self.rain.as_ref().map_or(0.0, |r| r.one_hour);
+        let snow = self.snow.as_ref().map_or(0.0, |s| s.one_hour);
+        rain + snow
+    }
+
+    pub fn description(&self) -> String {
+        if let Some(weather) = self.weather.first() {
+            format!("{} ({})", weather.main, weather.description)
+        } else {
+            "Unknown".to_string()
+        }
+    }
+
+    pub fn icon(&self) -> WeatherConditionIcon {
+        if let Some(weather) = self.weather.first() {
+            WeatherConditionIcon::from_owm_code(weather.id)
+        } else {
+            WeatherConditionIcon::Unknown
+        }
+    }
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -44,7 +69,7 @@ struct WindInfo {
 }
 
 #[derive(Debug, serde::Deserialize)]
-struct RainInfo {
+struct PrecipitationInfo {
     #[serde(rename = "1h")]
     one_hour: f64,
 }
@@ -82,19 +107,19 @@ impl OpenWeatherMapProvider {
         }
     }
 }
-impl WeatherCondition {
+impl WeatherConditionIcon {
     pub fn from_owm_code(code: u32) -> Self {
         match code {
-            200..=232 => WeatherCondition::Thunderstorm,
-            300..=321 | 500 | 520 => WeatherCondition::LightShowers,
-            500..=531 => WeatherCondition::HeavyShowers,
-            600 | 612 | 615 | 620 => WeatherCondition::LightSnow,
-            601..=622 => WeatherCondition::HeavySnow,
-            701..=781 => WeatherCondition::Fog,
-            800 => WeatherCondition::Sunny,
-            801 | 802 => WeatherCondition::PartlyCloudy,
-            803 | 804 => WeatherCondition::Cloudy,
-            _ => WeatherCondition::Unknown,
+            200..=232 => WeatherConditionIcon::Thunderstorm,
+            300..=321 | 500 | 520 => WeatherConditionIcon::LightShowers,
+            500..=531 => WeatherConditionIcon::HeavyShowers,
+            600 | 612 | 615 | 620 => WeatherConditionIcon::LightSnow,
+            601..=622 => WeatherConditionIcon::HeavySnow,
+            701..=781 => WeatherConditionIcon::Fog,
+            800 => WeatherConditionIcon::Sunny,
+            801 | 802 => WeatherConditionIcon::PartlyCloudy,
+            803 | 804 => WeatherConditionIcon::Cloudy,
+            _ => WeatherConditionIcon::Unknown,
         }
     }
 }
@@ -108,18 +133,12 @@ impl GetWeather for OpenWeatherMapProvider {
             self.lookup_city(city, config).await?
         } else {
             // Should not reach here due to prior validation
-            return Err(RustormyError::Other(anyhow::anyhow!(
-                "Neither city nor coordinates provided"
-            )));
-        };
-
-        let units = match config.units() {
-            Units::Metric => "metric",
-            Units::Imperial => "imperial",
+            return Err(RustormyError::NoLocationProvided);
         };
 
         let url = format!(
-            "https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&units={units}&appid={}",
+            "https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&units={}&appid={}",
+            config.units(),
             config.api_key().ok_or(RustormyError::MissingApiKey)?
         );
 
@@ -139,15 +158,13 @@ impl GetWeather for OpenWeatherMapProvider {
             temperature: data.main.temp,
             feels_like: data.main.feels_like,
             humidity: data.main.humidity,
-            precipitation: data.rain.as_ref().map_or(0.0, |r| r.one_hour),
+            precipitation: data.precipitation(),
             pressure: data.main.pressure,
             wind_speed: data.wind.speed,
             wind_direction: data.wind.deg,
-            description: data.weather.first().map_or("Unknown".to_string(), |w| {
-                format!("{} ({})", w.main, w.description)
-            }),
-            condition: WeatherCondition::from_owm_code(data.weather.first().map_or(0, |w| w.id)),
-            city: config.city().map(String::from),
+            description: data.description(),
+            icon: data.icon(),
+            city: data.name.or(config.city().map(String::from)),
         };
 
         Ok(weather)
