@@ -68,6 +68,10 @@ output_format = "text"
 show_city_name = true
 # Use colors in output
 use_colors = true
+# Live mode (periodically fetch and display updated weather data)
+live_mode = false
+# Live mode interval in seconds
+live_mode_interval = 300
 ```
 
 ## Usage
@@ -84,6 +88,8 @@ Options:
   -o, --output-format <OUTPUT_FORMAT>  Output format (text or json) [possible values: text, json]
       --show-city-name                 Show city name in output
       --use-colors                     Use colors in output
+  -l, --live-mode                      Live mode (periodically fetch and display updated weather data)
+  -i, --live-mode-interval <SECONDS>   Live mode interval in seconds [default: 300]
   -h, --help                           Print help
   -V, --version                        Print version
 ```

@@ -12,18 +12,34 @@ use clap::Parser;
 use cli::Cli;
 use config::Config;
 use display::formatter::WeatherFormatter;
+use std::time::Duration;
 use weather::{GetWeather, WeatherProvider};
+
+fn clear_screen() {
+    print!("\x1B[2J\x1B[1;1H\x1B[?25l");
+    std::io::Write::flush(&mut std::io::stdout()).unwrap();
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let config = Config::new(&Cli::parse())?;
-
     let provider = WeatherProvider::new(config.provider());
     let formatter = WeatherFormatter::new(config.clone());
 
-    match provider.get_weather(&config).await {
-        Ok(weather) => formatter.display(weather),
-        Err(error) => formatter.display_error(&error),
+    loop {
+        match provider.get_weather(&config).await {
+            Ok(weather) => {
+                if config.live_mode() {
+                    clear_screen();
+                }
+                formatter.display(weather);
+            }
+            Err(error) => formatter.display_error(&error),
+        }
+        if !config.live_mode() {
+            break;
+        }
+        tokio::time::sleep(Duration::from_secs(config.live_mode_interval())).await;
     }
 
     Ok(())

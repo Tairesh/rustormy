@@ -39,8 +39,16 @@ pub struct Config {
 
     #[serde(default)]
     use_colors: bool,
-    // #[serde(default)]
-    // live_mode: bool,
+
+    #[serde(default)]
+    live_mode: bool,
+
+    #[serde(default = "default_live_mode_interval")]
+    live_mode_interval: u64, // in seconds, default to 300 (5 minutes)
+}
+
+fn default_live_mode_interval() -> u64 {
+    300
 }
 
 impl Config {
@@ -124,6 +132,9 @@ impl Config {
         if let Some(output_format) = cli.output_format {
             self.output_format = output_format;
         }
+        if let Some(live_mode_interval) = cli.live_mode_interval {
+            self.live_mode_interval = live_mode_interval;
+        }
 
         // Boolean flags are set directly if the flag is present
         if cli.show_city_name {
@@ -132,9 +143,9 @@ impl Config {
         if cli.use_colors {
             self.use_colors = true;
         }
-        // if cli.live_mode {
-        //     self.live_mode = true;
-        // }
+        if cli.live_mode {
+            self.live_mode = true;
+        }
     }
 
     pub fn validate(&self) -> Result<(), RustormyError> {
@@ -203,7 +214,11 @@ impl Config {
         self.use_colors
     }
 
-    // pub fn live_mode(&self) -> bool {
-    //     self.live_mode
-    // }
+    pub fn live_mode(&self) -> bool {
+        self.live_mode
+    }
+
+    pub fn live_mode_interval(&self) -> u64 {
+        self.live_mode_interval
+    }
 }

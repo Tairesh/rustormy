@@ -35,7 +35,12 @@ pub struct Cli {
     /// Use colors in output
     #[arg(long, action = ArgAction::SetTrue)]
     pub use_colors: bool,
-    // /// Live mode - continuously update weather
-    // #[arg(short = 'l', long, action = ArgAction::SetTrue)]
-    // pub live_mode: bool,
+
+    /// Live mode - continuously update weather data every 5 minutes (or specified interval)
+    #[arg(short = 'l', long, action = ArgAction::SetTrue)]
+    pub live_mode: bool,
+
+    /// Live mode update interval in seconds (default: 300)
+    #[arg(short = 'i', long)]
+    pub live_mode_interval: Option<u64>, // in seconds, default to 300 (5 minutes)
 }
