@@ -198,6 +198,13 @@ impl Config {
         }
     }
 
+    pub fn location_name(&self) -> String {
+        self.city.as_ref().map_or_else(
+            || format!("{}, {}", self.lat.unwrap(), self.lon.unwrap()),
+            String::from,
+        )
+    }
+
     pub fn units(&self) -> Units {
         self.units
     }

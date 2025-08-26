@@ -78,5 +78,12 @@ pub struct Weather {
     pub wind_direction: u16,
     pub description: String,
     pub icon: WeatherConditionIcon,
-    pub city: Option<String>,
+    pub location_name: String,
+}
+
+#[derive(Debug)]
+pub struct Location {
+    pub name: String,
+    pub latitude: f64,
+    pub longitude: f64,
 }

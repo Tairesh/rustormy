@@ -1,4 +1,5 @@
 #![cfg(test)]
+use crate::models::Location;
 use crate::{
     cli::Cli,
     config::Config,
@@ -30,7 +31,7 @@ impl TestProvider {
             wind_direction: 180,
             description: "Clear sky".to_string(),
             icon: WeatherConditionIcon::Sunny,
-            city: Some("Test City".to_string()),
+            location_name: "Test City".to_string(),
         }
     }
 }
@@ -52,6 +53,25 @@ impl GetWeather for TestProvider {
 
         Ok(Self::mock_weather(config))
     }
+
+    async fn lookup_city(
+        &self,
+        city: &str,
+        _config: &Config,
+    ) -> anyhow::Result<Location, RustormyError> {
+        if city.is_empty() {
+            return Err(RustormyError::CityNotFound("".to_string()));
+        }
+        if city == "NonexistentCity" {
+            return Err(RustormyError::CityNotFound(city.to_string()));
+        }
+
+        Ok(Location {
+            name: "Test City".to_string(),
+            latitude: 51.5074,
+            longitude: -0.1278,
+        })
+    }
 }
 
 #[tokio::test]
@@ -64,7 +84,7 @@ async fn test_valid_city_lookup() {
 
     let weather = result.unwrap();
     assert_eq!(weather.temperature, 20.0);
-    assert_eq!(weather.city, Some("Test City".to_string()));
+    assert_eq!(weather.location_name, "Test City".to_string());
 }
 
 #[tokio::test]

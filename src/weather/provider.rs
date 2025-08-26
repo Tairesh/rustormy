@@ -1,6 +1,6 @@
 use super::{GetWeather, OpenMeteoProvider, OpenWeatherMapProvider, RustormyError, Weather};
 use crate::config::Config;
-use crate::models::Provider;
+use crate::models::{Location, Provider};
 
 pub enum WeatherProvider {
     OpenMeteo(OpenMeteoProvider),
@@ -22,6 +22,17 @@ impl GetWeather for WeatherProvider {
         match self {
             Self::OpenMeteo(provider) => provider.get_weather(config).await,
             Self::OpenWeatherMap(provider) => provider.get_weather(config).await,
+        }
+    }
+
+    async fn lookup_city(
+        &self,
+        city: &str,
+        config: &Config,
+    ) -> anyhow::Result<Location, RustormyError> {
+        match self {
+            Self::OpenMeteo(provider) => provider.lookup_city(city, config).await,
+            Self::OpenWeatherMap(provider) => provider.lookup_city(city, config).await,
         }
     }
 }

@@ -1,9 +1,9 @@
 use crate::config::Config;
 use crate::errors::RustormyError;
-use crate::models::{Units, Weather, WeatherConditionIcon};
+use crate::models::{Location, Units, Weather, WeatherConditionIcon};
 use crate::weather::GetWeather;
 
-const GEO_API_URL: &str = "http://api.openweathermap.org/geo/1.0/direct";
+const GEO_API_URL: &str = "https://api.openweathermap.org/geo/1.0/direct";
 const WEATHER_API_URL: &str = "https://api.openweathermap.org/data/2.5/weather";
 
 #[derive(Debug, Default)]
@@ -12,9 +12,20 @@ pub struct OpenWeatherMapProvider {
 }
 
 #[derive(Debug, serde::Deserialize)]
-struct Location {
+struct GeocodingLocation {
     lat: f64,
     lon: f64,
+    name: String,
+}
+
+impl From<GeocodingLocation> for Location {
+    fn from(loc: GeocodingLocation) -> Self {
+        Location {
+            name: loc.name,
+            latitude: loc.lat,
+            longitude: loc.lon,
+        }
+    }
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -45,7 +56,18 @@ impl WeatherResponse {
 
     pub fn icon(&self) -> WeatherConditionIcon {
         if let Some(weather) = self.weather.first() {
-            WeatherConditionIcon::from_owm_code(weather.id)
+            match weather.id {
+                200..=232 => WeatherConditionIcon::Thunderstorm,
+                300..=321 | 500 | 520 => WeatherConditionIcon::LightShowers,
+                500..=531 => WeatherConditionIcon::HeavyShowers,
+                600 | 612 | 615 | 620 => WeatherConditionIcon::LightSnow,
+                601..=622 => WeatherConditionIcon::HeavySnow,
+                701..=781 => WeatherConditionIcon::Fog,
+                800 => WeatherConditionIcon::Sunny,
+                801 | 802 => WeatherConditionIcon::PartlyCloudy,
+                803 | 804 => WeatherConditionIcon::Cloudy,
+                _ => WeatherConditionIcon::Unknown,
+            }
         } else {
             WeatherConditionIcon::Unknown
         }
@@ -79,43 +101,6 @@ struct PrecipitationInfo {
     one_hour: f64,
 }
 
-impl OpenWeatherMapProvider {
-    async fn lookup_city(&self, city: &str, config: &Config) -> Result<(f64, f64), RustormyError> {
-        let api_key = config.api_key().ok_or(RustormyError::MissingApiKey)?;
-
-        let response = self
-            .client
-            .get(GEO_API_URL)
-            .query(&[("q", city), ("limit", "1"), ("appid", api_key)])
-            .send()
-            .await?;
-
-        let data: Vec<Location> = response.json().await?;
-
-        if let Some(location) = data.first() {
-            Ok((location.lat, location.lon))
-        } else {
-            Err(RustormyError::CityNotFound(city.to_string()))
-        }
-    }
-}
-impl WeatherConditionIcon {
-    pub fn from_owm_code(code: u32) -> Self {
-        match code {
-            200..=232 => WeatherConditionIcon::Thunderstorm,
-            300..=321 | 500 | 520 => WeatherConditionIcon::LightShowers,
-            500..=531 => WeatherConditionIcon::HeavyShowers,
-            600 | 612 | 615 | 620 => WeatherConditionIcon::LightSnow,
-            601..=622 => WeatherConditionIcon::HeavySnow,
-            701..=781 => WeatherConditionIcon::Fog,
-            800 => WeatherConditionIcon::Sunny,
-            801 | 802 => WeatherConditionIcon::PartlyCloudy,
-            803 | 804 => WeatherConditionIcon::Cloudy,
-            _ => WeatherConditionIcon::Unknown,
-        }
-    }
-}
-
 #[derive(Debug, serde::Serialize)]
 struct WeatherAPIRequest<'a> {
     lat: f64,
@@ -127,20 +112,15 @@ struct WeatherAPIRequest<'a> {
 #[async_trait::async_trait]
 impl GetWeather for OpenWeatherMapProvider {
     async fn get_weather(&self, config: &Config) -> anyhow::Result<Weather, RustormyError> {
-        let (lat, lon) = match (config.coordinates(), config.city()) {
-            (Some(coords), _) => coords,
-            (None, Some(city)) => self.lookup_city(city, config).await?,
-            // Should not reach here due to prior validation
-            (None, None) => return Err(RustormyError::NoLocationProvided),
-        };
+        let location = self.get_location(config).await?;
 
         let api_key = config.api_key().ok_or(RustormyError::MissingApiKey)?;
         let response = self
             .client
             .get(WEATHER_API_URL)
             .query(&WeatherAPIRequest {
-                lat,
-                lon,
+                lat: location.latitude,
+                lon: location.longitude,
                 units: config.units(),
                 appid: api_key,
             })
@@ -159,9 +139,27 @@ impl GetWeather for OpenWeatherMapProvider {
             wind_direction: data.wind.deg,
             description: data.description(),
             icon: data.icon(),
-            city: data.name.or(config.city().map(String::from)),
+            location_name: data.name.unwrap_or(location.name),
         };
 
         Ok(weather)
+    }
+
+    async fn lookup_city(&self, city: &str, config: &Config) -> Result<Location, RustormyError> {
+        let api_key = config.api_key().ok_or(RustormyError::MissingApiKey)?;
+
+        let response = self
+            .client
+            .get(GEO_API_URL)
+            .query(&[("q", city), ("limit", "1"), ("appid", api_key)])
+            .send()
+            .await?;
+
+        let mut data: Vec<GeocodingLocation> = response.json().await?;
+        let location = data
+            .pop()
+            .ok_or_else(|| RustormyError::CityNotFound(city.to_string()))?;
+
+        Ok(location.into())
     }
 }

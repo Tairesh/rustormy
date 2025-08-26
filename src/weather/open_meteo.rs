@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::errors::RustormyError;
-use crate::models::{Units, Weather, WeatherConditionIcon};
+use crate::models::{Location, Units, Weather, WeatherConditionIcon};
 use crate::weather::GetWeather;
 use serde::Deserialize;
 
@@ -32,42 +32,53 @@ impl OpenMeteoResponse {
     }
 
     pub fn description(&self) -> String {
-        let code = self.current.weather_code;
-        match code {
-            0 => "Clear sky".to_string(),
-            1 => "Mainly clear".to_string(),
-            2 => "Partly cloudy".to_string(),
-            3 => "Overcast".to_string(),
-            45 => "Fog".to_string(),
-            48 => "Depositing rime fog".to_string(),
-            51 => "Light drizzle".to_string(),
-            53 => "Moderate drizzle".to_string(),
-            55 => "Dense drizzle".to_string(),
-            56 => "Light freezing drizzle".to_string(),
-            57 => "Dense freezing drizzle".to_string(),
-            61 => "Slight rain".to_string(),
-            63 => "Moderate rain".to_string(),
-            65 => "Heavy rain".to_string(),
-            66 => "Light freezing rain".to_string(),
-            67 => "Heavy freezing rain".to_string(),
-            71 => "Slight snow fall".to_string(),
-            73 => "Moderate snow fall".to_string(),
-            75 => "Heavy snow fall".to_string(),
-            77 => "Snow grains".to_string(),
-            80 => "Slight rain showers".to_string(),
-            81 => "Moderate rain showers".to_string(),
-            82 => "Violent rain showers".to_string(),
-            85 => "Slight snow showers".to_string(),
-            86 => "Heavy snow showers".to_string(),
-            95 => "Thunderstorm".to_string(),
-            96 => "Thunderstorm with slight hail".to_string(),
-            99 => "Thunderstorm with heavy hail".to_string(),
-            _ => "Unknown".to_string(),
+        match self.current.weather_code {
+            0 => "Clear sky",
+            1 => "Mainly clear",
+            2 => "Partly cloudy",
+            3 => "Overcast",
+            45 => "Fog",
+            48 => "Depositing rime fog",
+            51 => "Light drizzle",
+            53 => "Moderate drizzle",
+            55 => "Dense drizzle",
+            56 => "Light freezing drizzle",
+            57 => "Dense freezing drizzle",
+            61 => "Slight rain",
+            63 => "Moderate rain",
+            65 => "Heavy rain",
+            66 => "Light freezing rain",
+            67 => "Heavy freezing rain",
+            71 => "Slight snow fall",
+            73 => "Moderate snow fall",
+            75 => "Heavy snow fall",
+            77 => "Snow grains",
+            80 => "Slight rain showers",
+            81 => "Moderate rain showers",
+            82 => "Violent rain showers",
+            85 => "Slight snow showers",
+            86 => "Heavy snow showers",
+            95 => "Thunderstorm",
+            96 => "Thunderstorm with slight hail",
+            99 => "Thunderstorm with heavy hail",
+            _ => "Unknown",
         }
+        .to_string()
     }
 
     pub fn icon(&self) -> WeatherConditionIcon {
-        WeatherConditionIcon::from_wmo_code(self.current.weather_code)
+        match self.current.weather_code {
+            0 => WeatherConditionIcon::Sunny,
+            1..=2 => WeatherConditionIcon::PartlyCloudy,
+            3 => WeatherConditionIcon::Cloudy,
+            45 | 48 => WeatherConditionIcon::Fog,
+            51..=57 | 80 => WeatherConditionIcon::LightShowers,
+            61..=67 | 81 | 82 => WeatherConditionIcon::HeavyShowers,
+            71..=73 => WeatherConditionIcon::LightSnow,
+            75 | 77 | 85 | 86 => WeatherConditionIcon::HeavySnow,
+            95 | 96 | 99 => WeatherConditionIcon::Thunderstorm,
+            _ => WeatherConditionIcon::Unknown,
+        }
     }
 }
 
@@ -90,7 +101,7 @@ struct CurrentWeather {
 
 #[derive(Debug, Deserialize)]
 struct GeocodingResponse {
-    results: Option<Vec<Location>>,
+    results: Option<Vec<GeocodingLocation>>,
     error: Option<bool>,
     reason: Option<String>,
 }
@@ -108,51 +119,18 @@ impl GeocodingResponse {
 }
 
 #[derive(Debug, Deserialize)]
-struct Location {
+struct GeocodingLocation {
+    name: String,
     latitude: f64,
     longitude: f64,
 }
 
-impl OpenMeteoProvider {
-    async fn lookup_city(&self, city: &str) -> Result<(f64, f64), RustormyError> {
-        let response = self
-            .client
-            .get(GEO_API_URL)
-            .query(&[("name", city), ("count", "1")])
-            .send()
-            .await?;
-
-        let data: GeocodingResponse = response.json().await?;
-
-        if data.is_error() {
-            return Err(RustormyError::Other(anyhow::anyhow!(
-                "Geocoding API error: {}",
-                data.error_reason()
-            )));
-        }
-
-        let location = data
-            .results
-            .and_then(|mut results| results.pop())
-            .ok_or_else(|| RustormyError::CityNotFound(city.to_string()))?;
-
-        Ok((location.latitude, location.longitude))
-    }
-}
-
-impl WeatherConditionIcon {
-    pub fn from_wmo_code(code: u8) -> WeatherConditionIcon {
-        match code {
-            0 => WeatherConditionIcon::Sunny,
-            1..=2 => WeatherConditionIcon::PartlyCloudy,
-            3 => WeatherConditionIcon::Cloudy,
-            45 | 48 => WeatherConditionIcon::Fog,
-            51..=57 | 80 => WeatherConditionIcon::LightShowers,
-            61..=67 | 81 | 82 => WeatherConditionIcon::HeavyShowers,
-            71..=73 => WeatherConditionIcon::LightSnow,
-            75 | 77 | 85 | 86 => WeatherConditionIcon::HeavySnow,
-            95 | 96 | 99 => WeatherConditionIcon::Thunderstorm,
-            _ => WeatherConditionIcon::Unknown,
+impl From<GeocodingLocation> for Location {
+    fn from(loc: GeocodingLocation) -> Self {
+        Location {
+            name: loc.name,
+            latitude: loc.latitude,
+            longitude: loc.longitude,
         }
     }
 }
@@ -170,12 +148,7 @@ struct WeatherAPIRequest<'a> {
 #[async_trait::async_trait]
 impl GetWeather for OpenMeteoProvider {
     async fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
-        let (latitude, longitude) = match (config.coordinates(), config.city()) {
-            (Some(coords), _) => coords,
-            (None, Some(city)) => self.lookup_city(city).await?,
-            // Should not reach here due to prior validation
-            (None, None) => return Err(RustormyError::NoLocationProvided),
-        };
+        let location = self.get_location(config).await?;
 
         let (temperature_unit, wind_speed_unit, precipitation_unit) = match config.units() {
             Units::Metric => ("celsius", "ms", "mm"),
@@ -186,8 +159,8 @@ impl GetWeather for OpenMeteoProvider {
             .client
             .get(WEATHER_API_URL)
             .query(&WeatherAPIRequest {
-                latitude,
-                longitude,
+                latitude: location.latitude,
+                longitude: location.longitude,
                 current: WEATHER_API_FIELDS,
                 temperature_unit,
                 wind_speed_unit,
@@ -215,7 +188,32 @@ impl GetWeather for OpenMeteoProvider {
             wind_direction: data.current.wind_direction,
             description: data.description(),
             icon: data.icon(),
-            city: config.city().map(String::from),
+            location_name: location.name,
         })
+    }
+
+    async fn lookup_city(&self, city: &str, _config: &Config) -> Result<Location, RustormyError> {
+        let response = self
+            .client
+            .get(GEO_API_URL)
+            .query(&[("name", city), ("count", "1")])
+            .send()
+            .await?;
+
+        let data: GeocodingResponse = response.json().await?;
+
+        if data.is_error() {
+            return Err(RustormyError::Other(anyhow::anyhow!(
+                "Geocoding API error: {}",
+                data.error_reason()
+            )));
+        }
+
+        let location = data
+            .results
+            .and_then(|mut results| results.pop())
+            .ok_or_else(|| RustormyError::CityNotFound(city.to_string()))?;
+
+        Ok(location.into())
     }
 }

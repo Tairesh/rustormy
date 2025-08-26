@@ -79,16 +79,16 @@ impl WeatherFormatter {
         };
 
         let use_colors = self.config.use_colors();
-        let units = self.config.units();
 
-        let temp_unit = if units == Units::Metric { "C" } else { "F" };
-        let wind_unit = if units == Units::Metric { "m/s" } else { "mph" };
-        let precip_unit = if units == Units::Metric { "mm" } else { "inch" };
+        let (temp_unit, wind_unit, precip_unit) = match self.config.units() {
+            Units::Metric => ("C", "m/s", "mm"),
+            Units::Imperial => ("F", "mph", "inch"),
+        };
 
         let color_for_desc = |cond| match cond {
             WeatherConditionIcon::Unknown | WeatherConditionIcon::Fog => AnsiColor::White,
             WeatherConditionIcon::Sunny => AnsiColor::BrightYellow,
-            WeatherConditionIcon::PartlyCloudy | WeatherConditionIcon::Cloudy => AnsiColor::Magenta,
+            WeatherConditionIcon::PartlyCloudy | WeatherConditionIcon::Cloudy => AnsiColor::Yellow,
             WeatherConditionIcon::LightShowers | WeatherConditionIcon::HeavyShowers => {
                 AnsiColor::BrightBlue
             }
@@ -96,14 +96,12 @@ impl WeatherFormatter {
             WeatherConditionIcon::Thunderstorm => AnsiColor::BrightRed,
         };
 
-        if let Some(city) = weather.city
-            && self.config.show_city_name()
-        {
+        if self.config.show_city_name() {
             eprintln!(
                 "{} {} {}",
                 icon[0],
-                self.label("City:"),
-                colored_text(city, AnsiColor::White, use_colors)
+                self.label("Location:"),
+                colored_text(weather.location_name, AnsiColor::White, use_colors)
             );
         } else {
             eprintln!("{}", icon[0]);
