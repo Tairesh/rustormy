@@ -59,6 +59,12 @@ fn colored_text(text: impl Into<String>, color: AnsiColor, use_colors: bool) -> 
     }
 }
 
+const fn wind_deg_to_symbol(deg: u16) -> &'static str {
+    let symbols = ["↑", "↗", "→", "↘", "↓", "↙", "←", "↖"];
+    let index = ((deg as f32 + 22.5) / 45.0) as usize % 8;
+    symbols[index]
+}
+
 impl WeatherFormatter {
     pub fn new(config: Config) -> Self {
         Self { config }
@@ -160,8 +166,9 @@ impl WeatherFormatter {
             "Wind",
             colored_text(
                 format!(
-                    "{} {wind_unit} at {}°",
-                    weather.wind_speed, weather.wind_direction
+                    "{} {wind_unit} {}",
+                    weather.wind_speed,
+                    wind_deg_to_symbol(weather.wind_direction)
                 ),
                 AnsiColor::BrightRed,
                 use_colors,
