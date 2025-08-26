@@ -6,7 +6,7 @@ use crate::weather::GetWeather;
 const GEO_API_URL: &str = "http://api.openweathermap.org/geo/1.0/direct";
 const WEATHER_API_URL: &str = "https://api.openweathermap.org/data/2.5/weather";
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct OpenWeatherMapProvider {
     client: reqwest::Client,
 }
@@ -80,12 +80,6 @@ struct PrecipitationInfo {
 }
 
 impl OpenWeatherMapProvider {
-    pub fn new() -> Self {
-        Self {
-            client: reqwest::Client::new(),
-        }
-    }
-
     async fn lookup_city(&self, city: &str, config: &Config) -> Result<(f64, f64), RustormyError> {
         let api_key = config.api_key().ok_or(RustormyError::MissingApiKey)?;
 
@@ -94,13 +88,9 @@ impl OpenWeatherMapProvider {
             .get(GEO_API_URL)
             .query(&[("q", city), ("limit", "1"), ("appid", api_key)])
             .send()
-            .await
-            .map_err(RustormyError::RequestFailed)?;
+            .await?;
 
-        let data: Vec<Location> = response
-            .json()
-            .await
-            .map_err(RustormyError::RequestFailed)?;
+        let data: Vec<Location> = response.json().await?;
 
         if let Some(location) = data.first() {
             Ok((location.lat, location.lon))

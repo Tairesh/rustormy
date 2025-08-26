@@ -10,8 +10,8 @@ pub enum WeatherProvider {
 impl WeatherProvider {
     pub fn new(provider_type: Provider) -> Self {
         match provider_type {
-            Provider::OpenMeteo => Self::OpenMeteo(OpenMeteoProvider::new()),
-            Provider::OpenWeatherMap => Self::OpenWeatherMap(OpenWeatherMapProvider::new()),
+            Provider::OpenMeteo => Self::OpenMeteo(OpenMeteoProvider::default()),
+            Provider::OpenWeatherMap => Self::OpenWeatherMap(OpenWeatherMapProvider::default()),
         }
     }
 }

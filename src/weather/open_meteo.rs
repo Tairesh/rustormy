@@ -8,7 +8,7 @@ const GEO_API_URL: &str = "https://geocoding-api.open-meteo.com/v1/search";
 const WEATHER_API_URL: &str = "https://api.open-meteo.com/v1/forecast";
 const WEATHER_API_FIELDS: &str = "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,surface_pressure,wind_speed_10m,wind_direction_10m,weather_code";
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct OpenMeteoProvider {
     client: reqwest::Client,
 }
@@ -114,12 +114,6 @@ struct Location {
 }
 
 impl OpenMeteoProvider {
-    pub fn new() -> Self {
-        Self {
-            client: reqwest::Client::new(),
-        }
-    }
-
     async fn lookup_city(&self, city: &str) -> Result<(f64, f64), RustormyError> {
         let response = self
             .client
