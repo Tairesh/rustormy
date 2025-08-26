@@ -15,9 +15,14 @@ Minimal and neofetch-like weather CLI inspired by
 
 - Fetch weather data from [OpenMeteo](https://open-meteo.com/) (no API key required)
   or [OpenWeatherMap](https://openweathermap.org/)
-- Supports ANSI colors
-- Supports JSON output
+- Display current temperature, weather condition, wind speed and direction, humidity. precipitation, atmospheric
+  pressure.
+- Display ASCII art icons for weather conditions
+- ANSI colors in terminal output
+- Supports city name or latitude/longitude input
+- Supports multiple languages (English, Russian, Spanish; more to come)
 - Supports imperial and metric units
+- Supports JSON output
 - Live mode (periodically fetch and display updated weather data)
 
 ## Planned features
