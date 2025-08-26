@@ -1,4 +1,5 @@
 use crate::config::Config;
+use crate::display::translations::ll;
 use crate::errors::RustormyError;
 use crate::models::{OutputFormat, Units, Weather, WeatherConditionIcon};
 use std::fmt::Display;
@@ -30,6 +31,23 @@ enum AnsiColor {
 impl Display for AnsiColor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", *self as u8)
+    }
+}
+
+impl From<WeatherConditionIcon> for AnsiColor {
+    fn from(icon: WeatherConditionIcon) -> Self {
+        match icon {
+            WeatherConditionIcon::Unknown
+            | WeatherConditionIcon::Fog
+            | WeatherConditionIcon::Cloudy => AnsiColor::White,
+            WeatherConditionIcon::Sunny => AnsiColor::BrightYellow,
+            WeatherConditionIcon::PartlyCloudy => AnsiColor::Yellow,
+            WeatherConditionIcon::LightShowers | WeatherConditionIcon::HeavyShowers => {
+                AnsiColor::BrightBlue
+            }
+            WeatherConditionIcon::LightSnow | WeatherConditionIcon::HeavySnow => AnsiColor::Cyan,
+            WeatherConditionIcon::Thunderstorm => AnsiColor::BrightRed,
+        }
     }
 }
 
@@ -71,6 +89,16 @@ impl WeatherFormatter {
         std::process::exit(1);
     }
 
+    fn label(&self, text: &'static str) -> String {
+        let lang = self.config.language();
+        let translated = ll(lang, text).to_string() + ":";
+        colored_text(
+            format!("{translated:<12}"),
+            AnsiColor::BrightBlue,
+            self.config.use_colors(),
+        )
+    }
+
     fn display_text(&self, weather: Weather) {
         let icon = if self.config.use_colors() {
             weather.icon.colored_icon()
@@ -79,59 +107,49 @@ impl WeatherFormatter {
         };
 
         let use_colors = self.config.use_colors();
+        let lang = self.config.language();
 
         let (temp_unit, wind_unit, precip_unit) = match self.config.units() {
-            Units::Metric => ("C", "m/s", "mm"),
-            Units::Imperial => ("F", "mph", "inch"),
-        };
-
-        let color_for_desc = |cond| match cond {
-            WeatherConditionIcon::Unknown | WeatherConditionIcon::Fog => AnsiColor::White,
-            WeatherConditionIcon::Sunny => AnsiColor::BrightYellow,
-            WeatherConditionIcon::PartlyCloudy | WeatherConditionIcon::Cloudy => AnsiColor::Yellow,
-            WeatherConditionIcon::LightShowers | WeatherConditionIcon::HeavyShowers => {
-                AnsiColor::BrightBlue
-            }
-            WeatherConditionIcon::LightSnow | WeatherConditionIcon::HeavySnow => AnsiColor::Cyan,
-            WeatherConditionIcon::Thunderstorm => AnsiColor::BrightRed,
+            Units::Metric => ("°C", ll(lang, "m/s"), ll(lang, "mm")),
+            Units::Imperial => ("°F", ll(lang, "mph"), ll(lang, "inch")),
         };
 
         if self.config.show_city_name() {
             eprintln!(
                 "{} {} {}",
                 icon[0],
-                self.label("Location:"),
+                self.label("Location"),
                 colored_text(weather.location_name, AnsiColor::White, use_colors)
             );
         } else {
             eprintln!("{}", icon[0]);
         }
 
-        let print_line = |i: &str, label: &str, value: String| {
+        let print_line = |i: &str, label: &'static str, value: String| {
             println!("{} {} {}", i, self.label(label), value);
         };
 
         print_line(
             icon[1],
-            "Weather:",
-            colored_text(
-                &weather.description,
-                color_for_desc(weather.icon),
-                use_colors,
-            ),
+            "Condition",
+            colored_text(&weather.description, weather.icon.into(), use_colors),
         );
 
         println!(
             "{} {} {} {}",
             icon[2],
-            self.label("Temp:"),
+            self.label("Temperature"),
             colored_text(
-                format!("{}°{temp_unit}", weather.temperature),
+                format!("{}{temp_unit}", weather.temperature),
                 AnsiColor::BrightYellow,
                 use_colors
             ),
             colored_text(
-                format!("(feels like {}°{temp_unit})", weather.feels_like),
+                format!(
+                    "({} {}{temp_unit})",
+                    ll(lang, "feels like"),
+                    weather.feels_like
+                ),
                 AnsiColor::Yellow,
                 use_colors
             )
@@ -139,7 +157,7 @@ impl WeatherFormatter {
 
         print_line(
             icon[3],
-            "Wind:",
+            "Wind",
             colored_text(
                 format!(
                     "{} {wind_unit} at {}°",
@@ -153,7 +171,7 @@ impl WeatherFormatter {
         println!(
             "{} {} {} | {}",
             icon[4],
-            self.label("Humidity:"),
+            self.label("Humidity"),
             colored_text(
                 format!("{}%", weather.humidity),
                 AnsiColor::Cyan,
@@ -168,9 +186,9 @@ impl WeatherFormatter {
 
         print_line(
             icon[5],
-            "Pressure:",
+            "Pressure",
             colored_text(
-                format!("{} hPa", weather.pressure),
+                format!("{} {}", weather.pressure, ll(lang, "hPa")),
                 AnsiColor::Green,
                 use_colors,
             ),
@@ -186,13 +204,5 @@ impl WeatherFormatter {
             )))
         });
         println!("{json}");
-    }
-
-    fn label(&self, text: &str) -> String {
-        colored_text(
-            format!("{text:<9}"),
-            AnsiColor::Blue,
-            self.config.use_colors(),
-        )
     }
 }

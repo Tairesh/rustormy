@@ -1,4 +1,4 @@
-use crate::models::{OutputFormat, Provider, Units};
+use crate::models::{Language, OutputFormat, Provider, Units};
 use clap::{ArgAction, Parser};
 
 #[derive(Parser, Debug)]
@@ -16,17 +16,21 @@ pub struct Cli {
     #[arg(short = 'x', long)]
     pub lon: Option<f64>,
 
-    /// Weather data provider (`open_meteo` or `open_weather_map`)
+    /// Weather data provider
     #[arg(short = 'p', long, value_enum)]
     pub provider: Option<Provider>,
 
-    /// Units for temperature and wind speed (`metric` or `imperial`)
+    /// Units for temperature and wind speed
     #[arg(short = 'u', long)]
     pub units: Option<Units>,
 
-    /// Output format (`text` or `json`)
+    /// Output format
     #[arg(short = 'o', long)]
     pub output_format: Option<OutputFormat>,
+
+    /// Language for weather output
+    #[arg(short = 'g', long, value_enum)]
+    pub language: Option<Language>,
 
     /// Show city name in output
     #[arg(long, action = ArgAction::SetTrue)]

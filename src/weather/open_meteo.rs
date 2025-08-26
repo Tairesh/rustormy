@@ -1,6 +1,7 @@
 use crate::config::Config;
+use crate::display::translations::ll;
 use crate::errors::RustormyError;
-use crate::models::{Location, Units, Weather, WeatherConditionIcon};
+use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
 use crate::weather::GetWeather;
 use serde::Deserialize;
 
@@ -31,39 +32,41 @@ impl OpenMeteoResponse {
             .unwrap_or_else(|| "Unknown error".to_string())
     }
 
-    pub fn description(&self) -> String {
-        match self.current.weather_code {
-            0 => "Clear sky",
-            1 => "Mainly clear",
-            2 => "Partly cloudy",
-            3 => "Overcast",
-            45 => "Fog",
-            48 => "Depositing rime fog",
-            51 => "Light drizzle",
-            53 => "Moderate drizzle",
-            55 => "Dense drizzle",
-            56 => "Light freezing drizzle",
-            57 => "Dense freezing drizzle",
-            61 => "Slight rain",
-            63 => "Moderate rain",
-            65 => "Heavy rain",
-            66 => "Light freezing rain",
-            67 => "Heavy freezing rain",
-            71 => "Slight snow fall",
-            73 => "Moderate snow fall",
-            75 => "Heavy snow fall",
-            77 => "Snow grains",
-            80 => "Slight rain showers",
-            81 => "Moderate rain showers",
-            82 => "Violent rain showers",
-            85 => "Slight snow showers",
-            86 => "Heavy snow showers",
-            95 => "Thunderstorm",
-            96 => "Thunderstorm with slight hail",
-            99 => "Thunderstorm with heavy hail",
-            _ => "Unknown",
-        }
-        .to_string()
+    pub fn description(&self, lang: Language) -> &'static str {
+        ll(
+            lang,
+            match self.current.weather_code {
+                0 => "Clear sky",
+                1 => "Mainly clear",
+                2 => "Partly cloudy",
+                3 => "Overcast",
+                45 => "Fog",
+                48 => "Depositing rime fog",
+                51 => "Light drizzle",
+                53 => "Moderate drizzle",
+                55 => "Dense drizzle",
+                56 => "Light freezing drizzle",
+                57 => "Dense freezing drizzle",
+                61 => "Slight rain",
+                63 => "Moderate rain",
+                65 => "Heavy rain",
+                66 => "Light freezing rain",
+                67 => "Heavy freezing rain",
+                71 => "Slight snow fall",
+                73 => "Moderate snow fall",
+                75 => "Heavy snow fall",
+                77 => "Snow grains",
+                80 => "Slight rain showers",
+                81 => "Moderate rain showers",
+                82 => "Violent rain showers",
+                85 => "Slight snow showers",
+                86 => "Heavy snow showers",
+                95 => "Thunderstorm",
+                96 => "Thunderstorm with slight hail",
+                99 => "Thunderstorm with heavy hail",
+                _ => "Unknown",
+            },
+        )
     }
 
     pub fn icon(&self) -> WeatherConditionIcon {
@@ -186,17 +189,21 @@ impl GetWeather for OpenMeteoProvider {
             pressure: data.current.pressure as u32,
             wind_speed: data.current.wind_speed,
             wind_direction: data.current.wind_direction,
-            description: data.description(),
+            description: data.description(config.language()).to_string(),
             icon: data.icon(),
             location_name: location.name,
         })
     }
 
-    async fn lookup_city(&self, city: &str, _config: &Config) -> Result<Location, RustormyError> {
+    async fn lookup_city(&self, city: &str, config: &Config) -> Result<Location, RustormyError> {
         let response = self
             .client
             .get(GEO_API_URL)
-            .query(&[("name", city), ("count", "1")])
+            .query(&[
+                ("name", city),
+                ("count", "1"),
+                ("language", config.language().code()),
+            ])
             .send()
             .await?;
 

@@ -64,6 +64,8 @@ api_key = ""
 units = "metric"
 # Default output format (`text` or `json`)
 output_format = "text"
+# Language for weather description (e.g. "en" for English, "ru" for Russian, "es" for Spanish, etc.)
+language = "en"
 # Show city name in output
 show_city_name = true
 # Use colors in output
@@ -80,18 +82,33 @@ live_mode_interval = 300
 rustormy [OPTIONS]
 
 Options:
-  -c, --city <CITY>                    City name (required if lat/lon not provided)
-  -y, --lat <LAT>                      Latitude (required if city not provided)
-  -x, --lon <LON>                      Longitude (required if city not provided)
-  -p, --provider <PROVIDER>            Weather data provider [possible values: open_meteo, open_weather_map]
-  -u, --units <UNITS>                  Units for temperature and wind speed [possible values: metric, imperial]
-  -o, --output-format <OUTPUT_FORMAT>  Output format (text or json) [possible values: text, json]
-      --show-city-name                 Show city name in output
-      --use-colors                     Use colors in output
-  -l, --live-mode                      Live mode (periodically fetch and display updated weather data)
-  -i, --live-mode-interval <SECONDS>   Live mode interval in seconds [default: 300]
-  -h, --help                           Print help
-  -V, --version                        Print version
+  -c, --city <CITY>
+          City name (required if lat/lon not provided)
+  -y, --lat <LAT>
+          Latitude (required if city not provided)
+  -x, --lon <LON>
+          Longitude (required if city not provided)
+  -p, --provider <PROVIDER>
+          Weather data provider [possible values: open_meteo, open_weather_map]
+  -u, --units <UNITS>
+          Units for temperature and wind speed [possible values: metric, imperial]
+  -o, --output-format <OUTPUT_FORMAT>
+          Output format [possible values: text, json]
+  -g, --language <LANGUAGE>
+          Language for weather output [possible values: en, ru, es]
+      --show-city-name
+          Show city name in output
+      --use-colors
+          Use colors in output
+  -l, --live-mode
+          Live mode - continuously update weather data every 5 minutes (or specified interval)
+  -i, --live-mode-interval <LIVE_MODE_INTERVAL>
+          Live mode update interval in seconds (default: 300)
+  -h, --help
+          Print help
+  -V, --version
+          Print version
+
 ```
 
 ## Examples
@@ -100,6 +117,7 @@ Options:
 ![Colors: `rustormy -c Batumi --use-colors`](.github/assets/colors.png)
 ![Imperial units: `rustormy -c "New York" --use-colors -u imperial`](.github/assets/imperial.png)
 ![JSON output: `rustormy -c Ajax -o json`](.github/assets/json.png)
+![Spanish translation: `rustormy -c Valparaiso -g es --use-colors --show-city-name`](.github/assets/spanish.png)
 
 ## License
 

@@ -87,3 +87,25 @@ pub struct Location {
     pub latitude: f64,
     pub longitude: f64,
 }
+
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq, ValueEnum, Serialize, Deserialize)]
+#[non_exhaustive]
+pub enum Language {
+    #[value(name = "en")]
+    #[default]
+    English,
+    #[value(name = "ru")]
+    Russian,
+    #[value(name = "es")]
+    Spanish,
+}
+
+impl Language {
+    pub fn code(self) -> &'static str {
+        match self {
+            Self::English => "en",
+            Self::Russian => "ru",
+            Self::Spanish => "es",
+        }
+    }
+}

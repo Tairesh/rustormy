@@ -1,6 +1,6 @@
 use crate::cli::Cli;
 use crate::errors::RustormyError;
-use crate::models::{OutputFormat, Provider, Units};
+use crate::models::{Language, OutputFormat, Provider, Units};
 #[cfg(not(test))]
 use anyhow::Context;
 #[cfg(not(test))]
@@ -36,6 +36,9 @@ pub struct Config {
 
     #[serde(default)]
     show_city_name: bool,
+
+    #[serde(default)]
+    language: Language,
 
     #[serde(default)]
     use_colors: bool,
@@ -132,6 +135,9 @@ impl Config {
         if let Some(output_format) = cli.output_format {
             self.output_format = output_format;
         }
+        if let Some(language) = cli.language {
+            self.language = language;
+        }
         if let Some(live_mode_interval) = cli.live_mode_interval {
             self.live_mode_interval = live_mode_interval;
         }
@@ -227,5 +233,9 @@ impl Config {
 
     pub fn live_mode_interval(&self) -> u64 {
         self.live_mode_interval
+    }
+
+    pub fn language(&self) -> Language {
+        self.language
     }
 }

@@ -1,7 +1,9 @@
 use crate::config::Config;
+use crate::display::translations::ll;
 use crate::errors::RustormyError;
 use crate::models::{Location, Units, Weather, WeatherConditionIcon};
 use crate::weather::GetWeather;
+use capitalize::Capitalize;
 
 const GEO_API_URL: &str = "https://api.openweathermap.org/geo/1.0/direct";
 const WEATHER_API_URL: &str = "https://api.openweathermap.org/data/2.5/weather";
@@ -46,12 +48,8 @@ impl WeatherResponse {
         rain + snow
     }
 
-    pub fn description(&self) -> String {
-        if let Some(weather) = self.weather.first() {
-            format!("{} ({})", weather.main, weather.description)
-        } else {
-            "Unknown".to_string()
-        }
+    pub fn description(&self) -> Option<String> {
+        self.weather.first().map(|w| w.description.capitalize())
     }
 
     pub fn icon(&self) -> WeatherConditionIcon {
@@ -77,7 +75,6 @@ impl WeatherResponse {
 #[derive(Debug, serde::Deserialize)]
 struct WeatherInfo {
     id: u32,
-    main: String,
     description: String,
 }
 
@@ -106,6 +103,7 @@ struct WeatherAPIRequest<'a> {
     lat: f64,
     lon: f64,
     units: Units,
+    lang: &'a str,
     appid: &'a str,
 }
 
@@ -122,6 +120,7 @@ impl GetWeather for OpenWeatherMapProvider {
                 lat: location.latitude,
                 lon: location.longitude,
                 units: config.units(),
+                lang: config.language().code(),
                 appid: api_key,
             })
             .send()
@@ -137,7 +136,9 @@ impl GetWeather for OpenWeatherMapProvider {
             pressure: data.main.pressure,
             wind_speed: data.wind.speed,
             wind_direction: data.wind.deg,
-            description: data.description(),
+            description: data
+                .description()
+                .unwrap_or_else(|| ll(config.language(), "Unknown").to_string()),
             icon: data.icon(),
             location_name: data.name.unwrap_or(location.name),
         };
@@ -151,7 +152,12 @@ impl GetWeather for OpenWeatherMapProvider {
         let response = self
             .client
             .get(GEO_API_URL)
-            .query(&[("q", city), ("limit", "1"), ("appid", api_key)])
+            .query(&[
+                ("q", city),
+                ("limit", "1"),
+                ("appid", api_key),
+                ("lang", config.language().code()),
+            ])
             .send()
             .await?;
 

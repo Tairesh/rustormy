@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Upcoming]
+
+### Added
+
+- 🎌 Multilanguage support. Added translations for Russian and Spanish languages. More languages to come, contributions
+  welcome!
+
+### Changed
+
+- Improved code quality.
+
 ## [0.1.3] - 2025-08-26
 
 ### Added
