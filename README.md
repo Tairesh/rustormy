@@ -40,8 +40,12 @@ Or download a precompiled binary from the [releases page](https://github.com/Tai
 
 `rustormy` uses XDG Base Directory Specification for configuration files and will create a configuration file at
 `~/.config/rustormy/config.toml` to set default options at first run.
+
+On macOS, the configuration file will be located at
+`$HOME/Library/Application Support/rustormy/config.toml`.
+
 On Windows, the configuration file will be located at
-`%APPDATA%\rustormy\config.toml`.
+`%APPDATA%\Roaming\rustormy\config.toml`.
 
 ### Configuration options
 
