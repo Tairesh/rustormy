@@ -3,9 +3,13 @@ use crate::errors::RustormyError;
 use crate::models::{OutputFormat, Provider, Units};
 #[cfg(not(test))]
 use anyhow::Context;
+#[cfg(not(test))]
+use directories::ProjectDirs;
 use serde_derive::{Deserialize, Serialize};
 #[cfg(not(test))]
 use std::fs;
+#[cfg(not(test))]
+use std::path::PathBuf;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -61,29 +65,24 @@ impl Config {
 
     #[cfg(not(test))]
     fn load_from_file() -> Result<Option<Self>, RustormyError> {
-        let xdg_dirs = xdg::BaseDirectories::with_prefix("rustormy");
-        let config_path = Self::get_config_path(&xdg_dirs);
+        let proj_dirs = ProjectDirs::from("", "", "rustormy").ok_or_else(|| {
+            RustormyError::Other(anyhow::anyhow!("Could not determine config directory"))
+        })?;
 
-        if !config_path.as_ref().is_some_and(|p| p.exists()) {
-            let default_config = Self::create_default_config_file(&xdg_dirs)?;
+        let config_dir = proj_dirs.config_dir();
+        let config_path = config_dir.join("config.toml");
+
+        if !config_path.exists() {
+            let default_config = Self::create_default_config_file(&config_path)?;
             return Ok(Some(default_config));
         }
 
-        let config = Self::read_and_parse_config_file(config_path.unwrap())?;
+        let config = Self::read_and_parse_config_file(config_path)?;
         Ok(Some(config))
     }
 
     #[cfg(not(test))]
-    fn get_config_path(xdg_dirs: &xdg::BaseDirectories) -> Option<std::path::PathBuf> {
-        xdg_dirs.get_config_file("config.toml")
-    }
-
-    #[cfg(not(test))]
-    fn create_default_config_file(xdg_dirs: &xdg::BaseDirectories) -> Result<Self, RustormyError> {
-        let config_path = xdg_dirs.place_config_file("config.toml").map_err(|e| {
-            RustormyError::Other(anyhow::anyhow!("Failed to create config file: {}", e))
-        })?;
-
+    fn create_default_config_file(config_path: &PathBuf) -> Result<Self, RustormyError> {
         let default_config = Self::default();
 
         // Create parent directories if they don't exist
@@ -94,13 +93,13 @@ impl Config {
         // Serialize and write default config
         let default_content = toml::to_string_pretty(&default_config)
             .context("Failed to serialize default config")?;
-        fs::write(&config_path, default_content).context("Failed to write default config file")?;
+        fs::write(config_path, default_content).context("Failed to write default config file")?;
 
         Ok(default_config)
     }
 
     #[cfg(not(test))]
-    fn read_and_parse_config_file(config_path: std::path::PathBuf) -> Result<Self, RustormyError> {
+    fn read_and_parse_config_file(config_path: PathBuf) -> Result<Self, RustormyError> {
         let content = fs::read_to_string(config_path).context("Failed to read config file")?;
         let config: Self = toml::from_str(&content).context("Failed to parse config file")?;
         Ok(config)

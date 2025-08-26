@@ -17,7 +17,6 @@ use weather::{GetWeather, WeatherProvider};
 #[tokio::main]
 async fn main() -> Result<()> {
     let config = Config::new(&Cli::parse())?;
-    config.validate()?;
 
     let provider = WeatherProvider::new(config.provider());
     let formatter = WeatherFormatter::new(config.clone());
