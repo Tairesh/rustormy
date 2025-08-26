@@ -9,6 +9,8 @@ Minimal and neofetch-like weather CLI inspired by
 [![Commit activity](https://img.shields.io/github/commit-activity/m/tairesh/rustormy)](https://github.com/Tairesh/rustormy/commits/main)
 [![Lines of code](https://tokei.rs/b1/github/Tairesh/rustormy?category=code)](https://github.com/Tairesh/rustormy/tree/main)
 
+![Screenshot](.github/assets/live.png)
+
 ---
 
 ## Current features
@@ -121,8 +123,8 @@ Options:
 ![Basic usage: `rustormy -c London`](.github/assets/basic.png)
 ![Colors: `rustormy -c Batumi --use-colors`](.github/assets/colors.png)
 ![Imperial units: `rustormy -c "New York" --use-colors -u imperial`](.github/assets/imperial.png)
-![JSON output: `rustormy -c Ajax -o json`](.github/assets/json.png)
 ![Spanish translation: `rustormy -c Valparaiso -g es --use-colors --show-city-name`](.github/assets/spanish.png)
+![JSON output: `rustormy -c Ajax -o json`](.github/assets/json.png)
 
 ## License
 
