@@ -11,6 +11,7 @@ use std::fs;
 #[cfg(not(test))]
 use std::path::PathBuf;
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default)]
@@ -35,13 +36,19 @@ pub struct Config {
     output_format: OutputFormat,
 
     #[serde(default)]
-    show_city_name: bool,
-
-    #[serde(default)]
     language: Language,
 
     #[serde(default)]
+    show_city_name: bool,
+
+    #[serde(default)]
     use_colors: bool,
+
+    #[serde(default)]
+    use_degrees_for_wind: bool,
+
+    #[serde(default)]
+    compact_mode: bool,
 
     #[serde(default)]
     live_mode: bool,
@@ -149,6 +156,12 @@ impl Config {
         if cli.use_colors {
             self.use_colors = true;
         }
+        if cli.use_degrees_for_wind {
+            self.use_degrees_for_wind = true;
+        }
+        if cli.compact_mode {
+            self.compact_mode = true;
+        }
         if cli.live_mode {
             self.live_mode = true;
         }
@@ -215,6 +228,20 @@ impl Config {
         self.units
     }
 
+    #[cfg(test)]
+    pub fn set_units(&mut self, units: Units) {
+        self.units = units;
+    }
+
+    pub fn language(&self) -> Language {
+        self.language
+    }
+
+    #[cfg(test)]
+    pub fn set_language(&mut self, language: Language) {
+        self.language = language;
+    }
+
     pub fn output_format(&self) -> OutputFormat {
         self.output_format
     }
@@ -223,8 +250,36 @@ impl Config {
         self.show_city_name
     }
 
+    #[cfg(test)]
+    pub fn set_show_city_name(&mut self, show: bool) {
+        self.show_city_name = show;
+    }
+
     pub fn use_colors(&self) -> bool {
         self.use_colors
+    }
+
+    #[cfg(test)]
+    pub fn set_use_colors(&mut self, use_colors: bool) {
+        self.use_colors = use_colors;
+    }
+
+    pub fn use_degrees_for_wind(&self) -> bool {
+        self.use_degrees_for_wind
+    }
+
+    #[cfg(test)]
+    pub fn set_use_degrees_for_wind(&mut self, use_degrees: bool) {
+        self.use_degrees_for_wind = use_degrees;
+    }
+
+    pub fn compact_mode(&self) -> bool {
+        self.compact_mode
+    }
+
+    #[cfg(test)]
+    pub fn set_compact_mode(&mut self, compact: bool) {
+        self.compact_mode = compact;
     }
 
     pub fn live_mode(&self) -> bool {
@@ -233,9 +288,5 @@ impl Config {
 
     pub fn live_mode_interval(&self) -> u64 {
         self.live_mode_interval
-    }
-
-    pub fn language(&self) -> Language {
-        self.language
     }
 }

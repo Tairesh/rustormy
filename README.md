@@ -75,8 +75,12 @@ output_format = "text"
 language = "en"
 # Show city name in output
 show_city_name = true
-# Use colors in output
+# Use ANSI colors in terminal output
 use_colors = true
+# Use exact degrees for wind direction instead of arrows
+use_degrees_for_wind = true
+# Compact mode (text output without trailing newlines and labels, but still with icon)
+compact_mode = true
 # Live mode (periodically fetch and display updated weather data)
 live_mode = false
 # Live mode interval in seconds
@@ -99,17 +103,21 @@ Options:
           Weather data provider [possible values: open_meteo, open_weather_map]
   -u, --units <UNITS>
           Units for temperature and wind speed [possible values: metric, imperial]
-  -o, --output-format <OUTPUT_FORMAT>
+  -o, --format <OUTPUT_FORMAT>
           Output format [possible values: text, json]
-  -g, --language <LANGUAGE>
+  -g, --lang <LANGUAGE>
           Language for weather output [possible values: en, ru, es]
-      --show-city-name
+      --name
           Show city name in output
-      --use-colors
+      --colors
           Use colors in output
-  -l, --live-mode
+      --degrees
+          Use degrees for wind direction in output
+      --compact
+          Compact mode for text output
+  -l, --live
           Live mode - continuously update weather data every 5 minutes (or specified interval)
-  -i, --live-mode-interval <LIVE_MODE_INTERVAL>
+  -i, --interval <LIVE_MODE_INTERVAL>
           Live mode update interval in seconds (default: 300)
   -h, --help
           Print help

@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.5] - 2025-08-27
+
+### Added
+
+- Compact mode (`--compact` in cli or `compact_mode = true` in config) to use only 5 lines of output and less width
+  without labels.
+- Option to show wind direction in degrees instead of arrows (`--degrees` in cli or `use_degrees_for_wind = true` in
+  config).
+- Unit tests for verifying correct formatting in different modes and configurations.
+
+### Changed
+
+- The following CLI options have been renamed. Old names are still supported for backward compatibility:
+    - `--show-city-name` to `--name`
+    - `--use-colors` to `--colors`
+    - `--live-mode` to `--live`
+    - `--live-mode-interval` to `--interval`
+    - `--output-format` to `--format`
+    - `--language` to `--lang`
+
 ## [0.1.4] - 2025-08-27
 
 ### Added
