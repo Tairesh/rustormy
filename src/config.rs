@@ -12,7 +12,7 @@ use std::fs;
 use std::path::PathBuf;
 
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default)]
     provider: Provider,
@@ -62,6 +62,28 @@ pub struct Config {
 
 fn default_live_mode_interval() -> u64 {
     300
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            provider: Provider::default(),
+            api_key: None,
+            city: None,
+            lat: None,
+            lon: None,
+            units: Units::default(),
+            output_format: OutputFormat::default(),
+            language: Language::default(),
+            show_city_name: false,
+            use_colors: false,
+            use_degrees_for_wind: false,
+            text_mode: TextMode::default(),
+            compact_mode: None,
+            live_mode: false,
+            live_mode_interval: default_live_mode_interval(),
+        }
+    }
 }
 
 impl Config {

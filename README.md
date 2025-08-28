@@ -114,7 +114,11 @@ Options:
       --degrees
           Use degrees for wind direction in output
       --compact
-          Compact mode for text output
+          Compact mode for text output (short for `--text-mode compact`)
+      --one-line
+          One-line mode for text output (short for `--text-mode one_line`)
+  -m, --text-mode <TEXT_MODE>
+          Text output mode [possible values: full, compact, one_line]
   -l, --live
           Live mode - continuously update weather data every 5 minutes (or specified interval)
   -i, --interval <LIVE_MODE_INTERVAL>
@@ -129,9 +133,10 @@ Options:
 ## Examples
 
 ![Basic usage: `rustormy -c London`](.github/assets/basic.png)
-![Colors: `rustormy -c Batumi --use-colors`](.github/assets/colors.png)
-![Imperial units: `rustormy -c "New York" --use-colors -u imperial`](.github/assets/imperial.png)
-![Spanish translation: `rustormy -c Valparaiso -g es --use-colors --show-city-name`](.github/assets/spanish.png)
+![Colors: `rustormy -c Milan --colors`](.github/assets/colors.png)
+![Imperial units: `rustormy -c "New York" --colors -u imperial`](.github/assets/imperial.png)
+![Spanish translation: `rustormy -c Valparaiso -g es --name --colors`](.github/assets/spanish.png)
+![Compact and one-line modes](.github/assets/compact.png)
 ![JSON output: `rustormy -c Ajax -o json`](.github/assets/json.png)
 
 ## License
