@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
-use crate::models::{OutputFormat, Units, Weather, WeatherConditionIcon};
+use crate::models::{OutputFormat, TextMode, Units, Weather, WeatherConditionIcon};
 use std::fmt::Display;
 
 pub struct WeatherFormatter {
@@ -64,7 +64,7 @@ fn make_line(
         value.to_string()
     };
 
-    if config.compact_mode() {
+    if config.text_mode() == TextMode::Compact {
         format!("{i} {value}")
     } else {
         format!("{i} {} {value}", label(l, config))
@@ -114,15 +114,43 @@ impl WeatherFormatter {
     }
 
     fn display_text(&self, weather: Weather) {
-        let lines = self.format_text(weather);
-        for line in lines {
-            println!("{line}");
+        if self.config.text_mode() == TextMode::OneLine {
+            println!("{}", self.format_one_line(weather));
+            return;
+        }
+
+        self.format_text(weather)
+            .iter()
+            .for_each(|line| println!("{line}"));
+    }
+
+    fn format_one_line(&self, weather: Weather) -> String {
+        let temp_unit = match self.config.units() {
+            Units::Metric => "°C",
+            Units::Imperial => "°F",
+        };
+        let emoji = weather.icon.emoji();
+        let mut temperature = format!("{:.1}{}", weather.temperature, temp_unit);
+        if self.config.use_colors() {
+            temperature = colored_text(temperature, AnsiColor::BrightYellow);
+        }
+        let value = format!("{emoji} {temperature}");
+
+        if self.config.show_city_name() {
+            let location = if self.config.use_colors() {
+                colored_text(weather.location_name, AnsiColor::BrightWhite)
+            } else {
+                weather.location_name
+            };
+            format!("{location}: {value}")
+        } else {
+            value
         }
     }
 
     fn format_text(&self, weather: Weather) -> Vec<String> {
         let (compact, colors, name, lang) = (
-            self.config.compact_mode(),
+            self.config.text_mode() == TextMode::Compact,
             self.config.use_colors(),
             self.config.show_city_name(),
             self.config.language(),
@@ -165,7 +193,7 @@ impl WeatherFormatter {
             icon[2],
             "Temperature",
             format!(
-                "{:.1}{temp_unit} | {} {:.1}{temp_unit}",
+                "{:.1}{temp_unit} ({} {:.1}{temp_unit})",
                 weather.temperature,
                 ll(lang, "feels like"),
                 weather.feels_like
@@ -233,7 +261,7 @@ impl WeatherFormatter {
 mod tests {
     use super::*;
     use crate::config::Config;
-    use crate::models::{Language, Units, WeatherConditionIcon};
+    use crate::models::{Language, TextMode, Units, WeatherConditionIcon};
 
     fn sample_weather() -> Weather {
         Weather {
@@ -335,7 +363,7 @@ mod tests {
     fn test_format_text_compact() {
         let weather = sample_weather();
         let mut config = Config::default();
-        config.set_compact_mode(true);
+        config.set_text_mode(TextMode::Compact);
         let formatter = WeatherFormatter::new(config);
         let lines = formatter.format_text(weather);
 
@@ -512,6 +540,57 @@ mod tests {
             lines[1].contains("Погода"),
             "Expected 'Погода' in condition line, got '{}'",
             lines[1]
+        );
+    }
+
+    #[test]
+    fn test_one_line_mode_with_city_name() {
+        let weather = sample_weather();
+        let mut config = Config::default();
+        config.set_show_city_name(true);
+        config.set_text_mode(TextMode::OneLine);
+        let formatter = WeatherFormatter::new(config);
+        let line = formatter.format_one_line(weather);
+
+        assert!(
+            line.contains("Test City"),
+            "Expected 'Test City' in one-line output, got '{}'",
+            line
+        );
+        assert!(
+            line.contains("⛅"),
+            "Expected weather icon in one-line output, got '{}'",
+            line
+        );
+        assert!(
+            line.contains("22.5°C"),
+            "Expected temperature in one-line output, got '{}'",
+            line
+        );
+    }
+
+    #[test]
+    fn test_one_line_mode_without_city_name() {
+        let weather = sample_weather();
+        let mut config = Config::default();
+        config.set_text_mode(TextMode::OneLine);
+        let formatter = WeatherFormatter::new(config);
+        let line = formatter.format_one_line(weather);
+
+        assert!(
+            !line.contains("Test City"),
+            "Did not expect 'Test City' in one-line output, got '{}'",
+            line
+        );
+        assert!(
+            line.contains("⛅"),
+            "Expected weather icon in one-line output, got '{}'",
+            line
+        );
+        assert!(
+            line.contains("22.5°C"),
+            "Expected temperature in one-line output, got '{}'",
+            line
         );
     }
 }

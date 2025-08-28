@@ -1,6 +1,6 @@
 use crate::cli::Cli;
 use crate::errors::RustormyError;
-use crate::models::{Language, OutputFormat, Provider, Units};
+use crate::models::{Language, OutputFormat, Provider, TextMode, Units};
 #[cfg(not(test))]
 use anyhow::Context;
 #[cfg(not(test))]
@@ -48,7 +48,10 @@ pub struct Config {
     use_degrees_for_wind: bool,
 
     #[serde(default)]
-    compact_mode: bool,
+    text_mode: TextMode,
+
+    #[serde(default, skip_serializing)]
+    compact_mode: Option<bool>, // Deprecated, kept for migration purposes
 
     #[serde(default)]
     live_mode: bool,
@@ -83,12 +86,7 @@ impl Config {
 
     #[cfg(not(test))]
     fn load_from_file() -> Result<Option<Self>, RustormyError> {
-        let proj_dirs = ProjectDirs::from("", "", "rustormy").ok_or_else(|| {
-            RustormyError::Other(anyhow::anyhow!("Could not determine config directory"))
-        })?;
-
-        let config_dir = proj_dirs.config_dir();
-        let config_path = config_dir.join("config.toml");
+        let config_path = Self::get_config_path()?;
 
         if !config_path.exists() {
             let default_config = Self::create_default_config_file(&config_path)?;
@@ -97,6 +95,18 @@ impl Config {
 
         let config = Self::read_and_parse_config_file(config_path)?;
         Ok(Some(config))
+    }
+
+    #[cfg(not(test))]
+    fn get_config_path() -> Result<PathBuf, RustormyError> {
+        let proj_dirs = ProjectDirs::from("", "", "rustormy").ok_or_else(|| {
+            RustormyError::Other(anyhow::anyhow!("Could not determine config directory"))
+        })?;
+
+        let config_dir = proj_dirs.config_dir();
+        let config_path = config_dir.join("config.toml");
+
+        Ok(config_path)
     }
 
     #[cfg(not(test))]
@@ -119,8 +129,36 @@ impl Config {
     #[cfg(not(test))]
     fn read_and_parse_config_file(config_path: PathBuf) -> Result<Self, RustormyError> {
         let content = fs::read_to_string(config_path).context("Failed to read config file")?;
-        let config: Self = toml::from_str(&content).context("Failed to parse config file")?;
+        let mut config: Self = toml::from_str(&content).context("Failed to parse config file")?;
+        config = config.migrate()?;
         Ok(config)
+    }
+
+    fn migrate(mut self) -> Result<Self, RustormyError> {
+        #[cfg(not(test))]
+        let mut migrated = false;
+
+        if let Some(compact_mode) = self.compact_mode {
+            if compact_mode {
+                self.text_mode = TextMode::Compact;
+            }
+
+            #[cfg(not(test))]
+            {
+                migrated = true;
+            }
+        }
+
+        #[cfg(not(test))]
+        if migrated {
+            // Save config back to file after migration
+            let config_path = Self::get_config_path()?;
+            let content =
+                toml::to_string_pretty(&self).context("Failed to serialize migrated config")?;
+            fs::write(config_path, content).context("Failed to write migrated config file")?;
+        }
+
+        Ok(self)
     }
 
     fn merge_cli(&mut self, cli: &Cli) {
@@ -160,7 +198,13 @@ impl Config {
             self.use_degrees_for_wind = true;
         }
         if cli.compact_mode {
-            self.compact_mode = true;
+            self.text_mode = TextMode::Compact;
+        }
+        if cli.one_line_mode {
+            self.text_mode = TextMode::OneLine;
+        }
+        if let Some(text_mode) = cli.text_mode {
+            self.text_mode = text_mode;
         }
         if cli.live_mode {
             self.live_mode = true;
@@ -273,13 +317,13 @@ impl Config {
         self.use_degrees_for_wind = use_degrees;
     }
 
-    pub fn compact_mode(&self) -> bool {
-        self.compact_mode
+    pub fn text_mode(&self) -> TextMode {
+        self.text_mode
     }
 
     #[cfg(test)]
-    pub fn set_compact_mode(&mut self, compact: bool) {
-        self.compact_mode = compact;
+    pub fn set_text_mode(&mut self, text_mode: TextMode) {
+        self.text_mode = text_mode;
     }
 
     pub fn live_mode(&self) -> bool {
@@ -288,5 +332,32 @@ impl Config {
 
     pub fn live_mode_interval(&self) -> u64 {
         self.live_mode_interval
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_migrate_compact_mode_true() {
+        let config = Config {
+            compact_mode: Some(true),
+            ..Default::default()
+        }
+        .migrate()
+        .unwrap();
+        assert_eq!(config.text_mode, TextMode::Compact);
+    }
+
+    #[test]
+    fn test_migrate_compact_mode_false() {
+        let config = Config {
+            compact_mode: Some(false),
+            ..Default::default()
+        }
+        .migrate()
+        .unwrap();
+        assert_eq!(config.text_mode, TextMode::Full);
     }
 }

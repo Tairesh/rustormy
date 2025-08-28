@@ -192,4 +192,19 @@ impl WeatherConditionIcon {
             ],
         }
     }
+
+    pub fn emoji(self) -> &'static str {
+        match self {
+            WeatherConditionIcon::Unknown => "❓",
+            WeatherConditionIcon::Sunny => "☀️ ",
+            WeatherConditionIcon::PartlyCloudy => "⛅️",
+            WeatherConditionIcon::Cloudy => "☁️ ",
+            WeatherConditionIcon::LightShowers => "🌦️ ",
+            WeatherConditionIcon::HeavyShowers => "🌧️ ",
+            WeatherConditionIcon::LightSnow => "🌨️ ",
+            WeatherConditionIcon::HeavySnow => "❄️ ",
+            WeatherConditionIcon::Thunderstorm => "⛈️ ",
+            WeatherConditionIcon::Fog => "🌫 ",
+        }
+    }
 }

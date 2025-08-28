@@ -2,31 +2,22 @@ use clap::ValueEnum;
 use serde_derive::{Deserialize, Serialize};
 use std::fmt::Display;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, ValueEnum)]
+#[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, ValueEnum)]
 #[serde(rename_all = "snake_case")]
 #[clap(rename_all = "snake_case")]
 pub enum Provider {
+    #[default]
     OpenMeteo,
     OpenWeatherMap,
 }
 
-impl Default for Provider {
-    fn default() -> Self {
-        Self::OpenMeteo
-    }
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize, Deserialize, ValueEnum)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Serialize, Deserialize, ValueEnum)]
 #[serde(rename_all = "snake_case")]
+#[clap(rename_all = "snake_case")]
 pub enum Units {
+    #[default]
     Metric,
     Imperial,
-}
-
-impl Default for Units {
-    fn default() -> Self {
-        Self::Metric
-    }
 }
 
 impl Display for Units {
@@ -39,17 +30,23 @@ impl Display for Units {
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize, Deserialize, ValueEnum)]
+#[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Serialize, Deserialize, ValueEnum)]
 #[serde(rename_all = "snake_case")]
+#[clap(rename_all = "snake_case")]
 pub enum OutputFormat {
+    #[default]
     Text,
     Json,
 }
 
-impl Default for OutputFormat {
-    fn default() -> Self {
-        Self::Text
-    }
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ValueEnum)]
+#[serde(rename_all = "snake_case")]
+#[clap(rename_all = "snake_case")]
+pub enum TextMode {
+    #[default]
+    Full,
+    Compact,
+    OneLine,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

@@ -6,9 +6,22 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Upcoming] - Unreleased
 
+### Added
+
+- Add `--one-line` option to display weather information in a single line.
+- Add `--text-mode` option to CLI and `text_mode` option to config file to choose between `full` (default), `compact`
+  and `one_line` modes.
+- Implement automatic config file migration for `compact_mode` to `text_mode`.
+
 ### Changed
 
 - Temperature now shows only one decimal place for better readability.
+
+### Removed
+
+- :boom: Config file option `compact_mode` removed due to introduction of multiple text modes. Use
+  `text_mode = "compact"`
+  instead. `--compact` CLI option is still supported though.
 
 ## [0.1.5] - 2025-08-27
 

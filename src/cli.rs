@@ -1,4 +1,4 @@
-use crate::models::{Language, OutputFormat, Provider, Units};
+use crate::models::{Language, OutputFormat, Provider, TextMode, Units};
 use clap::{ArgAction, Parser};
 
 #[allow(clippy::struct_excessive_bools)]
@@ -45,9 +45,17 @@ pub struct Cli {
     #[arg(long="degrees", action = ArgAction::SetTrue)]
     pub use_degrees_for_wind: bool,
 
-    /// Compact mode for text output
+    /// Compact mode for text output (short for `--text-mode compact`)
     #[arg(long="compact", action = ArgAction::SetTrue)]
     pub compact_mode: bool,
+
+    /// One-line mode for text output (short for `--text-mode one-line`)
+    #[arg(long="one-line", action = ArgAction::SetTrue)]
+    pub one_line_mode: bool,
+
+    /// Text mode for text output
+    #[arg(short = 'm', long = "text-mode", value_enum)]
+    pub text_mode: Option<TextMode>,
 
     /// Live mode - continuously update weather data every 5 minutes (or specified interval)
     #[arg(short = 'l', long = "live", action = ArgAction::SetTrue, alias="live-mode")]
