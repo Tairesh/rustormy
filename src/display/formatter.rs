@@ -159,11 +159,13 @@ impl WeatherFormatter {
             &self.config,
         ));
 
+        // Temperature displays with only one decimal place
+        // e.g., 22.5°C instead of 22.48°C
         output.push(make_line(
             icon[2],
             "Temperature",
             format!(
-                "{}{temp_unit} ({} {}{temp_unit})",
+                "{:.1}{temp_unit} | {} {:.1}{temp_unit}",
                 weather.temperature,
                 ll(lang, "feels like"),
                 weather.feels_like
@@ -235,8 +237,8 @@ mod tests {
 
     fn sample_weather() -> Weather {
         Weather {
-            temperature: 22.5,
-            feels_like: 21.0,
+            temperature: 22.49,
+            feels_like: 21.51,
             humidity: 60,
             precipitation: 0.5,
             pressure: 1013,
