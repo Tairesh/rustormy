@@ -29,9 +29,15 @@ Minimal and neofetch-like weather CLI inspired by
 
 ## Planned features
 
-- Support for more weather APIs
+- Caching geocoding results to reduce API calls
+- Support for more weather APIs and data providers
 - More detailed weather information (e.g. dew point, UV index, etc.)
+- More weather-related information (e.g. sunrise/sunset times, moon phase, etc.)
 - More customization options (e.g. colors, layout, etc.)
+- More languages
+- Improved test coverage
+- Homebrew, nix, rpm, deb packages
+- Docker image (just for fun)
 
 ## Installation
 
@@ -85,6 +91,8 @@ text_mode = "full"
 live_mode = false
 # Live mode interval in seconds
 live_mode_interval = 300
+# Align labels in text output to the right
+align_right = true
 ```
 
 ## Usage
