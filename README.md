@@ -79,8 +79,8 @@ show_city_name = true
 use_colors = true
 # Use exact degrees for wind direction instead of arrows
 use_degrees_for_wind = true
-# Compact mode (text output without trailing newlines and labels, but still with icon)
-compact_mode = true
+# Text output mode (`full`, `compact`, or `one_line`)
+text_mode = "full"
 # Live mode (periodically fetch and display updated weather data)
 live_mode = false
 # Live mode interval in seconds
