@@ -24,3 +24,4 @@ reqwest = { version = "0.12", features = ["json"] }
 thiserror = "2.0"
 directories = "6.0"
 capitalize = "0.3"
+enum_dispatch = "0.3"

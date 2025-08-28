@@ -9,7 +9,7 @@ const GEO_API_URL: &str = "https://api.openweathermap.org/geo/1.0/direct";
 const WEATHER_API_URL: &str = "https://api.openweathermap.org/data/2.5/weather";
 
 #[derive(Debug, Default)]
-pub struct OpenWeatherMapProvider {
+pub struct OpenWeatherMap {
     client: reqwest::Client,
 }
 
@@ -108,7 +108,7 @@ struct WeatherAPIRequest<'a> {
 }
 
 #[async_trait::async_trait]
-impl GetWeather for OpenWeatherMapProvider {
+impl GetWeather for OpenWeatherMap {
     async fn get_weather(&self, config: &Config) -> anyhow::Result<Weather, RustormyError> {
         let location = self.get_location(config).await?;
 

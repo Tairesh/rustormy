@@ -10,7 +10,7 @@ const WEATHER_API_URL: &str = "https://api.open-meteo.com/v1/forecast";
 const WEATHER_API_FIELDS: &str = "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,surface_pressure,wind_speed_10m,wind_direction_10m,weather_code";
 
 #[derive(Debug, Default)]
-pub struct OpenMeteoProvider {
+pub struct OpenMeteo {
     client: reqwest::Client,
 }
 
@@ -149,7 +149,7 @@ struct WeatherAPIRequest<'a> {
 }
 
 #[async_trait::async_trait]
-impl GetWeather for OpenMeteoProvider {
+impl GetWeather for OpenMeteo {
     async fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
         let location = self.get_location(config).await?;
 

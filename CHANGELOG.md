@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Upcoming]
+
+### Changed
+
+- Improved code quality and maintainability by using `enum_dispatch` for weather providers.
+
 ## [0.2.0] - 2025-08-28
 
 ### Added

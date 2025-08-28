@@ -89,11 +89,14 @@ pub struct Location {
 #[non_exhaustive]
 pub enum Language {
     #[value(name = "en")]
+    #[serde(rename = "en", alias = "English")]
     #[default]
     English,
     #[value(name = "ru")]
+    #[serde(rename = "ru", alias = "Russian")]
     Russian,
     #[value(name = "es")]
+    #[serde(rename = "es", alias = "Spanish")]
     Spanish,
 }
 

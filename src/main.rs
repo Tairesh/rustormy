@@ -13,7 +13,7 @@ use cli::Cli;
 use config::Config;
 use display::formatter::WeatherFormatter;
 use std::time::Duration;
-use weather::{GetWeather, WeatherProvider};
+use weather::{GetWeather, GetWeatherProvider};
 
 fn clear_screen() {
     print!("\x1B[2J\x1B[1;1H\x1B[?25l");
@@ -23,7 +23,7 @@ fn clear_screen() {
 #[tokio::main]
 async fn main() -> Result<()> {
     let config = Config::new(&Cli::parse())?;
-    let provider = WeatherProvider::new(config.provider());
+    let provider = GetWeatherProvider::new(config.provider());
     let formatter = WeatherFormatter::new(config.clone());
 
     loop {
