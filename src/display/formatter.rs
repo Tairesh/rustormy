@@ -74,10 +74,15 @@ fn make_line(
 fn label(text: &'static str, config: &Config) -> String {
     let lang = config.language();
     let translated = ll(lang, text).to_string() + ":";
-    if config.use_colors() {
-        colored_text(format!("{translated:<12}"), AnsiColor::BrightBlue)
+    let padded = if config.align_right() {
+        format!("{translated:>12}")
     } else {
         format!("{translated:<12}")
+    };
+    if config.use_colors() {
+        colored_text(padded, AnsiColor::BrightBlue)
+    } else {
+        padded
     }
 }
 
@@ -591,6 +596,32 @@ mod tests {
             line.contains("22.5°C"),
             "Expected temperature in one-line output, got '{}'",
             line
+        );
+    }
+
+    #[test]
+    fn test_align_right() {
+        let weather = sample_weather();
+        let mut config = Config::default();
+        config.set_align_right(true);
+        let formatter = WeatherFormatter::new(config);
+        let lines = formatter.format_text(weather);
+
+        // Check if there are no extra spaces between the label and the value
+        assert!(
+            lines[1].contains("Condition: Partly cloudy"),
+            "Expected 'Condition: Partly cloudy' in line 1, got '{}'",
+            lines[1]
+        );
+        assert!(
+            lines[2].contains("Temperature: 22.5°C"),
+            "Expected 'Temperature: 22.5°C' in line 2, got '{}'",
+            lines[2]
+        );
+        assert!(
+            lines[3].contains("Wind: 5 m/s →"),
+            "Expected 'Wind: 5 m/s →' in line 3, got '{}'",
+            lines[3]
         );
     }
 }

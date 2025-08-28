@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Upcoming]
 
+### Added
+
+- Add option `align_right` to config file for aligning labels to the right in text output. By default,
+  labels are left-aligned.
+
 ### Changed
 
 - Improved code quality and maintainability by using `enum_dispatch` for weather providers.

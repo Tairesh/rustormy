@@ -58,6 +58,9 @@ pub struct Config {
 
     #[serde(default = "default_live_mode_interval")]
     live_mode_interval: u64, // in seconds, default to 300 (5 minutes)
+
+    #[serde(default)]
+    align_right: bool, // Actually aligns only labels to the right, not the whole output
 }
 
 fn default_live_mode_interval() -> u64 {
@@ -82,6 +85,7 @@ impl Default for Config {
             compact_mode: None,
             live_mode: false,
             live_mode_interval: default_live_mode_interval(),
+            align_right: false,
         }
     }
 }
@@ -354,6 +358,15 @@ impl Config {
 
     pub fn live_mode_interval(&self) -> u64 {
         self.live_mode_interval
+    }
+
+    pub fn align_right(&self) -> bool {
+        self.align_right
+    }
+
+    #[cfg(test)]
+    pub fn set_align_right(&mut self, align_right: bool) {
+        self.align_right = align_right;
     }
 }
 
