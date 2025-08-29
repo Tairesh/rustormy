@@ -36,12 +36,11 @@ impl TestProvider {
     }
 }
 
-#[async_trait::async_trait]
 impl GetWeather for TestProvider {
-    async fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
+    fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
         // Validate input parameters just like real providers
         if let Some(city) = config.city() {
-            self.lookup_city(city, config).await?;
+            self.lookup_city(city, config)?;
         } else if config.coordinates().is_none() {
             return Err(RustormyError::NoLocationProvided);
         }
@@ -49,7 +48,7 @@ impl GetWeather for TestProvider {
         Ok(Self::mock_weather(config))
     }
 
-    async fn lookup_city(&self, city: &str, _config: &Config) -> Result<Location, RustormyError> {
+    fn lookup_city(&self, city: &str, _config: &Config) -> Result<Location, RustormyError> {
         if city.is_empty() {
             return Err(RustormyError::CityNotFound("".to_string()));
         }
@@ -65,12 +64,12 @@ impl GetWeather for TestProvider {
     }
 }
 
-#[tokio::test]
-async fn test_valid_city_lookup() {
+#[test]
+fn test_valid_city_lookup() {
     let config = Config::new(&Cli::parse_from(&["rustormy", "-c", "Test"])).unwrap();
     let provider = TestProvider::new();
 
-    let result = provider.get_weather(&config).await;
+    let result = provider.get_weather(&config);
     assert!(result.is_ok());
 
     let weather = result.unwrap();
@@ -78,20 +77,20 @@ async fn test_valid_city_lookup() {
     assert_eq!(weather.location_name, "Test City".to_string());
 }
 
-#[tokio::test]
-async fn test_nonexistent_city() {
+#[test]
+fn test_nonexistent_city() {
     let config = Config::new(&Cli::parse_from(&["rustormy", "-c", "NonexistentCity"])).unwrap();
     let provider = TestProvider::new();
 
-    let result = provider.get_weather(&config).await;
+    let result = provider.get_weather(&config);
     assert!(matches!(
         result,
         Err(RustormyError::CityNotFound(city)) if city == "NonexistentCity"
     ));
 }
 
-#[tokio::test]
-async fn test_valid_coordinates() {
+#[test]
+fn test_valid_coordinates() {
     let config = Config::new(&Cli::parse_from(&[
         "rustormy",
         "-y",
@@ -101,7 +100,7 @@ async fn test_valid_coordinates() {
     .unwrap();
     let provider = TestProvider::new();
 
-    let result = provider.get_weather(&config).await;
+    let result = provider.get_weather(&config);
     assert!(result.is_ok());
 
     let weather = result.unwrap();
@@ -109,8 +108,8 @@ async fn test_valid_coordinates() {
     assert_eq!(weather.humidity, 65);
 }
 
-#[tokio::test]
-async fn test_invalid_coordinates() {
+#[test]
+fn test_invalid_coordinates() {
     let config = Config::new(&Cli::parse_from(&["rustormy", "-y", "91.0", "-x", "0.0"]));
     assert!(matches!(
         config,
@@ -121,12 +120,12 @@ async fn test_invalid_coordinates() {
     ));
 }
 
-#[tokio::test]
-async fn test_no_location_provided() {
+#[test]
+fn test_no_location_provided() {
     let config = Config::default();
     let provider = TestProvider::new();
 
-    let result = provider.get_weather(&config).await;
+    let result = provider.get_weather(&config);
     assert!(
         matches!(result, Err(RustormyError::NoLocationProvided)),
         "No location provided should result in an error, got {:?}",
@@ -134,20 +133,20 @@ async fn test_no_location_provided() {
     );
 }
 
-#[tokio::test]
-async fn test_empty_city() {
+#[test]
+fn test_empty_city() {
     let config = Config::new(&Cli::parse_from(&["rustormy", "-c", ""])).unwrap();
     let provider = TestProvider::new();
 
-    let result = provider.get_weather(&config).await;
+    let result = provider.get_weather(&config);
     assert!(matches!(
         result,
         Err(RustormyError::CityNotFound(city)) if city.is_empty()
     ));
 }
 
-#[tokio::test]
-async fn test_different_units() {
+#[test]
+fn test_different_units() {
     let config_metric = Config::new(&Cli::parse_from(&["rustormy", "-c", "Test"])).unwrap();
     let config_imperial = Config::new(&Cli::parse_from(&[
         "rustormy", "-c", "London", "-u", "imperial",
@@ -155,8 +154,8 @@ async fn test_different_units() {
     .unwrap();
     let provider = TestProvider::new();
 
-    let weather_metric = provider.get_weather(&config_metric).await.unwrap();
-    let weather_imperial = provider.get_weather(&config_imperial).await.unwrap();
+    let weather_metric = provider.get_weather(&config_metric).unwrap();
+    let weather_imperial = provider.get_weather(&config_imperial).unwrap();
 
     assert_eq!(weather_metric.temperature, 20.0);
     assert_eq!(weather_imperial.temperature, 68.0);

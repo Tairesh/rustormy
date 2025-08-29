@@ -19,14 +19,13 @@ fn clear_screen() {
     std::io::Write::flush(&mut std::io::stdout()).unwrap();
 }
 
-#[tokio::main]
-async fn main() -> Result<(), errors::RustormyError> {
+fn main() -> Result<(), errors::RustormyError> {
     let config = Config::new(&Cli::parse())?;
     let provider = GetWeatherProvider::new(config.provider());
     let formatter = WeatherFormatter::new(config.clone());
 
     loop {
-        match provider.get_weather(&config).await {
+        match provider.get_weather(&config) {
             Ok(weather) => {
                 if config.live_mode() {
                     clear_screen();
@@ -38,7 +37,8 @@ async fn main() -> Result<(), errors::RustormyError> {
         if !config.live_mode() {
             break;
         }
-        tokio::time::sleep(Duration::from_secs(config.live_mode_interval())).await;
+        let sleep_duration = Duration::from_secs(config.live_mode_interval());
+        std::thread::sleep(sleep_duration);
     }
 
     Ok(())

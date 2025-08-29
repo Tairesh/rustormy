@@ -17,9 +17,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_derive = "1.0"
 serde_json = "1.0"
 toml = "0.9"
-async-trait = "0.1"
-tokio = { version = "1", features = ["full"] }
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", features = ["json", "blocking"] }
 thiserror = "2.0"
 directories = "6.0"
 capitalize = "0.3"

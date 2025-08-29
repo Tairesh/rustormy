@@ -11,7 +11,7 @@ const WEATHER_API_FIELDS: &str = "temperature_2m,apparent_temperature,relative_h
 
 #[derive(Debug, Default)]
 pub struct OpenMeteo {
-    client: reqwest::Client,
+    client: reqwest::blocking::Client,
 }
 
 #[derive(Debug, Deserialize)]
@@ -148,10 +148,9 @@ struct WeatherAPIRequest<'a> {
     precipitation_unit: &'a str,
 }
 
-#[async_trait::async_trait]
 impl GetWeather for OpenMeteo {
-    async fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
-        let location = self.get_location(config).await?;
+    fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
+        let location = self.get_location(config)?;
 
         let (temperature_unit, wind_speed_unit, precipitation_unit) = match config.units() {
             Units::Metric => ("celsius", "ms", "mm"),
@@ -169,10 +168,9 @@ impl GetWeather for OpenMeteo {
                 wind_speed_unit,
                 precipitation_unit,
             })
-            .send()
-            .await?;
+            .send()?;
 
-        let data: OpenMeteoResponse = response.json().await?;
+        let data: OpenMeteoResponse = response.json()?;
 
         if data.is_error() {
             return Err(RustormyError::ApiReturnedError(data.error_reason()));
@@ -192,7 +190,7 @@ impl GetWeather for OpenMeteo {
         })
     }
 
-    async fn lookup_city(&self, city: &str, config: &Config) -> Result<Location, RustormyError> {
+    fn lookup_city(&self, city: &str, config: &Config) -> Result<Location, RustormyError> {
         let response = self
             .client
             .get(GEO_API_URL)
@@ -201,10 +199,9 @@ impl GetWeather for OpenMeteo {
                 ("count", "1"),
                 ("language", config.language().code()),
             ])
-            .send()
-            .await?;
+            .send()?;
 
-        let data: GeocodingResponse = response.json().await?;
+        let data: GeocodingResponse = response.json()?;
 
         if data.is_error() {
             return Err(RustormyError::ApiReturnedError(data.error_reason()));

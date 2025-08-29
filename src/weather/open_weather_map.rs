@@ -10,7 +10,7 @@ const WEATHER_API_URL: &str = "https://api.openweathermap.org/data/2.5/weather";
 
 #[derive(Debug, Default)]
 pub struct OpenWeatherMap {
-    client: reqwest::Client,
+    client: reqwest::blocking::Client,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -150,27 +150,21 @@ impl<'a> WeatherAPIRequest<'a> {
     }
 }
 
-#[async_trait::async_trait]
 impl GetWeather for OpenWeatherMap {
-    async fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
-        let location = self.get_location(config).await?;
+    fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
+        let location = self.get_location(config)?;
 
         let request = WeatherAPIRequest::new(&location, config)?;
-        let response = self
-            .client
-            .get(WEATHER_API_URL)
-            .query(&request)
-            .send()
-            .await?;
+        let response = self.client.get(WEATHER_API_URL).query(&request).send()?;
 
-        let response: WeatherApiResponse = response.json().await?;
+        let response: WeatherApiResponse = response.json()?;
         match response {
             WeatherApiResponse::Err { message } => Err(RustormyError::ApiReturnedError(message)),
             WeatherApiResponse::Ok(data) => Ok(data.into_weather(config, location)),
         }
     }
 
-    async fn lookup_city(&self, city: &str, config: &Config) -> Result<Location, RustormyError> {
+    fn lookup_city(&self, city: &str, config: &Config) -> Result<Location, RustormyError> {
         let api_key = config.api_key().ok_or(RustormyError::MissingApiKey)?;
 
         let response = self
@@ -182,10 +176,9 @@ impl GetWeather for OpenWeatherMap {
                 ("appid", api_key),
                 ("lang", config.language().code()),
             ])
-            .send()
-            .await?;
+            .send()?;
 
-        let response: GeocodingApiResponse = response.json().await?;
+        let response: GeocodingApiResponse = response.json()?;
 
         match response {
             GeocodingApiResponse::Err { message } => Err(RustormyError::ApiReturnedError(message)),
