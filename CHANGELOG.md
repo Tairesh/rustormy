@@ -15,6 +15,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Improved code quality and maintainability by using `enum_dispatch` for weather providers.
 
+### Fixed
+
+- Fix negative coordinates being parsed as unexpected arguments.
+
 ## [0.2.0] - 2025-08-28
 
 ### Added
