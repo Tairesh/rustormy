@@ -10,11 +10,11 @@ pub struct Cli {
     pub city: Option<String>,
 
     /// Latitude (required if city not provided)
-    #[arg(short = 'y', long)]
+    #[arg(short = 'y', long, allow_negative_numbers = true)]
     pub lat: Option<f64>,
 
     /// Longitude (required if city not provided)
-    #[arg(short = 'x', long)]
+    #[arg(short = 'x', long, allow_negative_numbers = true)]
     pub lon: Option<f64>,
 
     /// Weather data provider
