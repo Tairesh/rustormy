@@ -2,8 +2,6 @@ use crate::cli::Cli;
 use crate::errors::RustormyError;
 use crate::models::{Language, OutputFormat, Provider, TextMode, Units};
 #[cfg(not(test))]
-use anyhow::Context;
-#[cfg(not(test))]
 use directories::ProjectDirs;
 use serde_derive::{Deserialize, Serialize};
 #[cfg(not(test))]
@@ -125,9 +123,8 @@ impl Config {
 
     #[cfg(not(test))]
     fn get_config_path() -> Result<PathBuf, RustormyError> {
-        let proj_dirs = ProjectDirs::from("", "", "rustormy").ok_or_else(|| {
-            RustormyError::Other(anyhow::anyhow!("Could not determine config directory"))
-        })?;
+        let proj_dirs = ProjectDirs::from("", "", "rustormy")
+            .ok_or_else(|| RustormyError::ConfigNotFound("Could not determine config directory"))?;
 
         let config_dir = proj_dirs.config_dir();
         let config_path = config_dir.join("config.toml");
@@ -141,21 +138,20 @@ impl Config {
 
         // Create parent directories if they don't exist
         if let Some(parent) = config_path.parent() {
-            fs::create_dir_all(parent).context("Failed to create config directory")?;
+            fs::create_dir_all(parent)?;
         }
 
         // Serialize and write default config
-        let default_content = toml::to_string_pretty(&default_config)
-            .context("Failed to serialize default config")?;
-        fs::write(config_path, default_content).context("Failed to write default config file")?;
+        let default_content = toml::to_string_pretty(&default_config)?;
+        fs::write(config_path, default_content)?;
 
         Ok(default_config)
     }
 
     #[cfg(not(test))]
     fn read_and_parse_config_file(config_path: PathBuf) -> Result<Self, RustormyError> {
-        let content = fs::read_to_string(config_path).context("Failed to read config file")?;
-        let mut config: Self = toml::from_str(&content).context("Failed to parse config file")?;
+        let content = fs::read_to_string(config_path)?;
+        let mut config: Self = toml::from_str(&content)?;
         config = config.migrate()?;
         Ok(config)
     }
@@ -179,9 +175,8 @@ impl Config {
         if migrated {
             // Save config back to file after migration
             let config_path = Self::get_config_path()?;
-            let content =
-                toml::to_string_pretty(&self).context("Failed to serialize migrated config")?;
-            fs::write(config_path, content).context("Failed to write migrated config file")?;
+            let content = toml::to_string_pretty(&self)?;
+            fs::write(config_path, content)?;
         }
 
         Ok(self)
@@ -245,16 +240,14 @@ impl Config {
 
         // Check if city name is to be shown but no city is provided
         if self.city.is_none() && self.show_city_name {
-            return Err(RustormyError::Other(anyhow::anyhow!(
-                "Cannot show city name when no city is provided"
-            )));
+            return Err(RustormyError::InvalidConfiguration(
+                "Cannot show city name when no city is provided",
+            ));
         }
 
         // Check if API key is provided for OpenWeatherMap
         if matches!(self.provider, Provider::OpenWeatherMap) && self.api_key.is_none() {
-            return Err(RustormyError::Other(anyhow::anyhow!(
-                "API key is required for OpenWeatherMap provider"
-            )));
+            return Err(RustormyError::MissingApiKey);
         }
 
         // Validate coordinates if provided

@@ -1,7 +1,6 @@
 use crate::config::Config;
 use crate::errors::RustormyError;
 use crate::models::{Location, Weather};
-use anyhow::Result;
 use enum_dispatch::enum_dispatch;
 pub use open_meteo::OpenMeteo;
 pub use open_weather_map::OpenWeatherMap;

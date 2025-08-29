@@ -7,7 +7,6 @@ mod models;
 mod tests;
 mod weather;
 
-use anyhow::Result;
 use clap::Parser;
 use cli::Cli;
 use config::Config;
@@ -21,7 +20,7 @@ fn clear_screen() {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> Result<(), errors::RustormyError> {
     let config = Config::new(&Cli::parse())?;
     let provider = GetWeatherProvider::new(config.provider());
     let formatter = WeatherFormatter::new(config.clone());

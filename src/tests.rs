@@ -41,12 +41,7 @@ impl GetWeather for TestProvider {
     async fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
         // Validate input parameters just like real providers
         if let Some(city) = config.city() {
-            if city.is_empty() {
-                return Err(RustormyError::CityNotFound("".to_string()));
-            }
-            if city == "NonexistentCity" {
-                return Err(RustormyError::CityNotFound(city.to_string()));
-            }
+            self.lookup_city(city, config).await?;
         } else if config.coordinates().is_none() {
             return Err(RustormyError::NoLocationProvided);
         }
@@ -54,11 +49,7 @@ impl GetWeather for TestProvider {
         Ok(Self::mock_weather(config))
     }
 
-    async fn lookup_city(
-        &self,
-        city: &str,
-        _config: &Config,
-    ) -> anyhow::Result<Location, RustormyError> {
+    async fn lookup_city(&self, city: &str, _config: &Config) -> Result<Location, RustormyError> {
         if city.is_empty() {
             return Err(RustormyError::CityNotFound("".to_string()));
         }

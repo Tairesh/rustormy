@@ -175,10 +175,7 @@ impl GetWeather for OpenMeteo {
         let data: OpenMeteoResponse = response.json().await?;
 
         if data.is_error() {
-            return Err(RustormyError::Other(anyhow::anyhow!(
-                "Weather API error: {}",
-                data.error_reason()
-            )));
+            return Err(RustormyError::ApiReturnedError(data.error_reason()));
         }
 
         Ok(Weather {
@@ -210,10 +207,7 @@ impl GetWeather for OpenMeteo {
         let data: GeocodingResponse = response.json().await?;
 
         if data.is_error() {
-            return Err(RustormyError::Other(anyhow::anyhow!(
-                "Geocoding API error: {}",
-                data.error_reason()
-            )));
+            return Err(RustormyError::ApiReturnedError(data.error_reason()));
         }
 
         let location = data

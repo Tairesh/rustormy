@@ -14,6 +14,13 @@ pub struct OpenWeatherMap {
 }
 
 #[derive(Debug, serde::Deserialize)]
+#[serde(untagged)]
+enum GeocodingApiResponse {
+    Ok(Vec<GeocodingLocation>),
+    Err { message: String },
+}
+
+#[derive(Debug, serde::Deserialize)]
 struct GeocodingLocation {
     lat: f64,
     lon: f64,
@@ -31,8 +38,14 @@ impl From<GeocodingLocation> for Location {
 }
 
 #[derive(Debug, serde::Deserialize)]
-#[non_exhaustive]
-struct WeatherResponse {
+#[serde(untagged)]
+enum WeatherApiResponse {
+    Ok(WeatherResponseData),
+    Err { message: String },
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct WeatherResponseData {
     weather: Vec<WeatherInfo>,
     main: MainInfo,
     wind: WindInfo,
@@ -41,7 +54,7 @@ struct WeatherResponse {
     name: Option<String>,
 }
 
-impl WeatherResponse {
+impl WeatherResponseData {
     pub fn precipitation(&self) -> f64 {
         let rain = self.rain.as_ref().map_or(0.0, |r| r.one_hour);
         let snow = self.snow.as_ref().map_or(0.0, |s| s.one_hour);
@@ -68,6 +81,23 @@ impl WeatherResponse {
             }
         } else {
             WeatherConditionIcon::Unknown
+        }
+    }
+
+    pub fn into_weather(self, config: &Config, location: Location) -> Weather {
+        Weather {
+            temperature: self.main.temp,
+            feels_like: self.main.feels_like,
+            humidity: self.main.humidity,
+            precipitation: self.precipitation(),
+            pressure: self.main.pressure,
+            wind_speed: self.wind.speed,
+            wind_direction: self.wind.deg,
+            description: self
+                .description()
+                .unwrap_or_else(|| ll(config.language(), "Unknown").to_string()),
+            icon: self.icon(),
+            location_name: self.name.unwrap_or(location.name),
         }
     }
 }
@@ -108,7 +138,7 @@ struct WeatherAPIRequest<'a> {
 }
 
 impl<'a> WeatherAPIRequest<'a> {
-    pub fn new(location: &Location, config: &'a Config) -> anyhow::Result<Self, RustormyError> {
+    pub fn new(location: &Location, config: &'a Config) -> Result<Self, RustormyError> {
         let api_key = config.api_key().ok_or(RustormyError::MissingApiKey)?;
         Ok(Self {
             lat: location.latitude,
@@ -122,7 +152,7 @@ impl<'a> WeatherAPIRequest<'a> {
 
 #[async_trait::async_trait]
 impl GetWeather for OpenWeatherMap {
-    async fn get_weather(&self, config: &Config) -> anyhow::Result<Weather, RustormyError> {
+    async fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
         let location = self.get_location(config).await?;
 
         let request = WeatherAPIRequest::new(&location, config)?;
@@ -133,24 +163,11 @@ impl GetWeather for OpenWeatherMap {
             .send()
             .await?;
 
-        let data: WeatherResponse = response.json().await?;
-
-        let weather = Weather {
-            temperature: data.main.temp,
-            feels_like: data.main.feels_like,
-            humidity: data.main.humidity,
-            precipitation: data.precipitation(),
-            pressure: data.main.pressure,
-            wind_speed: data.wind.speed,
-            wind_direction: data.wind.deg,
-            description: data
-                .description()
-                .unwrap_or_else(|| ll(config.language(), "Unknown").to_string()),
-            icon: data.icon(),
-            location_name: data.name.unwrap_or(location.name),
-        };
-
-        Ok(weather)
+        let response: WeatherApiResponse = response.json().await?;
+        match response {
+            WeatherApiResponse::Err { message } => Err(RustormyError::ApiReturnedError(message)),
+            WeatherApiResponse::Ok(data) => Ok(data.into_weather(config, location)),
+        }
     }
 
     async fn lookup_city(&self, city: &str, config: &Config) -> Result<Location, RustormyError> {
@@ -168,11 +185,17 @@ impl GetWeather for OpenWeatherMap {
             .send()
             .await?;
 
-        let mut data: Vec<GeocodingLocation> = response.json().await?;
-        let location = data
-            .pop()
-            .ok_or_else(|| RustormyError::CityNotFound(city.to_string()))?;
+        let response: GeocodingApiResponse = response.json().await?;
 
-        Ok(location.into())
+        match response {
+            GeocodingApiResponse::Err { message } => Err(RustormyError::ApiReturnedError(message)),
+            GeocodingApiResponse::Ok(mut locations) => {
+                if let Some(location) = locations.pop() {
+                    Ok(location.into())
+                } else {
+                    Err(RustormyError::CityNotFound(city.to_string()))
+                }
+            }
+        }
     }
 }

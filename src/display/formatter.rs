@@ -254,9 +254,7 @@ impl WeatherFormatter {
 
     fn display_json(&self, weather: &Weather) {
         let json = serde_json::to_string_pretty(weather).unwrap_or_else(|e| {
-            self.display_error(&RustormyError::Other(anyhow::anyhow!(
-                "Failed to serialize weather data to JSON: {e}"
-            )))
+            self.display_error(&RustormyError::JsonSerializeError(e));
         });
         println!("{json}");
     }
