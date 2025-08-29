@@ -271,7 +271,6 @@ impl Config {
         self.provider
     }
 
-    #[allow(dead_code)]
     pub fn api_key(&self) -> Option<&str> {
         self.api_key.as_deref()
     }

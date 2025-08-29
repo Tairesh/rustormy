@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
-use crate::models::{Location, Units, Weather, WeatherConditionIcon};
+use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
 use crate::weather::GetWeather;
 use capitalize::Capitalize;
 
@@ -103,8 +103,21 @@ struct WeatherAPIRequest<'a> {
     lat: f64,
     lon: f64,
     units: Units,
-    lang: &'a str,
+    lang: Language,
     appid: &'a str,
+}
+
+impl<'a> WeatherAPIRequest<'a> {
+    pub fn new(location: &Location, config: &'a Config) -> anyhow::Result<Self, RustormyError> {
+        let api_key = config.api_key().ok_or(RustormyError::MissingApiKey)?;
+        Ok(Self {
+            lat: location.latitude,
+            lon: location.longitude,
+            units: config.units(),
+            lang: config.language(),
+            appid: api_key,
+        })
+    }
 }
 
 #[async_trait::async_trait]
@@ -112,17 +125,11 @@ impl GetWeather for OpenWeatherMap {
     async fn get_weather(&self, config: &Config) -> anyhow::Result<Weather, RustormyError> {
         let location = self.get_location(config).await?;
 
-        let api_key = config.api_key().ok_or(RustormyError::MissingApiKey)?;
+        let request = WeatherAPIRequest::new(&location, config)?;
         let response = self
             .client
             .get(WEATHER_API_URL)
-            .query(&WeatherAPIRequest {
-                lat: location.latitude,
-                lon: location.longitude,
-                units: config.units(),
-                lang: config.language().code(),
-                appid: api_key,
-            })
+            .query(&request)
             .send()
             .await?;
 
