@@ -1,19 +1,33 @@
 name: Security audit
 on:
+  # Run every week
+  schedule:
+    - cron: '0 0 * * 0'
   push:
     paths:
       - '**/Cargo.toml'
       - '**/Cargo.lock'
+      - '.github/workflows/audit.yml'
   pull_request:
     paths:
       - '**/Cargo.toml'
       - '**/Cargo.lock'
+      - '.github/workflows/audit.yml'
   workflow_dispatch:
 jobs:
   security_audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: rustsec/audit-check@v2.0.0
+      - name: "Install Rust toolchain"
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy,rustfmt
+      - name: "Build project"
+        run:
+          cargo build --all-targets
+      - name: "Run security audit"
+        uses: rustsec/audit-check@v2.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
