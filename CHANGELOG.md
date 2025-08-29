@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Upcoming] - Unreleased
+
+### Changed
+
+- Removed some dependencies to reduce binary size.
+- Improved error handling and messages.
+
 ## [0.2.1] - 2025-08-29
 
 ### Added

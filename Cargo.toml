@@ -1,14 +1,14 @@
 [package]
 name = "rustormy"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 description = "Minimal neofetch-like weather CLI"
 license = "MIT"
 homepage = "https://github.com/Tairesh/rustormy"
 repository = "https://github.com/Tairesh/rustormy"
 readme = "README.md"
-keywords = ["weather", "cli", "neofetch", "rust"]
-categories = ["command-line-utilities", "network-programming"]
+keywords = ["weather", "cli", "neofetch", "api", "ascii-art"]
+categories = ["command-line-utilities", "api-bindings"]
 authors = ["Tairesh <tairesh@protonmail.com>"]
 
 [dependencies]
