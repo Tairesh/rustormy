@@ -2,7 +2,7 @@ use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
 use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
-use crate::weather::GetWeather;
+use crate::weather::{GetWeather, LookUpCity};
 use serde::Deserialize;
 
 const GEO_API_URL: &str = "https://geocoding-api.open-meteo.com/v1/search";
@@ -148,9 +148,37 @@ struct WeatherAPIRequest<'a> {
     precipitation_unit: &'a str,
 }
 
+impl LookUpCity for OpenMeteo {
+    fn lookup_city(&self, config: &Config) -> Result<Location, RustormyError> {
+        let city = config.city().ok_or(RustormyError::NoLocationProvided)?;
+        let response = self
+            .client
+            .get(GEO_API_URL)
+            .query(&[
+                ("name", city),
+                ("count", "1"),
+                ("language", config.language().code()),
+            ])
+            .send()?;
+
+        let data: GeocodingResponse = response.json()?;
+
+        if data.is_error() {
+            return Err(RustormyError::ApiReturnedError(data.error_reason()));
+        }
+
+        let location = data
+            .results
+            .and_then(|mut results| results.pop())
+            .ok_or_else(|| RustormyError::CityNotFound(city.to_string()))?;
+
+        Ok(location.into())
+    }
+}
+
 impl GetWeather for OpenMeteo {
     fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
-        let location = self.get_location(config)?;
+        let location = config.get_location(self)?;
 
         let (temperature_unit, wind_speed_unit, precipitation_unit) = match config.units() {
             Units::Metric => ("celsius", "ms", "mm"),
@@ -188,30 +216,5 @@ impl GetWeather for OpenMeteo {
             icon: data.icon(),
             location_name: location.name,
         })
-    }
-
-    fn lookup_city(&self, city: &str, config: &Config) -> Result<Location, RustormyError> {
-        let response = self
-            .client
-            .get(GEO_API_URL)
-            .query(&[
-                ("name", city),
-                ("count", "1"),
-                ("language", config.language().code()),
-            ])
-            .send()?;
-
-        let data: GeocodingResponse = response.json()?;
-
-        if data.is_error() {
-            return Err(RustormyError::ApiReturnedError(data.error_reason()));
-        }
-
-        let location = data
-            .results
-            .and_then(|mut results| results.pop())
-            .ok_or_else(|| RustormyError::CityNotFound(city.to_string()))?;
-
-        Ok(location.into())
     }
 }

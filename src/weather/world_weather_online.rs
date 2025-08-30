@@ -267,12 +267,4 @@ impl GetWeather for WorldWeatherOnline {
             WwoResponse::Err { data } => Err(RustormyError::ApiReturnedError(data.get_message())),
         }
     }
-
-    fn lookup_city(
-        &self,
-        _city: &str,
-        _config: &Config,
-    ) -> Result<crate::models::Location, RustormyError> {
-        unreachable!("WWO does not support city lookup");
-    }
 }

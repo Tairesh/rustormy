@@ -1,6 +1,6 @@
 use super::{GetWeather, RustormyError, Weather};
 use crate::config::Config;
-use crate::models::{Location, Provider};
+use crate::models::Provider;
 use crate::weather::open_meteo::OpenMeteo;
 use crate::weather::open_weather_map::OpenWeatherMap;
 use crate::weather::world_weather_online::WorldWeatherOnline;

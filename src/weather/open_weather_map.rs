@@ -2,7 +2,7 @@ use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
 use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
-use crate::weather::GetWeather;
+use crate::weather::{GetWeather, LookUpCity};
 use capitalize::Capitalize;
 
 const GEO_API_URL: &str = "https://api.openweathermap.org/geo/1.0/direct";
@@ -150,21 +150,9 @@ impl<'a> WeatherAPIRequest<'a> {
     }
 }
 
-impl GetWeather for OpenWeatherMap {
-    fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
-        let location = self.get_location(config)?;
-
-        let request = WeatherAPIRequest::new(&location, config)?;
-        let response = self.client.get(WEATHER_API_URL).query(&request).send()?;
-
-        let response: WeatherApiResponse = response.json()?;
-        match response {
-            WeatherApiResponse::Err { message } => Err(RustormyError::ApiReturnedError(message)),
-            WeatherApiResponse::Ok(data) => Ok(data.into_weather(config, location)),
-        }
-    }
-
-    fn lookup_city(&self, city: &str, config: &Config) -> Result<Location, RustormyError> {
+impl LookUpCity for OpenWeatherMap {
+    fn lookup_city(&self, config: &Config) -> Result<Location, RustormyError> {
+        let city = config.city().ok_or(RustormyError::NoLocationProvided)?;
         let api_key = config.api_key_owm().ok_or(RustormyError::MissingApiKey)?;
 
         let response = self
@@ -189,6 +177,21 @@ impl GetWeather for OpenWeatherMap {
                     Err(RustormyError::CityNotFound(city.to_string()))
                 }
             }
+        }
+    }
+}
+
+impl GetWeather for OpenWeatherMap {
+    fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
+        let location = config.get_location(self)?;
+
+        let request = WeatherAPIRequest::new(&location, config)?;
+        let response = self.client.get(WEATHER_API_URL).query(&request).send()?;
+
+        let response: WeatherApiResponse = response.json()?;
+        match response {
+            WeatherApiResponse::Err { message } => Err(RustormyError::ApiReturnedError(message)),
+            WeatherApiResponse::Ok(data) => Ok(data.into_weather(config, location)),
         }
     }
 }

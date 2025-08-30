@@ -1,6 +1,7 @@
 use crate::cli::Cli;
 use crate::errors::RustormyError;
-use crate::models::{Language, OutputFormat, Provider, TextMode, Units};
+use crate::models::{Language, Location, OutputFormat, Provider, TextMode, Units};
+use crate::weather::LookUpCity;
 #[cfg(not(test))]
 use directories::ProjectDirs;
 use serde_derive::{Deserialize, Serialize};
@@ -349,6 +350,18 @@ impl Config {
             || format!("{}, {}", self.lat.unwrap(), self.lon.unwrap()),
             String::from,
         )
+    }
+
+    pub fn get_location(&self, city_provider: &impl LookUpCity) -> Result<Location, RustormyError> {
+        match (self.coordinates(), self.city()) {
+            (Some((lat, lon)), _) => Ok(Location {
+                name: self.location_name(),
+                latitude: lat,
+                longitude: lon,
+            }),
+            (None, Some(city)) if !city.is_empty() => city_provider.lookup_city(self),
+            _ => Err(RustormyError::NoLocationProvided),
+        }
     }
 
     pub fn units(&self) -> Units {

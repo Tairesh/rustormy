@@ -1,5 +1,6 @@
 #![cfg(test)]
 use crate::models::Location;
+use crate::weather::LookUpCity;
 use crate::{
     cli::Cli,
     config::Config,
@@ -16,7 +17,7 @@ impl TestProvider {
         Self
     }
 
-    fn mock_weather(config: &Config) -> Weather {
+    fn mock_weather(config: &Config, location: Location) -> Weather {
         Weather {
             temperature: if config.units() == Units::Metric {
                 20.0
@@ -31,42 +32,40 @@ impl TestProvider {
             wind_direction: 180,
             description: "Clear sky".to_string(),
             icon: WeatherConditionIcon::Sunny,
-            location_name: "Test City".to_string(),
+            location_name: location.name,
         }
     }
 }
 
-impl GetWeather for TestProvider {
-    fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
-        // Validate input parameters just like real providers
-        if let Some(city) = config.city() {
-            self.lookup_city(city, config)?;
-        } else if config.coordinates().is_none() {
-            return Err(RustormyError::NoLocationProvided);
-        }
-
-        Ok(Self::mock_weather(config))
-    }
-
-    fn lookup_city(&self, city: &str, _config: &Config) -> Result<Location, RustormyError> {
-        if city.is_empty() {
-            return Err(RustormyError::CityNotFound("".to_string()));
-        }
+impl LookUpCity for TestProvider {
+    fn lookup_city(&self, config: &Config) -> Result<Location, RustormyError> {
+        let city = config.city().ok_or(RustormyError::NoLocationProvided)?;
         if city == "NonexistentCity" {
             return Err(RustormyError::CityNotFound(city.to_string()));
         }
-
+        if city == "" {
+            return Err(RustormyError::CityNotFound(city.to_string()));
+        }
         Ok(Location {
-            name: "Test City".to_string(),
+            name: city.to_string(),
             latitude: 51.5074,
             longitude: -0.1278,
         })
     }
 }
 
+impl GetWeather for TestProvider {
+    fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
+        // Validate input parameters just like real providers
+        let location = config.get_location(self)?;
+
+        Ok(Self::mock_weather(config, location))
+    }
+}
+
 #[test]
 fn test_valid_city_lookup() {
-    let config = Config::new(&Cli::parse_from(&["rustormy", "-c", "Test"])).unwrap();
+    let config = Config::new(&Cli::parse_from(&["rustormy", "-c", "Test City"])).unwrap();
     let provider = TestProvider::new();
 
     let result = provider.get_weather(&config);
@@ -139,10 +138,7 @@ fn test_empty_city() {
     let provider = TestProvider::new();
 
     let result = provider.get_weather(&config);
-    assert!(matches!(
-        result,
-        Err(RustormyError::CityNotFound(city)) if city.is_empty()
-    ));
+    assert!(matches!(result, Err(RustormyError::NoLocationProvided)));
 }
 
 #[test]
