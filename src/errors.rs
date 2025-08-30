@@ -17,7 +17,7 @@ pub enum RustormyError {
     InvalidCoordinates { lat: f64, lon: f64 },
     #[error("No location provided. Please specify a city or coordinates.")]
     NoLocationProvided,
-    #[error("Missing API key for the weather provider")]
+    #[error("Missing API key for selected weather provider")]
     MissingApiKey,
     #[error("Invalid configuration: {0}")]
     InvalidConfiguration(&'static str),

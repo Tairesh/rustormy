@@ -2,8 +2,6 @@ use crate::config::Config;
 use crate::errors::RustormyError;
 use crate::models::{Location, Weather};
 use enum_dispatch::enum_dispatch;
-pub use open_meteo::OpenMeteo;
-pub use open_weather_map::OpenWeatherMap;
 pub use provider::GetWeatherProvider;
 
 #[enum_dispatch]
@@ -28,3 +26,4 @@ pub trait GetWeather {
 mod open_meteo;
 mod open_weather_map;
 mod provider;
+mod world_weather_online;

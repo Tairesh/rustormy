@@ -139,7 +139,7 @@ struct WeatherAPIRequest<'a> {
 
 impl<'a> WeatherAPIRequest<'a> {
     pub fn new(location: &Location, config: &'a Config) -> Result<Self, RustormyError> {
-        let api_key = config.api_key().ok_or(RustormyError::MissingApiKey)?;
+        let api_key = config.api_key_owm().ok_or(RustormyError::MissingApiKey)?;
         Ok(Self {
             lat: location.latitude,
             lon: location.longitude,
@@ -165,7 +165,7 @@ impl GetWeather for OpenWeatherMap {
     }
 
     fn lookup_city(&self, city: &str, config: &Config) -> Result<Location, RustormyError> {
-        let api_key = config.api_key().ok_or(RustormyError::MissingApiKey)?;
+        let api_key = config.api_key_owm().ok_or(RustormyError::MissingApiKey)?;
 
         let response = self
             .client

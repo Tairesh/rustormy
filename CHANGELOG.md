@@ -6,10 +6,29 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Upcoming] - Unreleased
 
+### Added
+
+- Add World Weather Online as a new weather data provider option (`--provider wwo` or `provider = "wwo"` in config).
+- Support for multiple API keys via config file (`api_key_owm` for OpenWeatherMap and `api_key_wwo` for World Weather
+  Online).
+- More unit tests for better coverage.
+
 ### Changed
 
+- Config file option `use_degrees_for_wind` renamed to `wind_in_degrees` for clarity. Old name is still supported for
+  backward compatibility.
 - Removed some dependencies to reduce binary size.
 - Improved error handling and messages.
+
+### Fixed
+
+- Wind speed now displays one decimal place.
+
+### Removed
+
+- Config file option `api_key` removed due to introduction of multiple providers. Use `api_key_owm` for OpenWeatherMap
+  and `api_key_wwo` for World Weather Online instead. Old name is still supported for backward compatibility. Each
+  provider will check for its own API key first, then fallback to `api_key` if not found.
 
 ## [0.2.1] - 2025-08-29
 

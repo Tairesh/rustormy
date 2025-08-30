@@ -210,7 +210,7 @@ impl WeatherFormatter {
         output.push(make_line(
             icon[3],
             "Wind",
-            if self.config.use_degrees_for_wind() {
+            if self.config.use_wind_in_degrees() {
                 format!(
                     "{:.1} {wind_unit} {}°",
                     weather.wind_speed, weather.wind_direction
@@ -513,7 +513,7 @@ mod tests {
     fn test_format_text_wind_degrees() {
         let weather = sample_weather();
         let mut config = Config::default();
-        config.set_use_degrees_for_wind(true);
+        config.set_wind_in_degrees(true);
         let formatter = WeatherFormatter::new(config);
         let lines = formatter.format_text(weather);
 

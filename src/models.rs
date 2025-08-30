@@ -7,8 +7,15 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 #[clap(rename_all = "snake_case")]
 pub enum Provider {
     #[default]
+    #[serde(alias = "om")]
+    #[value(alias = "om")]
     OpenMeteo,
+    #[serde(alias = "owm")]
+    #[value(alias = "owm")]
     OpenWeatherMap,
+    #[serde(alias = "wwo")]
+    #[value(alias = "wwo")]
+    WorldWeatherOnline,
 }
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Serialize, Deserialize, ValueEnum)]
