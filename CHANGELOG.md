@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Upcoming] - Unreleased
+## [0.2.2] - 2025-08-30
 
 ### Added
 

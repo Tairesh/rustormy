@@ -1,8 +1,7 @@
 # rustormy
 
-Minimal and neofetch-like weather CLI inspired by
-[stormy](https://github.com/ashish0kumar/stormy) and
-[rainy](https://github.com/liveslol/rainy), written in 🦀 Rust
+Minimal and neofetch-like weather CLI with multiple data providers support, ASCI-icons, ANSI colors, localization and
+various output modes.
 
 [![Tests](https://github.com/Tairesh/rustormy/actions/workflows/tests.yml/badge.svg)](https://github.com/Tairesh/rustormy/actions/workflows/tests.yml)
 [![Crates.io](https://img.shields.io/crates/v/rustormy.svg)](https://crates.io/crates/rustormy)
@@ -16,15 +15,15 @@ Minimal and neofetch-like weather CLI inspired by
 ## Current features
 
 - Fetch weather data from [OpenMeteo](https://open-meteo.com/) (no API key required)
-  or [OpenWeatherMap](https://openweathermap.org/)
+  or [OpenWeatherMap](https://openweathermap.org/) and [World Weather Online](https://www.worldweatheronline.com/)
 - Display current temperature, weather condition, wind speed and direction, humidity. precipitation, atmospheric
   pressure.
 - Display ASCII art icons for weather conditions
-- ANSI colors in terminal output
-- Supports city name or latitude/longitude input
+- Supports ANSI colors in terminal output
+- Supports geocoding by city name or latitude/longitude input
 - Supports multiple languages (English, Russian, Spanish; more to come)
 - Supports imperial and metric units
-- Supports JSON output
+- Supports different text output modes (full, compact, one-line) and JSON output
 - Live mode (periodically fetch and display updated weather data)
 
 ## Planned features
@@ -69,10 +68,12 @@ city = "New York"
 lat = 40.7128
 # Default longitude (if not provided via CLI)
 lon = -74.0060
-# Weather data provider (`open_meteo` or `open_weather_map`)
+# Weather data provider (`open_meteo`, `open_weather_map`, or `world_weather_online`)
 provider = "open_meteo"
 # API key for OpenWeatherMap (required if provider is `open_weather_map`)
-api_key = ""
+api_key_owm = ""
+# API key for World Weather Online (required if provider is `world_weather_online`)
+api_key_wwo = ""
 # Default units for temperature and wind speed (`metric` or `imperial`)
 units = "metric"
 # Default output format (`text` or `json`)
@@ -84,7 +85,7 @@ show_city_name = true
 # Use ANSI colors in terminal output
 use_colors = true
 # Use exact degrees for wind direction instead of arrows
-use_degrees_for_wind = true
+wind_in_degrees = true
 # Text output mode (`full`, `compact`, or `one_line`)
 text_mode = "full"
 # Live mode (periodically fetch and display updated weather data)
@@ -108,7 +109,7 @@ Options:
   -x, --lon <LON>
           Longitude (required if city not provided)
   -p, --provider <PROVIDER>
-          Weather data provider [possible values: open_meteo, open_weather_map]
+          Weather data provider (OpenMeteo, OpenWeatherMap, WorldWeatherOnline) [possible values: om, owm, wwo]
   -u, --units <UNITS>
           Units for temperature and wind speed [possible values: metric, imperial]
   -o, --format <OUTPUT_FORMAT>
@@ -154,3 +155,23 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request on GitHub.
+
+This project uses `just` for basic scripting. You can install it from cargo:
+
+```sh
+cargo install just
+```
+
+Use the following commands to run tests and lint the code before committing:
+
+```sh
+just check     # Run tests and clippy
+just before-commit  # Run commands before committing (lint and check)
+```
+
+To run the application in development mode with specific options, use:
+
+```sh
+cargo run -- -c London --colors
+```
+
