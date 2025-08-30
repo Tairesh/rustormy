@@ -1,3 +1,4 @@
+use crate::cache::cache_location;
 use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
@@ -153,6 +154,13 @@ impl<'a> WeatherAPIRequest<'a> {
 impl LookUpCity for OpenWeatherMap {
     fn lookup_city(&self, config: &Config) -> Result<Location, RustormyError> {
         let city = config.city().ok_or(RustormyError::NoLocationProvided)?;
+        if config.use_geocoding_cache() {
+            let cached_location = crate::cache::get_cached_location(city, config.language())?;
+            if let Some(location) = cached_location {
+                return Ok(location);
+            }
+        }
+
         let api_key = config.api_key_owm().ok_or(RustormyError::MissingApiKey)?;
 
         let response = self
@@ -172,7 +180,11 @@ impl LookUpCity for OpenWeatherMap {
             GeocodingApiResponse::Err { message } => Err(RustormyError::ApiReturnedError(message)),
             GeocodingApiResponse::Ok(mut locations) => {
                 if let Some(location) = locations.pop() {
-                    Ok(location.into())
+                    let location = location.into();
+                    if config.use_geocoding_cache() {
+                        cache_location(city, config.language(), &location)?;
+                    }
+                    Ok(location)
                 } else {
                     Err(RustormyError::CityNotFound(city.to_string()))
                 }

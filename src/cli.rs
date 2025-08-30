@@ -1,3 +1,4 @@
+use crate::cache::clear_cache;
 use crate::models::{Language, OutputFormat, Provider, TextMode, Units};
 use clap::{ArgAction, Parser};
 
@@ -69,4 +70,26 @@ pub struct Cli {
         alias = "live-mode-interval"
     )]
     pub live_mode_interval: Option<u64>, // in seconds, default to 300 (5 minutes)
+
+    /// Disable caching of geocoding results
+    #[arg(long, action = ArgAction::SetTrue)]
+    pub no_cache: bool,
+
+    /// Clear cached geocoding results and exit
+    #[arg(long, action = ArgAction::SetTrue)]
+    pub clear_cache: bool,
+}
+
+impl Cli {
+    pub fn new() -> Self {
+        let cli = Cli::parse();
+
+        if cli.clear_cache {
+            clear_cache().expect("Failed to clear cache");
+            println!("Cache cleared successfully.");
+            std::process::exit(0);
+        }
+
+        cli
+    }
 }

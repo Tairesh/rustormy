@@ -1,3 +1,4 @@
+use crate::cache::{cache_location, get_cached_location};
 use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
@@ -151,6 +152,13 @@ struct WeatherAPIRequest<'a> {
 impl LookUpCity for OpenMeteo {
     fn lookup_city(&self, config: &Config) -> Result<Location, RustormyError> {
         let city = config.city().ok_or(RustormyError::NoLocationProvided)?;
+        if config.use_geocoding_cache() {
+            let cached_location = get_cached_location(city, config.language())?;
+            if let Some(location) = cached_location {
+                return Ok(location);
+            }
+        }
+
         let response = self
             .client
             .get(GEO_API_URL)
@@ -170,9 +178,14 @@ impl LookUpCity for OpenMeteo {
         let location = data
             .results
             .and_then(|mut results| results.pop())
-            .ok_or_else(|| RustormyError::CityNotFound(city.to_string()))?;
+            .ok_or_else(|| RustormyError::CityNotFound(city.to_string()))?
+            .into();
 
-        Ok(location.into())
+        if config.use_geocoding_cache() {
+            cache_location(city, config.language(), &location)?;
+        }
+
+        Ok(location)
     }
 }
 

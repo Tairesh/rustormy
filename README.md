@@ -94,6 +94,8 @@ live_mode = false
 live_mode_interval = 300
 # Align labels in text output to the right
 align_right = true
+# Use cache for geocoding results
+use_geocoding_cache = true
 ```
 
 ## Usage
@@ -132,6 +134,10 @@ Options:
           Live mode - continuously update weather data every 5 minutes (or specified interval)
   -i, --interval <LIVE_MODE_INTERVAL>
           Live mode update interval in seconds (default: 300)
+      --no-cache
+          Disable caching of geocoding results
+      --clear-cache
+          Clear cached geocoding results and exit
   -h, --help
           Print help
   -V, --version

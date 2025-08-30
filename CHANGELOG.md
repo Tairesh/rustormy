@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Upcoming]
+
+### Added
+
+- Implemented simple file cache for getting coordinates from city names to reduce API calls.
+- Added `use_geocoding_cache` option to config file to enable/disable caching (disabled for default).
+- Added `--no-cache` CLI option to disable caching for current run (overrides config file).
+- Added `--clear-cache` CLI option to clear cache directory and exit.
+
 ## [0.2.2] - 2025-08-30
 
 ### Added

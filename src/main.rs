@@ -1,3 +1,4 @@
+mod cache;
 mod cli;
 mod config;
 mod display;
@@ -7,7 +8,6 @@ mod models;
 mod tests;
 mod weather;
 
-use clap::Parser;
 use cli::Cli;
 use config::Config;
 use display::formatter::WeatherFormatter;
@@ -20,7 +20,7 @@ fn clear_screen() {
 }
 
 fn main() -> Result<(), errors::RustormyError> {
-    let config = Config::new(&Cli::parse())?;
+    let config = Config::new(&Cli::new())?;
     let provider = GetWeatherProvider::new(config.provider());
     let formatter = WeatherFormatter::new(config.clone());
 

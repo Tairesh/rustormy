@@ -84,6 +84,11 @@ pub struct Config {
     /// Align output to the right (`true` or `false`)
     #[serde(default)]
     align_right: bool, // Actually aligns only labels to the right, not the whole output
+
+    /// Use geocoding cache (`true` or `false`)
+    /// (if enabled, previously looked up cities will be cached locally to avoid repeated API calls)
+    #[serde(default)]
+    use_geocoding_cache: bool,
 }
 
 fn default_live_mode_interval() -> u64 {
@@ -111,6 +116,7 @@ impl Default for Config {
             live_mode: false,
             live_mode_interval: default_live_mode_interval(),
             align_right: false,
+            use_geocoding_cache: false,
         }
     }
 }
@@ -283,6 +289,9 @@ impl Config {
         if cli.live_mode {
             self.live_mode = true;
         }
+        if cli.no_cache {
+            self.use_geocoding_cache = false;
+        }
     }
 
     pub fn validate(&self) -> Result<(), RustormyError> {
@@ -441,6 +450,10 @@ impl Config {
     #[cfg(test)]
     pub fn set_align_right(&mut self, align_right: bool) {
         self.align_right = align_right;
+    }
+
+    pub fn use_geocoding_cache(&self) -> bool {
+        self.use_geocoding_cache
     }
 }
 

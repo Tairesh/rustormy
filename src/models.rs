@@ -85,7 +85,7 @@ pub struct Weather {
     pub location_name: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Location {
     pub name: String,
     pub latitude: f64,

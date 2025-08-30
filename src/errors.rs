@@ -7,7 +7,7 @@ pub enum RustormyError {
     #[cfg(not(test))]
     #[error("Failed to find config file: {0}")]
     ConfigNotFound(&'static str),
-    #[error("Failed to read config file: {0}")]
+    #[error("Failed to read file: {0}")]
     ReadError(#[from] std::io::Error),
     #[error("Failed to parse config file: {0}")]
     ConfigParseError(#[from] toml::de::Error),
@@ -29,4 +29,7 @@ pub enum RustormyError {
     ApiReturnedError(String),
     #[error("Failed to encode JSON output: {0}")]
     JsonSerializeError(#[from] serde_json::Error),
+    #[cfg(not(test))]
+    #[error("Failed to locate cache file: {0}")]
+    CacheFindError(&'static str),
 }
