@@ -110,10 +110,10 @@ impl WeatherFormatter {
 
     pub fn display_error(&self, error: &RustormyError) -> ! {
         if self.config.output_format() == OutputFormat::Json {
-            let error_json = serde_json::json!({ "error": format!("{}", error) });
+            let error_json = serde_json::json!({ "error": format!("{:?}", error) });
             eprintln!("{error_json}");
         } else {
-            eprintln!("Error: {error}");
+            eprintln!("Error: {error:?}");
         }
         std::process::exit(1);
     }
@@ -212,12 +212,12 @@ impl WeatherFormatter {
             "Wind",
             if self.config.use_degrees_for_wind() {
                 format!(
-                    "{} {wind_unit} {}°",
+                    "{:.1} {wind_unit} {}°",
                     weather.wind_speed, weather.wind_direction
                 )
             } else {
                 format!(
-                    "{} {wind_unit} {}",
+                    "{:.1} {wind_unit} {}",
                     weather.wind_speed,
                     wind_deg_to_symbol(weather.wind_direction)
                 )
@@ -321,8 +321,8 @@ mod tests {
             lines[3]
         );
         assert!(
-            lines[3].contains("5 m/s"),
-            "Expected '5 m/s' in line 3, got '{}'",
+            lines[3].contains("5.0 m/s"),
+            "Expected '5.0 m/s' in line 3, got '{}'",
             lines[3]
         );
         assert!(
@@ -407,8 +407,8 @@ mod tests {
             lines[2]
         );
         assert!(
-            lines[2].contains("5 m/s"),
-            "Expected '5 m/s' in line 2, got '{}'",
+            lines[2].contains("5.0 m/s"),
+            "Expected '5.0 m/s' in line 2, got '{}'",
             lines[2]
         );
         assert!(
@@ -617,8 +617,8 @@ mod tests {
             lines[2]
         );
         assert!(
-            lines[3].contains("Wind: 5 m/s →"),
-            "Expected 'Wind: 5 m/s →' in line 3, got '{}'",
+            lines[3].contains("Wind: 5.0 m/s →"),
+            "Expected 'Wind: 5.0 m/s →' in line 3, got '{}'",
             lines[3]
         );
     }
