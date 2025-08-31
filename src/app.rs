@@ -3,6 +3,7 @@ use crate::display::formatter::WeatherFormatter;
 use crate::errors::RustormyError;
 use crate::models::Provider;
 use crate::weather::{GetWeather, GetWeatherProvider};
+use reqwest::blocking::Client;
 use std::time::Duration;
 
 fn clear_screen() {
@@ -11,6 +12,7 @@ fn clear_screen() {
 }
 
 pub struct App {
+    client: Client,
     config: Config,
     provider: GetWeatherProvider,
     formatter: WeatherFormatter,
@@ -18,10 +20,14 @@ pub struct App {
 
 impl App {
     pub fn new() -> Result<App, RustormyError> {
+        let client = Client::builder()
+            .user_agent(concat!("rustormy/", env!("CARGO_PKG_VERSION")))
+            .build()?;
         let mut config = Config::new(&crate::cli::Cli::new())?;
         let provider = GetWeatherProvider::new(config.provider().unwrap_or_default());
         let formatter = WeatherFormatter::new(&config);
         Ok(Self {
+            client,
             config,
             provider,
             formatter,
@@ -30,7 +36,7 @@ impl App {
 
     pub fn run(&mut self) {
         loop {
-            match self.provider.get_weather(&self.config) {
+            match self.provider.get_weather(&self.client, &self.config) {
                 Ok(weather) => {
                     if self.config.live_mode() {
                         clear_screen();

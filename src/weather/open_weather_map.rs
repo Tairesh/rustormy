@@ -5,14 +5,13 @@ use crate::errors::RustormyError;
 use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
 use crate::weather::{GetWeather, LookUpCity};
 use capitalize::Capitalize;
+use reqwest::blocking::Client;
 
 const GEO_API_URL: &str = "https://api.openweathermap.org/geo/1.0/direct";
 const WEATHER_API_URL: &str = "https://api.openweathermap.org/data/2.5/weather";
 
 #[derive(Debug, Default)]
-pub struct OpenWeatherMap {
-    client: reqwest::blocking::Client,
-}
+pub struct OpenWeatherMap {}
 
 #[derive(Debug, serde::Deserialize)]
 #[serde(untagged)]
@@ -152,7 +151,7 @@ impl<'a> WeatherAPIRequest<'a> {
 }
 
 impl LookUpCity for OpenWeatherMap {
-    fn lookup_city(&self, config: &Config) -> Result<Location, RustormyError> {
+    fn lookup_city(&self, client: &Client, config: &Config) -> Result<Location, RustormyError> {
         let city = config.city().ok_or(RustormyError::NoLocationProvided)?;
         if config.use_geocoding_cache() {
             let cached_location = crate::cache::get_cached_location(city, config.language())?;
@@ -163,8 +162,7 @@ impl LookUpCity for OpenWeatherMap {
 
         let api_key = config.api_key_owm().ok_or(RustormyError::MissingApiKey)?;
 
-        let response = self
-            .client
+        let response = client
             .get(GEO_API_URL)
             .query(&[
                 ("q", city),
@@ -194,11 +192,11 @@ impl LookUpCity for OpenWeatherMap {
 }
 
 impl GetWeather for OpenWeatherMap {
-    fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
-        let location = config.get_location(self)?;
+    fn get_weather(&self, client: &Client, config: &Config) -> Result<Weather, RustormyError> {
+        let location = self.get_location(client, config)?;
 
         let request = WeatherAPIRequest::new(&location, config)?;
-        let response = self.client.get(WEATHER_API_URL).query(&request).send()?;
+        let response = client.get(WEATHER_API_URL).query(&request).send()?;
 
         let response: WeatherApiResponse = response.json()?;
         match response {

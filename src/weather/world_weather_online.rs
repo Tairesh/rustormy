@@ -97,9 +97,9 @@ struct WwoCurrentCondition {
     temp_f: String,
     weather_code: String,
     weather_desc: Vec<WwoWeatherDesc>,
-    #[serde(default)]
+    #[serde(default, rename = "lang_ru")]
     lang_ru: Vec<WwoWeatherDesc>,
-    #[serde(default)]
+    #[serde(default, rename = "lang_es")]
     lang_es: Vec<WwoWeatherDesc>,
     windspeed_miles: String,
     windspeed_kmph: String,
@@ -252,14 +252,12 @@ struct WwoErrorMessage {
 }
 
 #[derive(Debug, Default)]
-pub struct WorldWeatherOnline {
-    client: Client,
-}
+pub struct WorldWeatherOnline {}
 
 impl GetWeather for WorldWeatherOnline {
-    fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
+    fn get_weather(&self, client: &Client, config: &Config) -> Result<Weather, RustormyError> {
         let params = WwoRequestParams::new(config)?;
-        let response = self.client.get(WWO_API_URL).query(&params).send()?;
+        let response = client.get(WWO_API_URL).query(&params).send()?;
         let response: WwoResponse = response.json()?;
 
         match response {

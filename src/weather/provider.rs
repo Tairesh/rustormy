@@ -5,6 +5,7 @@ use crate::weather::open_meteo::OpenMeteo;
 use crate::weather::open_weather_map::OpenWeatherMap;
 use crate::weather::world_weather_online::WorldWeatherOnline;
 use enum_dispatch::enum_dispatch;
+use reqwest::blocking::Client;
 
 macro_rules! provider_conversions {
     ($enum_impl:ident, $enum_config:ident, $($variant:ident),*) => {

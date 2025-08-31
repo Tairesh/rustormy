@@ -4,6 +4,7 @@ use crate::display::translations::ll;
 use crate::errors::RustormyError;
 use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
 use crate::weather::{GetWeather, LookUpCity};
+use reqwest::blocking::Client;
 use serde::Deserialize;
 
 const GEO_API_URL: &str = "https://geocoding-api.open-meteo.com/v1/search";
@@ -11,9 +12,7 @@ const WEATHER_API_URL: &str = "https://api.open-meteo.com/v1/forecast";
 const WEATHER_API_FIELDS: &str = "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,surface_pressure,wind_speed_10m,wind_direction_10m,weather_code";
 
 #[derive(Debug, Default)]
-pub struct OpenMeteo {
-    client: reqwest::blocking::Client,
-}
+pub struct OpenMeteo {}
 
 #[derive(Debug, Deserialize)]
 struct OpenMeteoResponse {
@@ -150,7 +149,7 @@ struct WeatherAPIRequest<'a> {
 }
 
 impl LookUpCity for OpenMeteo {
-    fn lookup_city(&self, config: &Config) -> Result<Location, RustormyError> {
+    fn lookup_city(&self, client: &Client, config: &Config) -> Result<Location, RustormyError> {
         let city = config.city().ok_or(RustormyError::NoLocationProvided)?;
         if config.use_geocoding_cache() {
             let cached_location = get_cached_location(city, config.language())?;
@@ -159,8 +158,7 @@ impl LookUpCity for OpenMeteo {
             }
         }
 
-        let response = self
-            .client
+        let response = client
             .get(GEO_API_URL)
             .query(&[
                 ("name", city),
@@ -190,16 +188,15 @@ impl LookUpCity for OpenMeteo {
 }
 
 impl GetWeather for OpenMeteo {
-    fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
-        let location = config.get_location(self)?;
+    fn get_weather(&self, client: &Client, config: &Config) -> Result<Weather, RustormyError> {
+        let location = self.get_location(client, config)?;
 
         let (temperature_unit, wind_speed_unit, precipitation_unit) = match config.units() {
             Units::Metric => ("celsius", "ms", "mm"),
             Units::Imperial => ("fahrenheit", "mph", "inch"),
         };
 
-        let response = self
-            .client
+        let response = client
             .get(WEATHER_API_URL)
             .query(&WeatherAPIRequest {
                 latitude: location.latitude,

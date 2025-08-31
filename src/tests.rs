@@ -9,6 +9,7 @@ use crate::{
     weather::GetWeather,
 };
 use clap::Parser;
+use reqwest::blocking::Client;
 
 struct TestProvider;
 
@@ -38,7 +39,7 @@ impl TestProvider {
 }
 
 impl LookUpCity for TestProvider {
-    fn lookup_city(&self, config: &Config) -> Result<Location, RustormyError> {
+    fn lookup_city(&self, _client: &Client, config: &Config) -> Result<Location, RustormyError> {
         let city = config.city().ok_or(RustormyError::NoLocationProvided)?;
         if city == "NonexistentCity" {
             return Err(RustormyError::CityNotFound(city.to_string()));
@@ -55,9 +56,9 @@ impl LookUpCity for TestProvider {
 }
 
 impl GetWeather for TestProvider {
-    fn get_weather(&self, config: &Config) -> Result<Weather, RustormyError> {
+    fn get_weather(&self, client: &Client, config: &Config) -> Result<Weather, RustormyError> {
         // Validate input parameters just like real providers
-        let location = config.get_location(self)?;
+        let location = self.get_location(client, config)?;
 
         Ok(Self::mock_weather(config, location))
     }
@@ -65,10 +66,11 @@ impl GetWeather for TestProvider {
 
 #[test]
 fn test_valid_city_lookup() {
+    let client = Client::new();
     let config = Config::new(&Cli::parse_from(&["rustormy", "-c", "Test City"])).unwrap();
     let provider = TestProvider::new();
 
-    let result = provider.get_weather(&config);
+    let result = provider.get_weather(&client, &config);
     assert!(result.is_ok());
 
     let weather = result.unwrap();
@@ -78,10 +80,11 @@ fn test_valid_city_lookup() {
 
 #[test]
 fn test_nonexistent_city() {
+    let client = Client::new();
     let config = Config::new(&Cli::parse_from(&["rustormy", "-c", "NonexistentCity"])).unwrap();
     let provider = TestProvider::new();
 
-    let result = provider.get_weather(&config);
+    let result = provider.get_weather(&client, &config);
     assert!(matches!(
         result,
         Err(RustormyError::CityNotFound(city)) if city == "NonexistentCity"
@@ -90,6 +93,7 @@ fn test_nonexistent_city() {
 
 #[test]
 fn test_valid_coordinates() {
+    let client = Client::new();
     let config = Config::new(&Cli::parse_from(&[
         "rustormy",
         "-y",
@@ -99,7 +103,7 @@ fn test_valid_coordinates() {
     .unwrap();
     let provider = TestProvider::new();
 
-    let result = provider.get_weather(&config);
+    let result = provider.get_weather(&client, &config);
     assert!(result.is_ok());
 
     let weather = result.unwrap();
@@ -121,10 +125,11 @@ fn test_invalid_coordinates() {
 
 #[test]
 fn test_no_location_provided() {
+    let client = Client::new();
     let config = Config::default();
     let provider = TestProvider::new();
 
-    let result = provider.get_weather(&config);
+    let result = provider.get_weather(&client, &config);
     assert!(
         matches!(result, Err(RustormyError::NoLocationProvided)),
         "No location provided should result in an error, got {:?}",
@@ -134,15 +139,17 @@ fn test_no_location_provided() {
 
 #[test]
 fn test_empty_city() {
+    let client = Client::new();
     let config = Config::new(&Cli::parse_from(&["rustormy", "-c", ""])).unwrap();
     let provider = TestProvider::new();
 
-    let result = provider.get_weather(&config);
+    let result = provider.get_weather(&client, &config);
     assert!(matches!(result, Err(RustormyError::NoLocationProvided)));
 }
 
 #[test]
 fn test_different_units() {
+    let client = Client::new();
     let config_metric = Config::new(&Cli::parse_from(&["rustormy", "-c", "Test"])).unwrap();
     let config_imperial = Config::new(&Cli::parse_from(&[
         "rustormy", "-c", "London", "-u", "imperial",
@@ -150,8 +157,8 @@ fn test_different_units() {
     .unwrap();
     let provider = TestProvider::new();
 
-    let weather_metric = provider.get_weather(&config_metric).unwrap();
-    let weather_imperial = provider.get_weather(&config_imperial).unwrap();
+    let weather_metric = provider.get_weather(&client, &config_metric).unwrap();
+    let weather_imperial = provider.get_weather(&client, &config_imperial).unwrap();
 
     assert_eq!(weather_metric.temperature, 20.0);
     assert_eq!(weather_imperial.temperature, 68.0);
