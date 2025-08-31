@@ -6,6 +6,26 @@ use crate::weather::open_weather_map::OpenWeatherMap;
 use crate::weather::world_weather_online::WorldWeatherOnline;
 use enum_dispatch::enum_dispatch;
 
+macro_rules! provider_conversions {
+    ($enum_impl:ident, $enum_config:ident, $($variant:ident),*) => {
+        impl From<$enum_config> for $enum_impl {
+            fn from(provider: $enum_config) -> Self {
+                match provider {
+                    $($enum_config::$variant => $enum_impl::$variant(Default::default()),)*
+                }
+            }
+        }
+
+        impl From<&$enum_impl> for $enum_config {
+            fn from(provider: &$enum_impl) -> Self {
+                match provider {
+                    $($enum_impl::$variant(..) => $enum_config::$variant,)*
+                }
+            }
+        }
+    };
+}
+
 #[enum_dispatch(GetWeather)]
 pub enum GetWeatherProvider {
     OpenMeteo,
@@ -13,25 +33,13 @@ pub enum GetWeatherProvider {
     WorldWeatherOnline,
 }
 
-impl From<Provider> for GetWeatherProvider {
-    fn from(provider: Provider) -> Self {
-        match provider {
-            Provider::OpenMeteo => OpenMeteo::default().into(),
-            Provider::OpenWeatherMap => OpenWeatherMap::default().into(),
-            Provider::WorldWeatherOnline => WorldWeatherOnline::default().into(),
-        }
-    }
-}
-
-impl From<&GetWeatherProvider> for Provider {
-    fn from(provider: &GetWeatherProvider) -> Self {
-        match provider {
-            GetWeatherProvider::OpenMeteo(..) => Provider::OpenMeteo,
-            GetWeatherProvider::OpenWeatherMap(..) => Provider::OpenWeatherMap,
-            GetWeatherProvider::WorldWeatherOnline(..) => Provider::WorldWeatherOnline,
-        }
-    }
-}
+provider_conversions!(
+    GetWeatherProvider,
+    Provider,
+    OpenMeteo,
+    OpenWeatherMap,
+    WorldWeatherOnline
+);
 
 impl GetWeatherProvider {
     pub fn new(provider_type: Provider) -> Self {
