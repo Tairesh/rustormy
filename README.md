@@ -96,6 +96,9 @@ live_mode_interval = 300
 align_right = true
 # Use cache for geocoding results
 use_geocoding_cache = true
+# Verbosity level (0 = fatal, 1 = error, 2 = warn, 3 = info, 4 = debug, 5 = trace)
+# Currently used only to display (if verbosity >= 1) an error if request to weather provider fails
+verbosity = 0
 ```
 
 ## Usage
@@ -138,11 +141,12 @@ Options:
           Disable caching of geocoding results
       --clear-cache
           Clear cached geocoding results and exit
+  -v, --verbose...
+          Increase verbosity level (can be used multiple times)
   -h, --help
           Print help
   -V, --version
           Print version
-
 ```
 
 ## Examples
@@ -181,3 +185,9 @@ To run the application in development mode with specific options, use:
 cargo run -- -c London --colors
 ```
 
+## Acknowledgements
+
+This project heavily inpired by [stormy](https://github.com/ashish0kumar/stormy). Actually, it started as a clone
+of `stormy`, just in Rust. Then I added more features, but kept the name similar to honor the original project.
+
+Also, [wttr.in](https://wttr.in) was a big inspiration for this project.

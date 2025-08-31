@@ -79,6 +79,7 @@ pub struct Cli {
     #[arg(long, action = ArgAction::SetTrue)]
     pub clear_cache: bool,
 
+    /// Increase verbosity level (can be used multiple times)
     #[arg(short = 'v', long, action = ArgAction::Count)]
     pub verbose: u8,
 }
