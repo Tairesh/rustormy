@@ -1,11 +1,73 @@
 use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
-use crate::models::{OutputFormat, TextMode, Units, Weather, WeatherConditionIcon};
+use crate::models::{Language, OutputFormat, TextMode, Units, Weather, WeatherConditionIcon};
 use std::fmt::Display;
 
+#[allow(clippy::struct_excessive_bools)]
+#[derive(Debug)]
+struct FormatterConfig {
+    output_format: OutputFormat,
+    text_mode: TextMode,
+    use_colors: bool,
+    show_city_name: bool,
+    align_right: bool,
+    use_wind_in_degrees: bool,
+    units: Units,
+    language: Language,
+}
+
+impl FormatterConfig {
+    pub fn output_format(&self) -> OutputFormat {
+        self.output_format
+    }
+
+    pub fn text_mode(&self) -> TextMode {
+        self.text_mode
+    }
+
+    pub fn use_colors(&self) -> bool {
+        self.use_colors
+    }
+
+    pub fn show_city_name(&self) -> bool {
+        self.show_city_name
+    }
+
+    pub fn align_right(&self) -> bool {
+        self.align_right
+    }
+
+    pub fn units(&self) -> Units {
+        self.units
+    }
+
+    pub fn language(&self) -> Language {
+        self.language
+    }
+
+    pub fn use_wind_in_degrees(&self) -> bool {
+        self.use_wind_in_degrees
+    }
+}
+
+impl From<&Config> for FormatterConfig {
+    fn from(config: &Config) -> Self {
+        Self {
+            output_format: config.output_format(),
+            text_mode: config.text_mode(),
+            use_colors: config.use_colors(),
+            show_city_name: config.show_city_name(),
+            align_right: config.align_right(),
+            units: config.units(),
+            language: config.language(),
+            use_wind_in_degrees: config.use_wind_in_degrees(),
+        }
+    }
+}
+
 pub struct WeatherFormatter {
-    config: Config,
+    config: FormatterConfig,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -56,7 +118,7 @@ fn make_line(
     l: &'static str,
     value: impl Display,
     color: AnsiColor,
-    config: &Config,
+    config: &FormatterConfig,
 ) -> String {
     let value = if config.use_colors() {
         colored_text(value, color)
@@ -71,7 +133,7 @@ fn make_line(
     }
 }
 
-fn label(text: &'static str, config: &Config) -> String {
+fn label(text: &'static str, config: &FormatterConfig) -> String {
     let lang = config.language();
     let translated = ll(lang, text).to_string() + ":";
     let padded = if config.align_right() {
@@ -97,8 +159,10 @@ const fn wind_deg_to_symbol(deg: u16) -> &'static str {
 }
 
 impl WeatherFormatter {
-    pub fn new(config: Config) -> Self {
-        Self { config }
+    pub fn new(config: &Config) -> Self {
+        Self {
+            config: config.into(),
+        }
     }
 
     pub fn display(&self, weather: Weather) {
@@ -285,7 +349,7 @@ mod tests {
     fn test_format_text_default() {
         let weather = sample_weather();
         let config = Config::default();
-        let formatter = WeatherFormatter::new(config);
+        let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
         assert_eq!(lines.len(), 7);
@@ -367,7 +431,7 @@ mod tests {
         let weather = sample_weather();
         let mut config = Config::default();
         config.set_text_mode(TextMode::Compact);
-        let formatter = WeatherFormatter::new(config);
+        let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
         assert_eq!(lines.len(), 5);
@@ -448,7 +512,7 @@ mod tests {
         let weather = sample_weather();
         let mut config = Config::default();
         config.set_show_city_name(true);
-        let formatter = WeatherFormatter::new(config);
+        let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
         assert_eq!(lines.len(), 7);
@@ -469,7 +533,7 @@ mod tests {
         let weather = sample_weather();
         let mut config = Config::default();
         config.set_use_colors(true);
-        let formatter = WeatherFormatter::new(config);
+        let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
         assert_eq!(lines.len(), 7);
@@ -488,7 +552,7 @@ mod tests {
         let weather = sample_weather();
         let mut config = Config::default();
         config.set_units(Units::Imperial);
-        let formatter = WeatherFormatter::new(config);
+        let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
         assert_eq!(lines.len(), 7);
@@ -514,7 +578,7 @@ mod tests {
         let weather = sample_weather();
         let mut config = Config::default();
         config.set_wind_in_degrees(true);
-        let formatter = WeatherFormatter::new(config);
+        let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
         assert_eq!(lines.len(), 7);
@@ -535,7 +599,7 @@ mod tests {
         let weather = sample_weather();
         let mut config = Config::default();
         config.set_language(Language::Russian);
-        let formatter = WeatherFormatter::new(config);
+        let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
         assert_eq!(lines.len(), 7);
@@ -552,7 +616,7 @@ mod tests {
         let mut config = Config::default();
         config.set_show_city_name(true);
         config.set_text_mode(TextMode::OneLine);
-        let formatter = WeatherFormatter::new(config);
+        let formatter = WeatherFormatter::new(&config);
         let line = formatter.format_one_line(weather);
 
         assert!(
@@ -577,7 +641,7 @@ mod tests {
         let weather = sample_weather();
         let mut config = Config::default();
         config.set_text_mode(TextMode::OneLine);
-        let formatter = WeatherFormatter::new(config);
+        let formatter = WeatherFormatter::new(&config);
         let line = formatter.format_one_line(weather);
 
         assert!(
@@ -602,7 +666,7 @@ mod tests {
         let weather = sample_weather();
         let mut config = Config::default();
         config.set_align_right(true);
-        let formatter = WeatherFormatter::new(config);
+        let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
         // Check if there are no extra spaces between the label and the value

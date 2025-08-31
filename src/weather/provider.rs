@@ -23,6 +23,16 @@ impl From<Provider> for GetWeatherProvider {
     }
 }
 
+impl From<&GetWeatherProvider> for Provider {
+    fn from(provider: &GetWeatherProvider) -> Self {
+        match provider {
+            GetWeatherProvider::OpenMeteo(..) => Provider::OpenMeteo,
+            GetWeatherProvider::OpenWeatherMap(..) => Provider::OpenWeatherMap,
+            GetWeatherProvider::WorldWeatherOnline(..) => Provider::WorldWeatherOnline,
+        }
+    }
+}
+
 impl GetWeatherProvider {
     pub fn new(provider_type: Provider) -> Self {
         provider_type.into()

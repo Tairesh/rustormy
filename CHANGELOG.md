@@ -8,10 +8,23 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Now `rustormy` will try to get data from other providers if the first one fails.
+- Added `providers` option to config file to specify a list of providers in order of preference.
+- Added `-v/--verbose` option to show error details when a provider fails.
 - Implemented simple file cache for getting coordinates from city names to reduce API calls.
 - Added `use_geocoding_cache` option to config file to enable/disable caching (disabled for default).
 - Added `--no-cache` CLI option to disable caching for current run (overrides config file).
 - Added `--clear-cache` CLI option to clear cache directory and exit.
+
+### Changed
+
+- Deprecated config file option `provider` in favor of `providers` which accepts a list of providers in order of
+  preference. Old name is still supported for backward compatibility. Also `--provider` CLI option is still supported
+  and will override config file providers list with a single provider.
+
+### Fixed
+
+- Improved code quality and maintainability.
 
 ## [0.2.2] - 2025-08-30
 

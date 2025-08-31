@@ -10,24 +10,103 @@ use std::fs;
 #[cfg(not(test))]
 use std::path::PathBuf;
 
+#[cfg(not(test))]
+const CONFIG_FILE_EXAMPLE: &str = r#"# Rustormy Configuration File
+# This file is in TOML format. See https://toml.io/ for details
+# For more details, see the documentation at https://github.com/Tairesh/rustormy/tree/main?tab=readme-ov-file#configuration
+#
+# Possible providers: `open_meteo`, `open_weather_map`, `world_weather_online`
+# Note that `open_weather_map` and `world_weather_online` require an API key
+# (`api_key_owm` for Open Weather Map, `api_key_wwo` for World Weather Online)
+# You can specify multiple providers in the `providers` array to try them in order
+# Example: `providers = ["world_weather_online", "open_weather_map", "open_meteo"]`
+
+providers = ["open_meteo"]
+api_key_owm = ""
+api_key_wwo = ""
+
+# You can specify location either by `city` name or by `lat` and `lon` coordinates
+# If both are provided, coordinates will be used
+
+# city = "London"
+# lat = 51.5074
+# lon = -0.1278
+
+# Units can be `metric` (Celsius, m/s) or `imperial` (Fahrenheit, mph)
+
+units = "metric"
+
+# Output format can be `text` or `json`
+
+output_format = "text"
+
+# Language codes: `en` (English), `es` (Spanish), `ru` (Russian)
+# (more languages will be added in future)
+
+language = "en"
+
+# Text mode can be `full`, `compact`, or `one_line`
+# `compact` mode shows same info as `full` but without labels and trailing empty lines
+# `one_line` mode shows only temperature and weather condition in a single line
+
+text_mode = "full"
+
+# Show city name can be enabled with `show_city_name = true` to include the city name in the output
+# (only works if `city` is provided, not coordinates)
+
+show_city_name = false
+
+# Use colors can be enabled with `use_colors = true` to colorize the text output with ANSI colors
+
+use_colors = false
+
+# Wind in degrees can be enabled with `wind_in_degrees = true` to show wind direction in degrees
+
+wind_in_degrees = false
+
+# Live mode can be enabled with `live_mode = true` to update weather data every
+# `live_mode_interval` seconds (default is 300 seconds, i.e., 5 minutes)
+
+live_mode = false
+live_mode_interval = 300
+
+# Align right can be enabled with `align_right = true` to align labels to the right
+
+align_right = false
+
+# Use geocoding cache can be enabled with `use_geocoding_cache = true` to cache
+# previously looked up cities locally to avoid repeated API calls
+
+use_geocoding_cache = false
+
+# Verbosity level can be set with `verbose` (0 = errors, 1 = warnings, 2 = info, 3 = debug)
+
+verbose = 0
+"#;
+
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     /// Weather data provider (`open_meteo`, `open_weather_map`, or `world_weather_online`)
+    #[serde(default, skip_serializing)]
+    provider: Option<Provider>, // Deprecated, kept for migration purposes. Use `providers` instead.
+
+    /// List of providers to try in order (if the first fails, try the next, etc.)
+    /// Example: `["open_meteo", "open_weather_map", "world_weather_online"]`
     #[serde(default)]
-    provider: Provider,
+    providers: Vec<Provider>,
 
     /// Deprecated, kept for migration purposes. Use `api_key_owm` or `api_key_wwo` instead.
     #[serde(default, skip_serializing)]
-    api_key: Option<String>, // Deprecated, kept for migration purposes
+    api_key: Option<String>, // Deprecated, kept for migration purposes. Use `api_key_owm` or `api_key_wwo` instead.
 
     /// API key for Open Weather Map
     #[serde(default)]
-    api_key_owm: Option<String>,
+    api_key_owm: String,
 
     /// API key for World Weather Online
     #[serde(default)]
-    api_key_wwo: Option<String>,
+    api_key_wwo: String,
 
     /// City name (required if lat/lon not provided)
     #[serde(default)]
@@ -71,7 +150,7 @@ pub struct Config {
 
     /// Deprecated, kept for migration purposes. Use `text_mode` instead.
     #[serde(default, skip_serializing)]
-    compact_mode: Option<bool>, // Deprecated, kept for migration purposes
+    compact_mode: Option<bool>, // Deprecated, kept for migration purposes. Use `text_mode = "compact"` instead.
 
     /// Live mode - continuously update weather data every `live_mode_interval` seconds (`true` or `false`)
     #[serde(default)]
@@ -89,6 +168,10 @@ pub struct Config {
     /// (if enabled, previously looked up cities will be cached locally to avoid repeated API calls)
     #[serde(default)]
     use_geocoding_cache: bool,
+
+    /// Verbosity level of output (0 = errors, 1 = warnings, 2 = info, 3 = debug)
+    #[serde(default)]
+    verbose: u8,
 }
 
 fn default_live_mode_interval() -> u64 {
@@ -98,10 +181,11 @@ fn default_live_mode_interval() -> u64 {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            provider: Provider::default(),
+            provider: None,
+            providers: vec![Provider::default()],
             api_key: None,
-            api_key_wwo: None,
-            api_key_owm: None,
+            api_key_wwo: String::default(),
+            api_key_owm: String::default(),
             city: None,
             lat: None,
             lon: None,
@@ -117,6 +201,7 @@ impl Default for Config {
             live_mode_interval: default_live_mode_interval(),
             align_right: false,
             use_geocoding_cache: false,
+            verbose: 0,
         }
     }
 }
@@ -175,8 +260,7 @@ impl Config {
         }
 
         // Serialize and write default config
-        let default_content = toml::to_string_pretty(&default_config)?;
-        fs::write(config_path, default_content)?;
+        fs::write(config_path, CONFIG_FILE_EXAMPLE)?;
 
         Ok(default_config)
     }
@@ -205,8 +289,8 @@ impl Config {
         }
 
         if let Some(api_key) = self.api_key.as_deref() {
-            if self.api_key_owm.is_none() {
-                self.api_key_owm = Some(api_key.to_string());
+            if self.api_key_owm.is_empty() {
+                self.api_key_owm = api_key.to_string();
             }
 
             #[cfg(not(test))]
@@ -215,15 +299,10 @@ impl Config {
             }
         }
 
-        if self.api_key_owm.is_none() {
-            self.api_key_owm = Some(String::default());
-            #[cfg(not(test))]
-            {
-                migrated = true;
-            }
-        }
-        if self.api_key_wwo.is_none() {
-            self.api_key_wwo = Some(String::default());
+        if let Some(provider) = self.provider
+            && self.providers.is_empty()
+        {
+            self.providers = vec![provider];
             #[cfg(not(test))]
             {
                 migrated = true;
@@ -252,7 +331,7 @@ impl Config {
             self.lon = Some(lon);
         }
         if let Some(provider) = cli.provider {
-            self.provider = provider;
+            self.providers = vec![provider];
         }
         if let Some(units) = cli.units {
             self.units = units;
@@ -292,6 +371,9 @@ impl Config {
         if cli.no_cache {
             self.use_geocoding_cache = false;
         }
+        if cli.verbose > 0 {
+            self.verbose = cli.verbose;
+        }
     }
 
     pub fn validate(&self) -> Result<(), RustormyError> {
@@ -307,15 +389,22 @@ impl Config {
             ));
         }
 
-        // Check if API key is provided for OpenWeatherMap
-        if matches!(self.provider, Provider::OpenWeatherMap)
+        // Check if at least one provider is specified
+        if self.providers.is_empty() {
+            return Err(RustormyError::InvalidConfiguration(
+                "At least one provider must be specified",
+            ));
+        }
+
+        // Check if API key is provided for Open Weather Map
+        if self.providers.contains(&Provider::OpenWeatherMap)
             && self.api_key_owm().is_none_or(str::is_empty)
         {
             return Err(RustormyError::MissingApiKey);
         }
 
         // Check if API key is provided for World Weather Online
-        if matches!(self.provider, Provider::WorldWeatherOnline)
+        if self.providers.contains(&Provider::WorldWeatherOnline)
             && self.api_key_wwo().is_none_or(str::is_empty)
         {
             return Err(RustormyError::MissingApiKey);
@@ -331,16 +420,29 @@ impl Config {
         Ok(())
     }
 
-    pub fn provider(&self) -> Provider {
-        self.provider
+    /// Pop the first provider from the list to try
+    pub fn provider(&mut self) -> Option<Provider> {
+        if self.providers.is_empty() {
+            None
+        } else {
+            Some(self.providers.remove(0))
+        }
     }
 
     pub fn api_key_wwo(&self) -> Option<&str> {
-        self.api_key_wwo.as_deref().or(self.api_key.as_deref())
+        if self.api_key_wwo.is_empty() {
+            return self.api_key.as_deref();
+        }
+
+        Some(self.api_key_wwo.as_str())
     }
 
     pub fn api_key_owm(&self) -> Option<&str> {
-        self.api_key_owm.as_deref().or(self.api_key.as_deref())
+        if self.api_key_owm.is_empty() {
+            return self.api_key.as_deref();
+        }
+
+        Some(self.api_key_owm.as_str())
     }
 
     pub fn city(&self) -> Option<&str> {
@@ -455,6 +557,10 @@ impl Config {
     pub fn use_geocoding_cache(&self) -> bool {
         self.use_geocoding_cache
     }
+
+    pub fn verbose(&self) -> u8 {
+        self.verbose
+    }
 }
 
 #[cfg(test)]
@@ -487,13 +593,11 @@ mod tests {
     fn test_migrate_api_key() {
         let config = Config {
             api_key: Some("test_key".to_string()),
-            api_key_owm: None,
-            api_key_wwo: None,
             ..Default::default()
         };
         let migrated_config = config.migrate().unwrap();
-        assert_eq!(migrated_config.api_key_owm, Some("test_key".to_string()));
-        assert_eq!(migrated_config.api_key_wwo, Some(String::default()));
+        assert_eq!(migrated_config.api_key_owm, "test_key");
+        assert_eq!(migrated_config.api_key_wwo, "");
     }
 
     #[test]
@@ -526,8 +630,7 @@ mod tests {
     #[test]
     fn test_validate_missing_api_key_owm() {
         let config = Config {
-            provider: Provider::OpenWeatherMap,
-            api_key_owm: None,
+            providers: vec![Provider::OpenMeteo, Provider::OpenWeatherMap],
             city: Some("TestCity".to_string()),
             ..Default::default()
         };
@@ -542,8 +645,7 @@ mod tests {
     #[test]
     fn test_validate_missing_api_key_wwo() {
         let config = Config {
-            provider: Provider::WorldWeatherOnline,
-            api_key_wwo: None,
+            providers: vec![Provider::WorldWeatherOnline],
             city: Some("TestCity".to_string()),
             ..Default::default()
         };
@@ -589,7 +691,7 @@ mod tests {
     fn test_validate_valid_config_om() {
         let config = Config {
             city: Some("TestCity".to_string()),
-            provider: Provider::OpenMeteo,
+            providers: vec![Provider::OpenMeteo],
             ..Default::default()
         };
         let result = config.validate();
@@ -604,8 +706,8 @@ mod tests {
     fn test_validate_valid_config_owm() {
         let config = Config {
             city: Some("TestCity".to_string()),
-            provider: Provider::OpenWeatherMap,
-            api_key_owm: Some("test_key".to_string()),
+            providers: vec![Provider::OpenWeatherMap],
+            api_key_owm: "test_key".to_string(),
             ..Default::default()
         };
         let result = config.validate();
@@ -620,8 +722,8 @@ mod tests {
     fn test_validate_valid_config_wwo() {
         let config = Config {
             city: Some("TestCity".to_string()),
-            provider: Provider::WorldWeatherOnline,
-            api_key_wwo: Some("test_key".to_string()),
+            providers: vec![Provider::WorldWeatherOnline],
+            api_key_wwo: "test_key".to_string(),
             ..Default::default()
         };
         let result = config.validate();
@@ -636,9 +738,9 @@ mod tests {
     fn test_validate_valid_config_with_old_api_key() {
         let config = Config {
             city: Some("TestCity".to_string()),
-            provider: Provider::OpenWeatherMap,
+            providers: vec![Provider::OpenWeatherMap],
             api_key: Some("test_key".to_string()),
-            api_key_owm: None,
+            api_key_owm: "".to_string(),
             ..Default::default()
         };
         let result = config.validate();
@@ -647,5 +749,37 @@ mod tests {
             "Expected valid config, got error {:?}",
             result
         );
+    }
+
+    #[test]
+    fn test_validate_valid_config_with_all_providers() {
+        let config = Config {
+            city: Some("TestCity".to_string()),
+            providers: vec![
+                Provider::OpenMeteo,
+                Provider::OpenWeatherMap,
+                Provider::WorldWeatherOnline,
+            ],
+            api_key_owm: "test_key_owm".to_string(),
+            api_key_wwo: "test_key_wwo".to_string(),
+            ..Default::default()
+        };
+        let result = config.validate();
+        assert!(
+            result.is_ok(),
+            "Expected valid config, got error {:?}",
+            result
+        );
+    }
+
+    #[test]
+    fn test_migrate_provider_to_providers() {
+        let config = Config {
+            provider: Some(Provider::OpenWeatherMap),
+            providers: vec![],
+            ..Default::default()
+        };
+        let migrated_config = config.migrate().expect("Failed to migrate");
+        assert_eq!(migrated_config.providers, vec![Provider::OpenWeatherMap]);
     }
 }

@@ -78,6 +78,9 @@ pub struct Cli {
     /// Clear cached geocoding results and exit
     #[arg(long, action = ArgAction::SetTrue)]
     pub clear_cache: bool,
+
+    #[arg(short = 'v', long, action = ArgAction::Count)]
+    pub verbose: u8,
 }
 
 impl Cli {
