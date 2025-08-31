@@ -14,17 +14,20 @@ various output modes.
 
 ## Current features
 
-- Fetch weather data from [OpenMeteo](https://open-meteo.com/) (no API key required)
-  or [OpenWeatherMap](https://openweathermap.org/) and [World Weather Online](https://www.worldweatheronline.com/)
+- Fetch weather data from multiple providers: [OpenMeteo](https://open-meteo.com/) (default, no API key required),
+  [OpenWeatherMap](https://openweathermap.org/), amd [World Weather Online](https://www.worldweatheronline.com/)
+- If first provider is not available (e.g. API limit exceeded), automatically fallback to the next one
 - Display current temperature, weather condition, wind speed and direction, humidity. precipitation, atmospheric
   pressure.
 - Display ASCII art icons for weather conditions
 - Supports ANSI colors in terminal output
 - Supports geocoding by city name or latitude/longitude input
+- Supports caching geocoding results to reduce API calls
 - Supports multiple languages (English, Russian, Spanish; more to come)
 - Supports imperial and metric units
 - Supports different text output modes (full, compact, one-line) and JSON output
-- Live mode (periodically fetch and display updated weather data)
+- Supports live mode (periodically fetch and display updated weather data)
+- Cross-platform (Linux, macOS, Windows)
 
 ## Planned features
 
