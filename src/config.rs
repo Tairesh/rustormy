@@ -131,6 +131,7 @@ pub struct Config {
     #[serde(default)]
     language: Language,
 
+    // TODO: refactor formatting options into a separate struct
     /// Show city name in output (`true` or `false`)
     #[serde(default)]
     show_city_name: bool,
@@ -363,6 +364,9 @@ impl Config {
         }
         if let Some(text_mode) = cli.text_mode {
             self.text_mode = text_mode;
+        }
+        if cli.align_right {
+            self.align_right = true;
         }
         if cli.live_mode {
             self.live_mode = true;

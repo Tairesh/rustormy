@@ -47,6 +47,7 @@ impl App {
                     RustormyError::ApiReturnedError(_) | RustormyError::HttpRequestFailed(_) => {
                         let p: Provider = (&self.provider).into();
                         if self.config.verbose() >= 1 {
+                            // TODO: Log this instead of printing to stderr
                             eprintln!("Provider {p:?} failed: {error:?}");
                         }
                         self.provider =

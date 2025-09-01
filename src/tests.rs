@@ -31,6 +31,7 @@ impl TestProvider {
             pressure: 1013,
             wind_speed: 5.0,
             wind_direction: 180,
+            uv_index: None,
             description: "Clear sky".to_string(),
             icon: WeatherConditionIcon::Sunny,
             location_name: location.name,

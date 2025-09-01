@@ -224,9 +224,14 @@ impl WeatherFormatter {
             self.config.show_city_name(),
             self.config.language(),
         );
-        let (temp_unit, wind_unit, precip_unit) = match self.config.units() {
-            Units::Metric => ("°C", ll(lang, "m/s"), ll(lang, "mm")),
-            Units::Imperial => ("°F", ll(lang, "mph"), ll(lang, "inch")),
+        let (temp_unit, wind_unit, precip_unit, dew_point) = match self.config.units() {
+            Units::Metric => ("°C", ll(lang, "m/s"), ll(lang, "mm"), weather.dew_point()),
+            Units::Imperial => (
+                "°F",
+                ll(lang, "mph"),
+                ll(lang, "inch"),
+                weather.dew_point_f(),
+            ),
         };
         let icon = if colors {
             weather.icon.colored_icon()
@@ -234,7 +239,7 @@ impl WeatherFormatter {
             weather.icon.icon()
         };
 
-        let mut output = Vec::with_capacity(if compact { 5 } else { 7 });
+        let mut output = Vec::with_capacity(if compact { 6 } else { 7 });
 
         if name {
             output.push(make_line(
@@ -251,13 +256,15 @@ impl WeatherFormatter {
         output.push(make_line(
             icon[1],
             "Condition",
-            weather.description,
+            if let Some(uv) = weather.uv_index {
+                format!("{} ({} {uv})", weather.description, ll(lang, "UV index"))
+            } else {
+                weather.description
+            },
             weather.icon.into(),
             &self.config,
         ));
 
-        // Temperature displays with only one decimal place
-        // e.g., 22.5°C instead of 22.48°C
         output.push(make_line(
             icon[2],
             "Temperature",
@@ -292,11 +299,8 @@ impl WeatherFormatter {
 
         output.push(make_line(
             icon[4],
-            "Humidity",
-            format!(
-                "{}% | {} {precip_unit}",
-                weather.humidity, weather.precipitation
-            ),
+            "Precipitation",
+            format!("{} {precip_unit}", weather.precipitation),
             AnsiColor::Cyan,
             &self.config,
         ));
@@ -309,9 +313,17 @@ impl WeatherFormatter {
             &self.config,
         ));
 
-        if !compact {
-            output.push(icon[6].to_string());
-        }
+        output.push(make_line(
+            icon[6],
+            "Humidity",
+            format!(
+                "{}% ({} {dew_point:.1}{temp_unit})",
+                weather.humidity,
+                ll(lang, "dew point")
+            ),
+            AnsiColor::Blue,
+            &self.config,
+        ));
 
         output
     }
@@ -339,6 +351,7 @@ mod tests {
             pressure: 1013,
             wind_speed: 5.0,
             wind_direction: 90,
+            uv_index: None,
             description: "Partly cloudy".to_string(),
             icon: WeatherConditionIcon::PartlyCloudy,
             location_name: "Test City".to_string(),
@@ -362,6 +375,11 @@ mod tests {
         assert!(
             lines[1].contains("Condition"),
             "Expected 'Condition' in line 1, got '{}'",
+            lines[1]
+        );
+        assert!(
+            !lines[1].contains("UV index"),
+            "Did not expect 'UV index' in line 1, got '{}'",
             lines[1]
         );
         assert!(
@@ -395,13 +413,13 @@ mod tests {
             lines[3]
         );
         assert!(
-            lines[4].contains("Humidity"),
-            "Expected 'Humidity' in line 4, got '{}'",
+            lines[4].contains("Precip"),
+            "Expected 'Precip' in line 4, got '{}'",
             lines[4]
         );
         assert!(
-            lines[4].contains("60%"),
-            "Expected '60%' in line 4, got '{}'",
+            lines[4].contains("0.5 mm"),
+            "Expected '0.5 mm' in line 4, got '{}'",
             lines[4]
         );
         assert!(
@@ -419,9 +437,24 @@ mod tests {
             "Expected '1013 hPa' in line 5, got '{}'",
             lines[5]
         );
-        assert_eq!(
-            lines[6], "             ",
-            "Expected empty line at the end, got '{}'",
+        assert!(
+            lines[6].contains("Humidity"),
+            "Expected 'Humidity' in line 6, got '{}'",
+            lines[6]
+        );
+        assert!(
+            lines[6].contains("60%"),
+            "Expected '60%' in line 6, got '{}'",
+            lines[6]
+        );
+        assert!(
+            lines[6].contains("dew point"),
+            "Expected 'dew point' in line 6, got '{}'",
+            lines[6]
+        );
+        assert!(
+            lines[6].contains("14.3°C"),
+            "Expected '14.3°C' in line 6, got '{}'",
             lines[6]
         );
     }
@@ -434,7 +467,7 @@ mod tests {
         let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
-        assert_eq!(lines.len(), 5);
+        assert_eq!(lines.len(), 6);
         assert!(
             !lines[0].contains("Location"),
             "Expected no 'Location' in line 0, got '{}'",
@@ -481,13 +514,13 @@ mod tests {
             lines[2]
         );
         assert!(
-            !lines[3].contains("Humidity"),
-            "Expected no 'Humidity' label in compact mode, got '{}'",
+            !lines[3].contains("Precip"),
+            "Expected no 'Precip' label in compact mode, got '{}'",
             lines[3]
         );
         assert!(
-            lines[3].contains("60%"),
-            "Expected '60%' in line 3, got '{}'",
+            lines[3].contains("0.5 mm"),
+            "Expected '0.5 mm' in line 3, got '{}'",
             lines[3]
         );
         assert!(
@@ -504,6 +537,42 @@ mod tests {
             lines[4].contains("1013 hPa"),
             "Expected '1013 hPa' in line 4, got '{}'",
             lines[4]
+        );
+        assert!(
+            !lines[5].contains("Humidity"),
+            "Expected no 'Humidity' label in compact mode, got '{}'",
+            lines[5]
+        );
+        assert!(
+            lines[5].contains("60%"),
+            "Expected '60%' in line 5, got '{}'",
+            lines[5]
+        );
+        assert!(
+            lines[5].contains("dew point"),
+            "Expected 'dew point' in line 5, got '{}'",
+            lines[5]
+        );
+        assert!(
+            lines[5].contains("14.3°C"),
+            "Expected '14.3°C' in line 6, got '{}'",
+            lines[6]
+        );
+    }
+
+    #[test]
+    fn test_uv_index() {
+        let mut weather = sample_weather();
+        weather.uv_index = Some(7);
+        let config = Config::default();
+        let formatter = WeatherFormatter::new(&config);
+        let lines = formatter.format_text(weather);
+
+        assert_eq!(lines.len(), 7);
+        assert!(
+            lines[1].contains("UV index 7"),
+            "Expected 'UV index 7' in condition line, got '{}'",
+            lines[1]
         );
     }
 
@@ -684,6 +753,22 @@ mod tests {
             lines[3].contains("Wind: 5.0 m/s →"),
             "Expected 'Wind: 5.0 m/s →' in line 3, got '{}'",
             lines[3]
+        );
+    }
+
+    #[test]
+    fn test_uv_index_display() {
+        let mut weather = sample_weather();
+        weather.uv_index = Some(5);
+        let config = Config::default();
+        let formatter = WeatherFormatter::new(&config);
+        let lines = formatter.format_text(weather);
+
+        assert_eq!(lines.len(), 7);
+        assert!(
+            lines[1].contains("UV index 5"),
+            "Expected 'UV index 5' in condition line, got '{}'",
+            lines[1]
         );
     }
 }

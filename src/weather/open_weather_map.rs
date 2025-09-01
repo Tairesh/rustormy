@@ -93,6 +93,7 @@ impl WeatherResponseData {
             pressure: self.main.pressure,
             wind_speed: self.wind.speed,
             wind_direction: self.wind.deg,
+            uv_index: None,
             description: self
                 .description()
                 .unwrap_or_else(|| ll(config.language(), "Unknown").to_string()),

@@ -31,10 +31,8 @@ various output modes.
 
 ## Planned features
 
-- Caching geocoding results to reduce API calls
-- Support for more weather APIs and data providers
-- More detailed weather information (e.g. dew point, UV index, etc.)
 - More weather-related information (e.g. sunrise/sunset times, moon phase, etc.)
+- Support for more weather APIs and data providers
 - More customization options (e.g. colors, layout, etc.)
 - More languages
 - Improved test coverage
@@ -110,7 +108,7 @@ verbosity = 0
 rustormy [OPTIONS]
 
 Options:
-  -c, --city <CITY>
+  -C, --city <CITY>
           City name (required if lat/lon not provided)
   -y, --lat <LAT>
           Latitude (required if city not provided)
@@ -136,6 +134,8 @@ Options:
           One-line mode for text output (short for `--text-mode one_line`)
   -m, --text-mode <TEXT_MODE>
           Text output mode [possible values: full, compact, one_line]
+      --align-right
+          Align labels to the right in text output
   -l, --live
           Live mode - continuously update weather data every 5 minutes (or specified interval)
   -i, --interval <LIVE_MODE_INTERVAL>
@@ -154,12 +154,12 @@ Options:
 
 ## Examples
 
-![Basic usage: `rustormy -c London`](.github/assets/basic.png)
-![Colors: `rustormy -c Milan --colors`](.github/assets/colors.png)
-![Imperial units: `rustormy -c "New York" --colors -u imperial`](.github/assets/imperial.png)
-![Spanish translation: `rustormy -c Valparaiso -g es --name --colors`](.github/assets/spanish.png)
+![Basic usage: `rustormy -C London`](.github/assets/basic.png)
+![Colors: `rustormy -C Milan --colors`](.github/assets/colors.png)
+![Imperial units: `rustormy -C "New York" --colors -u imperial`](.github/assets/imperial.png)
+![Spanish translation: `rustormy -C Valparaiso -g es --name --colors`](.github/assets/spanish.png)
 ![Compact and one-line modes](.github/assets/compact.png)
-![JSON output: `rustormy -c Ajax -o json`](.github/assets/json.png)
+![JSON output: `rustormy -C Ajax -o json`](.github/assets/json.png)
 
 ## License
 
@@ -185,7 +185,7 @@ just before-commit  # Run commands before committing (lint and check)
 To run the application in development mode with specific options, use:
 
 ```sh
-cargo run -- -c London --colors
+cargo run -- -C London --colors
 ```
 
 ## Acknowledgements

@@ -64,6 +64,7 @@ impl WwoWeatherData {
             pressure: condition.pressure()?,
             wind_speed: condition.wind_speed(config.units())?,
             wind_direction: condition.wind_direction()?,
+            uv_index: condition.uv_index()?,
             description: condition.desc(config.language())?.to_string(),
             icon: condition.icon()?,
             location_name,
@@ -114,7 +115,6 @@ struct WwoCurrentCondition {
     feels_like_c: String,
     #[serde(rename = "FeelsLikeF")]
     feels_like_f: String,
-    #[allow(dead_code)]
     uv_index: String,
 }
 
@@ -202,6 +202,13 @@ impl WwoCurrentCondition {
         self.winddir_degree.parse::<u16>().map_err(|e| {
             RustormyError::ApiReturnedError(format!("Invalid wind direction value: {e:?}"))
         })
+    }
+
+    fn uv_index(&self) -> Result<Option<u8>, RustormyError> {
+        let uv_index = self.uv_index.parse::<u8>().map_err(|e| {
+            RustormyError::ApiReturnedError(format!("Invalid UV index value: {e:?}"))
+        })?;
+        Ok(Some(uv_index))
     }
 
     fn icon(&self) -> Result<WeatherConditionIcon, RustormyError> {

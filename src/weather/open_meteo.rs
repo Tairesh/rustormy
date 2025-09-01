@@ -222,6 +222,7 @@ impl GetWeather for OpenMeteo {
             pressure: data.current.pressure as u32,
             wind_speed: data.current.wind_speed,
             wind_direction: data.current.wind_direction,
+            uv_index: None,
             description: data.description(config.language()).to_string(),
             icon: data.icon(),
             location_name: location.name,

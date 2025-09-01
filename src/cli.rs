@@ -58,6 +58,10 @@ pub struct Cli {
     #[arg(short = 'm', long = "text-mode", value_enum)]
     pub text_mode: Option<TextMode>,
 
+    /// Align labels to the right in text output
+    #[arg(long="align-right", action = ArgAction::SetTrue)]
+    pub align_right: bool,
+
     /// Live mode - continuously update weather data every 5 minutes (or specified interval)
     #[arg(short = 'l', long = "live", action = ArgAction::SetTrue, alias="live-mode")]
     pub live_mode: bool,

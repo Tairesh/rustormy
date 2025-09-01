@@ -46,10 +46,25 @@ static TRANSLATIONS: LazyLock<HashMap<&'static str, HashMap<&'static str, &'stat
         ["ru"] => "Влажность",
         ["es"] => "Humedad",
     },
+    "Precipitation" => {
+        ["en"] => "Precip",
+        ["ru"] => "Осадки",
+        ["es"] => "Lluvias",
+    },
     "Pressure" => {
         ["en"] => "Pressure",
         ["ru"] => "Давление",
         ["es"] => "Presión",
+    },
+    "UV index" => {
+        ["en"] => "UV index",
+        ["ru"] => "УФ индекс",
+        ["es"] => "Índice UV",
+    },
+    "dew point" => {
+        ["en"] => "dew point",
+        ["ru"] => "точка росы",
+        ["es"] => "punto de rocío",
     },
     // Weather conditions
     "Clear sky" => {
@@ -234,5 +249,6 @@ pub fn ll(lang: Language, key: &'static str) -> &'static str {
     TRANSLATIONS
         .get(lang.code())
         .and_then(|translations| translations.get(key))
+        // TODO: Add logging for missing translations
         .unwrap_or(&key)
 }

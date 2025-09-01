@@ -1,4 +1,5 @@
 use clap::ValueEnum;
+use serde::ser::SerializeStruct;
 use serde_derive::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
@@ -71,7 +72,7 @@ pub enum WeatherConditionIcon {
     Fog,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct Weather {
     pub temperature: f64,
     pub feels_like: f64,
@@ -80,9 +81,57 @@ pub struct Weather {
     pub pressure: u32,
     pub wind_speed: f64,
     pub wind_direction: u16,
+    pub uv_index: Option<u8>,
     pub description: String,
     pub icon: WeatherConditionIcon,
     pub location_name: String,
+}
+
+impl serde::Serialize for Weather {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut state = serializer.serialize_struct("Weather", 11)?;
+        state.serialize_field("temperature", &self.temperature)?;
+        state.serialize_field("feels_like", &self.feels_like)?;
+        state.serialize_field("humidity", &self.humidity)?;
+        state.serialize_field("precipitation", &self.precipitation)?;
+        state.serialize_field("pressure", &self.pressure)?;
+        state.serialize_field("wind_speed", &self.wind_speed)?;
+        state.serialize_field("wind_direction", &self.wind_direction)?;
+        state.serialize_field("dew_point", &self.dew_point())?;
+        if let Some(uv) = self.uv_index {
+            state.serialize_field("uv_index", &uv)?;
+        }
+        state.serialize_field("description", &self.description)?;
+        state.serialize_field("icon", &self.icon)?;
+        state.serialize_field("location_name", &self.location_name)?;
+        state.end()
+    }
+}
+
+/// Convert Celsius to Fahrenheit
+fn c_to_f(c: f64) -> f64 {
+    (c * 9.0 / 5.0) + 32.0
+}
+
+impl Weather {
+    /// Calculate dew point using the Magnus formula
+    pub fn dew_point(&self) -> f64 {
+        const B: f64 = 17.625;
+        const C: f64 = 243.04;
+        let t = self.temperature;
+        let h: f64 = self.humidity.into();
+        let gamma = (B * t) / (C + t) + (h / 100.0).ln();
+        let result = (C * gamma) / (B - gamma);
+        (result * 10.0).round() / 10.0 // Round to one decimal place
+    }
+
+    /// Dew point in Fahrenheit
+    pub fn dew_point_f(&self) -> f64 {
+        c_to_f(self.dew_point())
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
