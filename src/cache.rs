@@ -18,19 +18,7 @@ fn get_geocoding_cache_dir() -> Result<PathBuf, RustormyError> {
     Ok(std::env::temp_dir().join("rustormy_test_cache"))
 }
 
-#[cfg(not(test))]
 /// Get the path to the geocoding cache file based on city and language
-fn get_geocoding_cache_path(city: &str, language: Language) -> Result<PathBuf, RustormyError> {
-    let cache_dir = get_geocoding_cache_dir()?;
-    Ok(cache_dir.join(format!(
-        "geocoding_{}_{}.json",
-        city.replace(' ', "_"),
-        language.code()
-    )))
-}
-
-#[cfg(test)]
-/// Get the path to the geocoding cache file based on city and language (for tests, use temp dir)
 fn get_geocoding_cache_path(city: &str, language: Language) -> Result<PathBuf, RustormyError> {
     let cache_dir = get_geocoding_cache_dir()?;
     Ok(cache_dir.join(format!(
