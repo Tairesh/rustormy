@@ -108,7 +108,7 @@ verbosity = 0
 rustormy [OPTIONS]
 
 Options:
-  -C, --city <CITY>
+  -c, --city <CITY>
           City name (required if lat/lon not provided)
   -y, --lat <LAT>
           Latitude (required if city not provided)
@@ -154,12 +154,12 @@ Options:
 
 ## Examples
 
-![Basic usage: `rustormy -C London`](.github/assets/basic.png)
-![Colors: `rustormy -C Milan --colors`](.github/assets/colors.png)
-![Imperial units: `rustormy -C "New York" --colors -u imperial`](.github/assets/imperial.png)
-![Spanish translation: `rustormy -C Valparaiso -g es --name --colors`](.github/assets/spanish.png)
+![Basic usage: `rustormy -c London`](.github/assets/basic.png)
+![Colors: `rustormy -c Milan --colors`](.github/assets/colors.png)
+![Imperial units: `rustormy -c "New York" --colors -u imperial`](.github/assets/imperial.png)
+![Spanish translation: `rustormy -c Valparaiso -g es --name --colors`](.github/assets/spanish.png)
 ![Compact and one-line modes](.github/assets/compact.png)
-![JSON output: `rustormy -C Ajax -o json`](.github/assets/json.png)
+![JSON output: `rustormy -c Ajax -o json`](.github/assets/json.png)
 
 ## License
 
@@ -185,7 +185,7 @@ just before-commit  # Run commands before committing (lint and check)
 To run the application in development mode with specific options, use:
 
 ```sh
-cargo run -- -C London --colors
+cargo run -- -c London --colors
 ```
 
 ## Acknowledgements
