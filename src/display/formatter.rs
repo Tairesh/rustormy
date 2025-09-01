@@ -194,16 +194,33 @@ impl WeatherFormatter {
     }
 
     fn format_one_line(&self, weather: Weather) -> String {
-        let temp_unit = match self.config.units() {
-            Units::Metric => "°C",
-            Units::Imperial => "°F",
+        let (temp_unit, wind_unit) = match self.config.units() {
+            Units::Metric => ("°C", ll(self.config.language(), "m/s")),
+            Units::Imperial => ("°F", ll(self.config.language(), "mph")),
         };
         let emoji = weather.icon.emoji();
         let mut temperature = format!("{:.1}{}", weather.temperature, temp_unit);
         if self.config.use_colors() {
             temperature = colored_text(temperature, AnsiColor::BrightYellow);
         }
-        let value = format!("{emoji} {temperature}");
+        let wind = if self.config.use_wind_in_degrees() {
+            format!(
+                "{:.1} {wind_unit} {}°",
+                weather.wind_speed, weather.wind_direction
+            )
+        } else {
+            format!(
+                "{:.1} {wind_unit} {}",
+                weather.wind_speed,
+                wind_deg_to_symbol(weather.wind_direction)
+            )
+        };
+        let wind = if self.config.use_colors() {
+            colored_text(wind, AnsiColor::BrightRed)
+        } else {
+            wind
+        };
+        let value = format!("{emoji} {temperature} {wind}");
 
         if self.config.show_city_name() {
             let location = if self.config.use_colors() {
@@ -701,6 +718,11 @@ mod tests {
         assert!(
             line.contains("22.5°C"),
             "Expected temperature in one-line output, got '{}'",
+            line
+        );
+        assert!(
+            line.contains("5.0 m/s →"),
+            "Expected wind info in one-line output, got '{}'",
             line
         );
     }
