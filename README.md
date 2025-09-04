@@ -63,43 +63,77 @@ On Windows, the configuration file will be located at
 ### Configuration options
 
 ```toml
-# Default city name (if not provided via CLI)
-city = "New York"
-# Default latitude (if not provided via CLI)
-lat = 40.7128
-# Default longitude (if not provided via CLI)
-lon = -74.0060
-# Weather data provider (`open_meteo`, `open_weather_map`, or `world_weather_online`)
-provider = "open_meteo"
-# API key for OpenWeatherMap (required if provider is `open_weather_map`)
+# Rustormy Configuration File
+# This file is in TOML format. See https://toml.io/ for details
+# For more details, see the documentation at https://github.com/Tairesh/rustormy/tree/main?tab=readme-ov-file#configuration
+#
+# Possible providers: `open_meteo`, `open_weather_map`, `world_weather_online`
+# Note that `open_weather_map` and `world_weather_online` require an API key
+# (`api_key_owm` for Open Weather Map, `api_key_wwo` for World Weather Online)
+# You can specify multiple providers in the `providers` array to try them in order
+# Example: `providers = ["world_weather_online", "open_weather_map", "open_meteo"]`
+
+providers = ["open_meteo"]
 api_key_owm = ""
-# API key for World Weather Online (required if provider is `world_weather_online`)
 api_key_wwo = ""
-# Default units for temperature and wind speed (`metric` or `imperial`)
+
+# You can specify location either by `city` name or by `lat` and `lon` coordinates
+# If both are provided, coordinates will be used
+
+# city = "London"
+# lat = 51.5074
+# lon = -0.1278
+
+# Units can be `metric` (Celsius, m/s) or `imperial` (Fahrenheit, mph)
+
 units = "metric"
-# Default output format (`text` or `json`)
+
+# Output format can be `text` or `json`
+
 output_format = "text"
-# Language for weather description (e.g. "en" for English, "ru" for Russian, "es" for Spanish, etc.)
+
+# Language codes: `en` (English), `es` (Spanish), `ru` (Russian)
+# (more languages will be added in future)
+
 language = "en"
-# Show city name in output
-show_city_name = true
-# Use ANSI colors in terminal output
-use_colors = true
-# Use exact degrees for wind direction instead of arrows
-wind_in_degrees = true
-# Text output mode (`full`, `compact`, or `one_line`)
+
+# Text mode can be `full`, `compact`, or `one_line`
+# `compact` mode shows same info as `full` but without labels and trailing empty lines
+# `one_line` mode shows only temperature and weather condition in a single line
+
 text_mode = "full"
-# Live mode (periodically fetch and display updated weather data)
+
+# Show city name can be enabled with `show_city_name = true` to include the city name in the output
+# (only works if `city` is provided, not coordinates)
+
+show_city_name = false
+
+# Use colors can be enabled with `use_colors = true` to colorize the text output with ANSI colors
+
+use_colors = false
+
+# Wind in degrees can be enabled with `wind_in_degrees = true` to show wind direction in degrees
+
+wind_in_degrees = false
+
+# Live mode can be enabled with `live_mode = true` to update weather data every
+# `live_mode_interval` seconds (default is 300 seconds, i.e., 5 minutes)
+
 live_mode = false
-# Live mode interval in seconds
 live_mode_interval = 300
-# Align labels in text output to the right
-align_right = true
-# Use cache for geocoding results
-use_geocoding_cache = true
-# Verbosity level (0 = fatal, 1 = error, 2 = warn, 3 = info, 4 = debug, 5 = trace)
-# Currently used only to display (if verbosity >= 1) an error if request to weather provider fails
-verbosity = 0
+
+# Align right can be enabled with `align_right = true` to align labels to the right
+
+align_right = false
+
+# Use geocoding cache can be enabled with `use_geocoding_cache = true` to cache
+# previously looked up cities locally to avoid repeated API calls
+
+use_geocoding_cache = false
+
+# Verbosity level can be set with `verbose` (0 = errors, 1 = warnings, 2 = info, 3 = debug)
+
+verbose = 0
 ```
 
 ## Usage
