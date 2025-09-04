@@ -4,19 +4,29 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Upcoming]
+
+### Added
+
+- Added wind info in one-line mode.
+
+### Fixed
+
+- Fixed minor bugs and improved code quality.
+
 ## [0.3.1] - 2025-09-01
 
-## Added
+### Added
 
 - Added UV index to weather information display (only supported by World Weather Online provider for now).
 - Added dew point to weather information (calculated from temperature and humidity by Magnus formula).
 - Added `--align-right` CLI option to align labels to the right in text output (as `align_right` config option).
 
-## Changed
+### Changed
 
 - Changed default layout, now precipitation is shown in separate line, humidity and dew point are shown together.
 
-## Fixed
+### Fixed
 
 - Fixed bug with World Weather Online not working in different languages.
 - Minor code improvements and optimizations.
