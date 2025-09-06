@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Upcoming]
+## [0.3.3] - 2025-09-07
 
 ### Added
 
@@ -13,6 +13,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- Slightly changed default colors for better readability.
 - Improved code quality and maintainability.
 
 ## [0.3.2] - 2025-09-04

@@ -134,6 +134,10 @@ use_geocoding_cache = false
 # Verbosity level can be set with `verbose` (0 = errors, 1 = warnings, 2 = info, 3 = debug)
 
 verbose = 0
+
+# API HTTP client timeout in seconds (default is 10 seconds)
+
+connect_timeout = 10
 ```
 
 ## Usage
