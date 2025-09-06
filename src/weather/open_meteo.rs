@@ -1,4 +1,3 @@
-use crate::cache::{cache_location, get_cached_location};
 use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
@@ -6,6 +5,7 @@ use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
 use crate::weather::{GetWeather, LookUpCity};
 use reqwest::blocking::Client;
 use serde::Deserialize;
+use serde_derive::Serialize;
 
 const GEO_API_URL: &str = "https://geocoding-api.open-meteo.com/v1/search";
 const WEATHER_API_URL: &str = "https://api.open-meteo.com/v1/forecast";
@@ -102,6 +102,23 @@ struct CurrentWeather {
     weather_code: u8,
 }
 
+#[derive(Debug, Serialize)]
+struct GeocodingRequest<'a> {
+    name: &'a str,
+    count: u8,
+    language: &'a str,
+}
+
+impl<'a> GeocodingRequest<'a> {
+    pub fn new(name: &'a str, language: Language) -> Self {
+        Self {
+            name,
+            count: 1,
+            language: language.code(),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct GeocodingResponse {
     results: Option<Vec<GeocodingLocation>>,
@@ -118,6 +135,12 @@ impl GeocodingResponse {
         self.reason
             .clone()
             .unwrap_or_else(|| "Unknown error".to_string())
+    }
+
+    pub fn into_location(self) -> Option<Location> {
+        self.results
+            .and_then(|mut results| results.pop())
+            .map(Location::from)
     }
 }
 
@@ -151,22 +174,9 @@ struct WeatherAPIRequest<'a> {
 impl LookUpCity for OpenMeteo {
     fn lookup_city(&self, client: &Client, config: &Config) -> Result<Location, RustormyError> {
         let city = config.city().ok_or(RustormyError::NoLocationProvided)?;
-        if config.use_geocoding_cache() {
-            let cached_location = get_cached_location(city, config.language())?;
-            if let Some(location) = cached_location {
-                return Ok(location);
-            }
-        }
 
-        let response = client
-            .get(GEO_API_URL)
-            .query(&[
-                ("name", city),
-                ("count", "1"),
-                ("language", config.language().code()),
-            ])
-            .send()?;
-
+        let request = GeocodingRequest::new(city, config.language());
+        let response = client.get(GEO_API_URL).query(&request).send()?;
         let data: GeocodingResponse = response.json()?;
 
         if data.is_error() {
@@ -174,14 +184,8 @@ impl LookUpCity for OpenMeteo {
         }
 
         let location = data
-            .results
-            .and_then(|mut results| results.pop())
-            .ok_or_else(|| RustormyError::CityNotFound(city.to_string()))?
-            .into();
-
-        if config.use_geocoding_cache() {
-            cache_location(city, config.language(), &location)?;
-        }
+            .into_location()
+            .ok_or_else(|| RustormyError::CityNotFound(city.to_string()))?;
 
         Ok(location)
     }

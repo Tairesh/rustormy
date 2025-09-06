@@ -1,4 +1,3 @@
-use crate::cache::cache_location;
 use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
@@ -13,11 +12,41 @@ const WEATHER_API_URL: &str = "https://api.openweathermap.org/data/2.5/weather";
 #[derive(Debug, Default)]
 pub struct OpenWeatherMap {}
 
+#[derive(Debug, serde::Serialize)]
+struct GeocodingApiRequest<'a> {
+    q: &'a str,
+    limit: u8,
+    appid: &'a str,
+    lang: &'a str,
+}
+
+impl<'a> GeocodingApiRequest<'a> {
+    pub fn new(city: &'a str, config: &'a Config) -> Result<Self, RustormyError> {
+        let api_key = config.api_key_owm().ok_or(RustormyError::MissingApiKey)?;
+        Ok(Self {
+            q: city,
+            limit: 1,
+            appid: api_key,
+            lang: config.language().code(),
+        })
+    }
+}
+
 #[derive(Debug, serde::Deserialize)]
 #[serde(untagged)]
 enum GeocodingApiResponse {
     Ok(Vec<GeocodingLocation>),
     Err { message: String },
+}
+
+impl GeocodingApiResponse {
+    pub fn into_location(self) -> Option<Location> {
+        if let GeocodingApiResponse::Ok(mut locations) = self {
+            return locations.pop().map(Location::from);
+        }
+
+        None
+    }
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -154,41 +183,19 @@ impl<'a> WeatherAPIRequest<'a> {
 impl LookUpCity for OpenWeatherMap {
     fn lookup_city(&self, client: &Client, config: &Config) -> Result<Location, RustormyError> {
         let city = config.city().ok_or(RustormyError::NoLocationProvided)?;
-        if config.use_geocoding_cache() {
-            let cached_location = crate::cache::get_cached_location(city, config.language())?;
-            if let Some(location) = cached_location {
-                return Ok(location);
-            }
+
+        let request = GeocodingApiRequest::new(city, config)?;
+        let response = client.get(GEO_API_URL).query(&request).send()?;
+        let data: GeocodingApiResponse = response.json()?;
+
+        if let GeocodingApiResponse::Err { message } = data {
+            return Err(RustormyError::ApiReturnedError(message));
         }
+        let location = data
+            .into_location()
+            .ok_or(RustormyError::CityNotFound(city.to_string()))?;
 
-        let api_key = config.api_key_owm().ok_or(RustormyError::MissingApiKey)?;
-
-        let response = client
-            .get(GEO_API_URL)
-            .query(&[
-                ("q", city),
-                ("limit", "1"),
-                ("appid", api_key),
-                ("lang", config.language().code()),
-            ])
-            .send()?;
-
-        let response: GeocodingApiResponse = response.json()?;
-
-        match response {
-            GeocodingApiResponse::Err { message } => Err(RustormyError::ApiReturnedError(message)),
-            GeocodingApiResponse::Ok(mut locations) => {
-                if let Some(location) = locations.pop() {
-                    let location = location.into();
-                    if config.use_geocoding_cache() {
-                        cache_location(city, config.language(), &location)?;
-                    }
-                    Ok(location)
-                } else {
-                    Err(RustormyError::CityNotFound(city.to_string()))
-                }
-            }
-        }
+        Ok(location)
     }
 }
 

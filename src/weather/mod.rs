@@ -20,9 +20,28 @@ pub trait LookUpCity {
                 latitude: lat,
                 longitude: lon,
             }),
-            (None, Some(city)) if !city.is_empty() => self.lookup_city(client, config),
+            (None, Some(city)) if !city.is_empty() => self.lookup_city_cached(client, config),
             _ => Err(RustormyError::NoLocationProvided),
         }
+    }
+
+    fn lookup_city_cached(
+        &self,
+        client: &Client,
+        config: &Config,
+    ) -> Result<Location, RustormyError> {
+        let city = config.city().ok_or(RustormyError::NoLocationProvided)?;
+        if config.use_geocoding_cache() {
+            let cached_location = crate::cache::get_cached_location(city, config.language())?;
+            if let Some(location) = cached_location {
+                return Ok(location);
+            }
+        }
+        let location = self.lookup_city(client, config)?;
+        if config.use_geocoding_cache() {
+            crate::cache::cache_location(city, config.language(), &location)?;
+        }
+        Ok(location)
     }
 }
 
