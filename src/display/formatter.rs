@@ -1,7 +1,9 @@
 use crate::config::Config;
+use crate::display::color::{AnsiColor, colored_text};
+use crate::display::theme::{ColorTheme, condition_color};
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
-use crate::models::{Language, OutputFormat, TextMode, Units, Weather, WeatherConditionIcon};
+use crate::models::{Language, OutputFormat, TextMode, Units, Weather};
 use std::fmt::Display;
 
 #[allow(clippy::struct_excessive_bools)]
@@ -15,6 +17,7 @@ struct FormatterConfig {
     use_wind_in_degrees: bool,
     units: Units,
     language: Language,
+    color_theme: ColorTheme,
 }
 
 impl FormatterConfig {
@@ -49,6 +52,10 @@ impl FormatterConfig {
     pub fn use_wind_in_degrees(&self) -> bool {
         self.use_wind_in_degrees
     }
+
+    pub fn color_theme(&self) -> &ColorTheme {
+        &self.color_theme
+    }
 }
 
 impl From<&Config> for FormatterConfig {
@@ -62,55 +69,13 @@ impl From<&Config> for FormatterConfig {
             units: config.units(),
             language: config.language(),
             use_wind_in_degrees: config.use_wind_in_degrees(),
+            color_theme: ColorTheme::default(),
         }
     }
 }
 
 pub struct WeatherFormatter {
     config: FormatterConfig,
-}
-
-#[derive(Debug, Clone, Copy)]
-#[allow(dead_code)]
-enum AnsiColor {
-    Red = 31,
-    Green = 32,
-    Yellow = 33,
-    Blue = 34,
-    Magenta = 35,
-    Cyan = 36,
-    White = 37,
-    BrightBlack = 90,
-    BrightRed = 91,
-    BrightGreen = 92,
-    BrightYellow = 93,
-    BrightBlue = 94,
-    BrightMagenta = 95,
-    BrightCyan = 96,
-    BrightWhite = 97,
-}
-
-impl Display for AnsiColor {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", *self as u8)
-    }
-}
-
-impl From<WeatherConditionIcon> for AnsiColor {
-    fn from(icon: WeatherConditionIcon) -> Self {
-        match icon {
-            WeatherConditionIcon::Unknown
-            | WeatherConditionIcon::Fog
-            | WeatherConditionIcon::Cloudy => AnsiColor::White,
-            WeatherConditionIcon::Sunny => AnsiColor::BrightYellow,
-            WeatherConditionIcon::PartlyCloudy => AnsiColor::Yellow,
-            WeatherConditionIcon::LightShowers | WeatherConditionIcon::HeavyShowers => {
-                AnsiColor::BrightBlue
-            }
-            WeatherConditionIcon::LightSnow | WeatherConditionIcon::HeavySnow => AnsiColor::Cyan,
-            WeatherConditionIcon::Thunderstorm => AnsiColor::BrightRed,
-        }
-    }
 }
 
 fn make_line(
@@ -142,14 +107,10 @@ fn label(text: &'static str, config: &FormatterConfig) -> String {
         format!("{translated:<12}")
     };
     if config.use_colors() {
-        colored_text(padded, AnsiColor::BrightBlue)
+        colored_text(padded, config.color_theme.label)
     } else {
         padded
     }
-}
-
-fn colored_text(text: impl Display, color: AnsiColor) -> String {
-    format!("\x1b[{color}m{text}\x1b[0m")
 }
 
 const fn wind_deg_to_symbol(deg: u16) -> &'static str {
@@ -194,6 +155,7 @@ impl WeatherFormatter {
     }
 
     fn format_one_line(&self, weather: Weather) -> String {
+        let color_theme = self.config.color_theme();
         let (temp_unit, wind_unit) = match self.config.units() {
             Units::Metric => ("°C", ll(self.config.language(), "m/s")),
             Units::Imperial => ("°F", ll(self.config.language(), "mph")),
@@ -201,7 +163,7 @@ impl WeatherFormatter {
         let emoji = weather.icon.emoji();
         let mut temperature = format!("{:.1}{}", weather.temperature, temp_unit);
         if self.config.use_colors() {
-            temperature = colored_text(temperature, AnsiColor::BrightYellow);
+            temperature = colored_text(temperature, color_theme.temperature);
         }
         let wind = if self.config.use_wind_in_degrees() {
             format!(
@@ -216,7 +178,7 @@ impl WeatherFormatter {
             )
         };
         let wind = if self.config.use_colors() {
-            colored_text(wind, AnsiColor::BrightRed)
+            colored_text(wind, color_theme.wind)
         } else {
             wind
         };
@@ -224,7 +186,7 @@ impl WeatherFormatter {
 
         if self.config.show_city_name() {
             let location = if self.config.use_colors() {
-                colored_text(weather.location_name, AnsiColor::BrightWhite)
+                colored_text(weather.location_name, color_theme.location)
             } else {
                 weather.location_name
             };
@@ -255,6 +217,7 @@ impl WeatherFormatter {
         } else {
             weather.icon.icon()
         };
+        let color_theme = self.config.color_theme();
 
         let mut output = Vec::with_capacity(if compact { 6 } else { 7 });
 
@@ -263,7 +226,7 @@ impl WeatherFormatter {
                 icon[0],
                 "Location",
                 weather.location_name,
-                AnsiColor::BrightWhite,
+                color_theme.location,
                 &self.config,
             ));
         } else if !compact {
@@ -278,7 +241,7 @@ impl WeatherFormatter {
             } else {
                 weather.description
             },
-            weather.icon.into(),
+            condition_color(weather.icon),
             &self.config,
         ));
 
@@ -291,7 +254,7 @@ impl WeatherFormatter {
                 ll(lang, "feels like"),
                 weather.feels_like
             ),
-            AnsiColor::BrightYellow,
+            color_theme.temperature,
             &self.config,
         ));
 
@@ -310,7 +273,7 @@ impl WeatherFormatter {
                     wind_deg_to_symbol(weather.wind_direction)
                 )
             },
-            AnsiColor::BrightRed,
+            color_theme.wind,
             &self.config,
         ));
 
@@ -318,7 +281,7 @@ impl WeatherFormatter {
             icon[4],
             "Precipitation",
             format!("{} {precip_unit}", weather.precipitation),
-            AnsiColor::Cyan,
+            color_theme.precipitation,
             &self.config,
         ));
 
@@ -326,7 +289,7 @@ impl WeatherFormatter {
             icon[5],
             "Pressure",
             format!("{} {}", weather.pressure, ll(lang, "hPa")),
-            AnsiColor::Green,
+            color_theme.pressure,
             &self.config,
         ));
 
@@ -338,7 +301,7 @@ impl WeatherFormatter {
                 weather.humidity,
                 ll(lang, "dew point")
             ),
-            AnsiColor::Blue,
+            color_theme.humidity,
             &self.config,
         ));
 
