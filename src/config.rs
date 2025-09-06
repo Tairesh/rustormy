@@ -172,10 +172,17 @@ pub struct Config {
     /// Verbosity level of output (0 = errors, 1 = warnings, 2 = info, 3 = debug)
     #[serde(default)]
     verbose: u8,
+
+    /// API HTTP client timeout in seconds
+    #[serde(default = "default_connect_timeout")]
+    connect_timeout: u64, // in seconds, default to 10
 }
 
 fn default_live_mode_interval() -> u64 {
     300
+}
+fn default_connect_timeout() -> u64 {
+    10
 }
 
 impl Default for Config {
@@ -202,13 +209,14 @@ impl Default for Config {
             align_right: false,
             use_geocoding_cache: false,
             verbose: 0,
+            connect_timeout: default_connect_timeout(),
         }
     }
 }
 
 impl Config {
     #[cfg(not(test))]
-    pub fn new(cli: &Cli) -> Result<Self, RustormyError> {
+    pub fn new(cli: Cli) -> Result<Self, RustormyError> {
         // Try to load config from file first
         let mut config = Self::load_from_file()?.unwrap_or_default();
 
@@ -219,7 +227,7 @@ impl Config {
     }
 
     #[cfg(test)]
-    pub fn new(cli: &Cli) -> Result<Self, RustormyError> {
+    pub fn new(cli: Cli) -> Result<Self, RustormyError> {
         let mut config = Self::default();
         config.merge_cli(cli);
         config.validate()?;
@@ -320,9 +328,9 @@ impl Config {
         Ok(self)
     }
 
-    fn merge_cli(&mut self, cli: &Cli) {
-        if let Some(city) = &cli.city {
-            self.city = Some(city.clone());
+    fn merge_cli(&mut self, cli: Cli) {
+        if let Some(city) = cli.city {
+            self.city = Some(city);
         }
         if let Some(lat) = cli.lat {
             self.lat = Some(lat);
@@ -551,6 +559,14 @@ impl Config {
 
     pub fn verbose(&self) -> u8 {
         self.verbose
+    }
+
+    pub fn connect_timeout(&self) -> u64 {
+        if self.connect_timeout == 0 {
+            default_connect_timeout()
+        } else {
+            self.connect_timeout
+        }
     }
 }
 

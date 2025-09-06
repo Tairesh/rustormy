@@ -1,3 +1,4 @@
+use crate::cli::Cli;
 use crate::config::Config;
 use crate::display::formatter::WeatherFormatter;
 use crate::errors::RustormyError;
@@ -20,10 +21,11 @@ pub struct App {
 
 impl App {
     pub fn new() -> Result<App, RustormyError> {
+        let mut config = Config::new(Cli::new())?;
         let client = Client::builder()
             .user_agent(concat!("rustormy/", env!("CARGO_PKG_VERSION")))
+            .timeout(Duration::from_secs(config.connect_timeout()))
             .build()?;
-        let mut config = Config::new(&crate::cli::Cli::new())?;
         let provider = GetWeatherProvider::new(config.provider().unwrap_or_default());
         let formatter = WeatherFormatter::new(&config);
         Ok(Self {

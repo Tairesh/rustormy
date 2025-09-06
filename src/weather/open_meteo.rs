@@ -26,10 +26,8 @@ impl OpenMeteoResponse {
         self.error.unwrap_or(false)
     }
 
-    pub fn error_reason(&self) -> String {
-        self.reason
-            .clone()
-            .unwrap_or_else(|| "Unknown error".to_string())
+    pub fn into_error_reason(self) -> String {
+        self.reason.unwrap_or_else(|| "Unknown error".to_string())
     }
 
     pub fn description(&self, lang: Language) -> &'static str {
@@ -131,10 +129,8 @@ impl GeocodingResponse {
         self.error.unwrap_or(false)
     }
 
-    pub fn error_reason(&self) -> String {
-        self.reason
-            .clone()
-            .unwrap_or_else(|| "Unknown error".to_string())
+    pub fn into_error_reason(self) -> String {
+        self.reason.unwrap_or_else(|| "Unknown error".to_string())
     }
 
     pub fn into_location(self) -> Option<Location> {
@@ -180,7 +176,7 @@ impl LookUpCity for OpenMeteo {
         let data: GeocodingResponse = response.json()?;
 
         if data.is_error() {
-            return Err(RustormyError::ApiReturnedError(data.error_reason()));
+            return Err(RustormyError::ApiReturnedError(data.into_error_reason()));
         }
 
         let location = data
@@ -215,7 +211,7 @@ impl GetWeather for OpenMeteo {
         let data: OpenMeteoResponse = response.json()?;
 
         if data.is_error() {
-            return Err(RustormyError::ApiReturnedError(data.error_reason()));
+            return Err(RustormyError::ApiReturnedError(data.into_error_reason()));
         }
 
         Ok(Weather {

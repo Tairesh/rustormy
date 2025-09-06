@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Upcoming]
+
+### Added
+
+- Added option `connect_timeout` to config file to set providers' APIs connection timeout in seconds (default is 10
+  seconds).
+
+### Changed
+
+- Improved code quality and maintainability.
+
 ## [0.3.2] - 2025-09-04
 
 ### Added

@@ -247,7 +247,7 @@ impl WwoError {
     fn get_message(&self) -> String {
         self.error
             .iter()
-            .map(|e| e.msg.clone())
+            .map(|e| e.msg.as_str())
             .collect::<Vec<_>>()
             .join(", ")
     }
