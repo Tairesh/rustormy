@@ -1,6 +1,7 @@
+use crate::models::Provider;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Debug, Error)]
 pub enum RustormyError {
     #[error("Failed to parse command line arguments: {0}")]
     CliError(#[from] clap::Error),
@@ -17,8 +18,8 @@ pub enum RustormyError {
     InvalidCoordinates { lat: f64, lon: f64 },
     #[error("No location provided. Please specify a city or coordinates.")]
     NoLocationProvided,
-    #[error("Missing API key for selected weather provider")]
-    MissingApiKey,
+    #[error("Missing API key for selected weather provider {0:?}")]
+    MissingApiKey(Provider),
     #[error("Invalid configuration: {0}")]
     InvalidConfiguration(&'static str),
     #[error("HTTP request failed: {0}")]

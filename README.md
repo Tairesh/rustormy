@@ -70,7 +70,91 @@ On Windows, it uses
 the [Known Folder](https://msdn.microsoft.com/en-us/library/windows/desktop/bb776911(v=vs.85).aspx) system.
 The configuration file will be located at `%APPDATA%\Roaming\rustormy\config.toml`.
 
-### API keys
+### Configuration file options
+
+#### Providers
+
+Default provider is `open_meteo`.
+
+```toml
+providers = ["open_meteo"]
+```
+
+Possible providers: `open_meteo`, `open_weather_map`, `world_weather_online`, `weather_api`.
+You can also use short names: `om`, `owm`, `wwo`, `wa`, respectively.
+Note that all providers except `open_meteo` require an API key.
+You can specify multiple providers in the `providers` array to try them in order.
+
+Example:
+
+```toml
+providers = ["weather_api", "world_weather_online", "open_weather_map", "open_meteo"]
+```
+
+---
+
+#### Location
+
+You can specify location either by `city` name or by `lat` and `lon` coordinates
+If both are provided, coordinates will be used.
+You can skip this section to provide location via command line options.
+
+Example:
+
+```toml
+city = "London"
+lat = 51.5074
+lon = -0.1278
+```
+
+---
+
+#### Live mode
+
+Live mode can be enabled with `live_mode = true` to update weather data every `live_mode_interval` seconds
+(default is 300 seconds, i.e., 5 minutes)
+
+```toml
+live_mode = false
+live_mode_interval = 300
+```
+
+---
+
+#### Geocoding cache
+
+Geocoding cache can be enabled with `use_geocoding_cache = true` to cache
+previously looked up cities locally to avoid repeated API calls.
+Note that this cache is only for geocoding (getting coordinates from city names), not for weather data.
+Also, World Weather Online and WeatherAPI.com providers do not require geocoding, so caching is not needed for them.
+
+```toml
+use_geocoding_cache = false
+```
+
+---
+
+#### Verbosity level
+
+Verbosity level can be set with `verbose` option (0 - no verbose, 1 - show errors)
+
+```toml
+verbose = 0
+```
+
+---
+
+#### Connect timeout
+
+API HTTP client timeout in seconds (default is 10 seconds)
+
+```toml
+connect_timeout = 10
+```
+
+---
+
+#### API keys
 
 Some weather data providers require an API key to access their services.
 You can obtain free API keys by signing up on their websites:
@@ -79,96 +163,56 @@ You can obtain free API keys by signing up on their websites:
 - [World Weather Online](https://www.worldweatheronline.com/developer/)
 - [WeatherAPI.com](https://www.weatherapi.com/signup.aspx)
 
-### Default configuration file
+```toml
+[api_keys]
+open_weather_map = ""
+world_weather_online = ""
+weather_api = ""
+```
+
+---
+
+#### Formatting options
 
 ```toml
-# Rustormy Configuration File
-# This file is in TOML format. See https://toml.io/ for details
-# For more details, see the documentation at https://github.com/Tairesh/rustormy/tree/main?tab=readme-ov-file#configuration
-
-# Possible providers: `open_meteo`, `open_weather_map`, `world_weather_online`, `weather_api`
-# Note that all providers except `open_meteo` require an API key
-# You can specify multiple providers in the `providers` array to try them in order
-# Example: `providers = ["world_weather_online", "open_weather_map", "open_meteo"]`
-
-providers = ["open_meteo"]
-
-# API key for Open Weather Map (required if using `open_weather_map` provider)
-# Get your free API key from https://home.openweathermap.org/users/sign_up
-
-api_key_owm = ""
-
-# API key for World Weather Online (required if using `world_weather_online` provider)
-# Get your free API key from https://www.worldweatheronline.com/developer/
-
-api_key_wwo = ""
-
-# API key for WeatherAPI.com (required if using `weather_api` provider)
-# Get your free API key from https://www.weatherapi.com/signup.aspx
-
-api_key_wa = ""
-
-# You can specify location either by `city` name or by `lat` and `lon` coordinates
-# If both are provided, coordinates will be used
-
-# city = "London"
-# lat = 51.5074
-# lon = -0.1278
-
-# Units can be `metric` (Celsius, m/s) or `imperial` (Fahrenheit, mph)
-
-units = "metric"
-
+[format]
 # Output format can be `text` or `json`
-
 output_format = "text"
-
-# Language codes: `en` (English), `es` (Spanish), `ru` (Russian)
-# (more languages will be added in future)
-
-language = "en"
-
 # Text mode can be `full`, `compact`, or `one_line`
 # `compact` mode shows same info as `full` but without labels and trailing empty lines
 # `one_line` mode shows only temperature and weather condition in a single line
-
 text_mode = "full"
-
-# Show city name can be enabled with `show_city_name = true` to include the city name in the output
-# (only works if `city` is provided, not coordinates)
-
-show_city_name = false
-
-# Use colors can be enabled with `use_colors = true` to colorize the text output with ANSI colors
-
+# If `use_colors` is set to true, ANSI colors will be used in text output
 use_colors = false
-
-# Wind in degrees can be enabled with `wind_in_degrees = true` to show wind direction in degrees
-
-wind_in_degrees = false
-
-# Live mode can be enabled with `live_mode = true` to update weather data every
-# `live_mode_interval` seconds (default is 300 seconds, i.e., 5 minutes)
-
-live_mode = false
-live_mode_interval = 300
-
-# Align right can be enabled with `align_right = true` to align labels to the right
-
+# If `show_city_name` is set to true, city name will be shown in output (if available)
+show_city_name = false
+# If `align_right` is set to true, labels will be aligned to the right in text output
 align_right = false
+# If `wind_in_degrees` is set to true, wind direction will be shown in degrees (e.g., 270°) instead of arrows
+wind_in_degrees = false
+# Units can be `metric` (Celsius, m/s, mm) or `imperial` (Fahrenheit, mph, inches)
+units = "metric"
+# Language codes: `en` (English), `es` (Spanish), `ru` (Russian)
+language = "en"
+```
 
-# Use geocoding cache can be enabled with `use_geocoding_cache = true` to cache
-# previously looked up cities locally to avoid repeated API calls
+---
 
-use_geocoding_cache = false
+#### Color theme
 
-# Verbosity level can be set with `verbose` (0 = errors, 1 = warnings, 2 = info, 3 = debug)
+You can customize colors for output elements using ANSI colors.
+Supported colors are: `Black`, `Red`, `Green`, `Yellow`, `Blue`, `Magenta`, `Cyan`, `White`,
+`BrightBlack`, `BrightRed`, `BrightGreen`, `BrightYellow`, `BrightBlue`, `BrightMagenta`, `BrightCyan`, `BrightWhite`.
 
-verbose = 0
-
-# API HTTP client timeout in seconds (default is 10 seconds)
-
-connect_timeout = 10
+```toml
+[format.color_theme]
+label = "BrightBlue"
+location = "BrightWhite"
+temperature = "BrightYellow"
+wind = "BrightRed"
+precipitation = "BrightCyan"
+pressure = "BrightGreen"
+humidity = "Blue"
 ```
 
 ## Usage

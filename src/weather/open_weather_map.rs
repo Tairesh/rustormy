@@ -21,14 +21,13 @@ struct GeocodingApiRequest<'a> {
 }
 
 impl<'a> GeocodingApiRequest<'a> {
-    pub fn new(city: &'a str, config: &'a Config) -> Result<Self, RustormyError> {
-        let api_key = config.api_key_owm().ok_or(RustormyError::MissingApiKey)?;
-        Ok(Self {
+    pub fn new(city: &'a str, config: &'a Config) -> Self {
+        Self {
             q: city,
             limit: 1,
-            appid: api_key,
+            appid: &config.api_keys().open_weather_map,
             lang: config.language().code(),
-        })
+        }
     }
 }
 
@@ -176,15 +175,14 @@ struct WeatherAPIRequest<'a> {
 }
 
 impl<'a> WeatherAPIRequest<'a> {
-    pub fn new(location: &Location, config: &'a Config) -> Result<Self, RustormyError> {
-        let api_key = config.api_key_owm().ok_or(RustormyError::MissingApiKey)?;
-        Ok(Self {
+    pub fn new(location: &Location, config: &'a Config) -> Self {
+        Self {
             lat: location.latitude,
             lon: location.longitude,
             units: config.units(),
             lang: config.language(),
-            appid: api_key,
-        })
+            appid: &config.api_keys().open_weather_map,
+        }
     }
 }
 
@@ -192,7 +190,7 @@ impl LookUpCity for OpenWeatherMap {
     fn lookup_city(&self, client: &Client, config: &Config) -> Result<Location, RustormyError> {
         let city = config.city().ok_or(RustormyError::NoLocationProvided)?;
 
-        let request = GeocodingApiRequest::new(city, config)?;
+        let request = GeocodingApiRequest::new(city, config);
         let response = client.get(GEO_API_URL).query(&request).send()?;
         let data: GeocodingApiResponse = response.json()?;
 
@@ -211,7 +209,7 @@ impl GetWeather for OpenWeatherMap {
     fn get_weather(&self, client: &Client, config: &Config) -> Result<Weather, RustormyError> {
         let location = self.get_location(client, config)?;
 
-        let request = WeatherAPIRequest::new(&location, config)?;
+        let request = WeatherAPIRequest::new(&location, config);
         let response = client.get(WEATHER_API_URL).query(&request).send()?;
 
         let response: WeatherApiResponse = response.json()?;

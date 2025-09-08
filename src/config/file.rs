@@ -1,7 +1,7 @@
 use crate::config::Cli;
 use crate::config::legacy::LegacyConfig;
 use crate::errors::RustormyError;
-use crate::models::{Language, OutputFormat, Provider, TextMode, Units};
+use crate::models::{ColorTheme, Language, OutputFormat, Provider, TextMode, Units};
 #[cfg(not(test))]
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
@@ -10,8 +10,42 @@ use std::path::PathBuf;
 
 const CONFIG_FILE_HEADER: &str = "# Rustormy Configuration File
 # This file is in TOML format. See https://toml.io/ for details
-# For more details, see the documentation at https://github.com/Tairesh/rustormy/tree/main?tab=readme-ov-file#configuration
+#
+# Check the documentation for configuration options: https://github.com/Tairesh/rustormy/tree/main?tab=readme-ov-file#configuration
 ";
+
+#[derive(Debug, Default, Deserialize, Serialize)]
+pub struct ApiKeys {
+    #[serde(default)]
+    pub open_weather_map: String,
+    #[serde(default)]
+    pub world_weather_online: String,
+    #[serde(default)]
+    pub weather_api: String,
+}
+
+#[allow(clippy::struct_excessive_bools)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct FormatterConfig {
+    #[serde(default)]
+    pub output_format: OutputFormat,
+    #[serde(default)]
+    pub text_mode: TextMode,
+    #[serde(default)]
+    pub use_colors: bool,
+    #[serde(default)]
+    pub show_city_name: bool,
+    #[serde(default)]
+    pub align_right: bool,
+    #[serde(default)]
+    pub wind_in_degrees: bool,
+    #[serde(default)]
+    pub units: Units,
+    #[serde(default)]
+    pub language: Language,
+    #[serde(default)]
+    pub color_theme: ColorTheme,
+}
 
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Serialize, Deserialize)]
@@ -22,18 +56,8 @@ pub struct Config {
     #[serde(default)]
     providers: Vec<Provider>,
 
-    // TODO: provide more clear way to specify API keys for different providers (e.g., a map of provider to API key, or separate fields for each provider)
-    /// API key for Open Weather Map
-    #[serde(default)]
-    api_key_owm: String,
-
-    /// API key for World Weather Online
-    #[serde(default)]
-    api_key_wwo: String,
-
-    /// API key for WeatherAPI.com
-    #[serde(default)]
-    api_key_wa: String,
+    /// API keys for various providers
+    api_keys: ApiKeys,
 
     /// City name (required if lat/lon not provided)
     #[serde(default)]
@@ -47,34 +71,9 @@ pub struct Config {
     #[serde(default)]
     lon: Option<f64>,
 
-    /// Units for temperature and wind speed (`metric` or `imperial`)
+    /// Configuration for output formatting
     #[serde(default)]
-    units: Units,
-
-    /// Output format (`text` or `json`)
-    #[serde(default)]
-    output_format: OutputFormat,
-
-    /// Language code for weather output (e.g., `en`, `es`, `ru`, etc.)
-    #[serde(default)]
-    language: Language,
-
-    // TODO: refactor formatting options into a separate struct
-    /// Show city name in output (`true` or `false`)
-    #[serde(default)]
-    show_city_name: bool,
-
-    /// Use colors in output (`true` or `false`)
-    #[serde(default)]
-    use_colors: bool,
-
-    /// Use degrees for wind direction in output instead of arrows (`true` or `false`)
-    #[serde(default, alias = "use_degrees_for_wind")]
-    wind_in_degrees: bool,
-
-    /// Text mode for text output (`full`, `compact`, or `one_line`)
-    #[serde(default)]
-    text_mode: TextMode,
+    format: FormatterConfig,
 
     /// Live mode - continuously update weather data every `live_mode_interval` seconds (`true` or `false`)
     #[serde(default)]
@@ -83,11 +82,6 @@ pub struct Config {
     /// Live mode update interval in seconds (default: 300)
     #[serde(default = "default_live_mode_interval")]
     live_mode_interval: u64, // in seconds, default to 300 (5 minutes)
-
-    /// Align labels in text output to the right (`true` or `false`)
-    /// (Note: only affects text output in `full` mode, not `compact` or `one_line` modes)
-    #[serde(default)]
-    align_right: bool,
 
     /// Use geocoding cache (`true` or `false`)
     /// (if enabled, previously looked up cities will be cached locally to avoid repeated API calls)
@@ -114,22 +108,23 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             providers: vec![Provider::default()],
-            api_key_wwo: String::default(),
-            api_key_owm: String::default(),
-            api_key_wa: String::default(),
+            api_keys: ApiKeys::default(),
             city: None,
             lat: None,
             lon: None,
-            units: Units::default(),
-            output_format: OutputFormat::default(),
-            language: Language::default(),
-            show_city_name: false,
-            use_colors: false,
-            wind_in_degrees: false,
-            text_mode: TextMode::default(),
+            format: FormatterConfig {
+                output_format: OutputFormat::default(),
+                text_mode: TextMode::default(),
+                use_colors: false,
+                show_city_name: false,
+                align_right: false,
+                wind_in_degrees: false,
+                units: Units::default(),
+                language: Language::default(),
+                color_theme: ColorTheme::default(),
+            },
             live_mode: false,
             live_mode_interval: default_live_mode_interval(),
-            align_right: false,
             use_geocoding_cache: false,
             verbose: 0,
             connect_timeout: default_connect_timeout(),
@@ -223,13 +218,13 @@ impl Config {
             self.providers = vec![provider];
         }
         if let Some(units) = cli.units {
-            self.units = units;
+            self.format.units = units;
         }
         if let Some(output_format) = cli.output_format {
-            self.output_format = output_format;
+            self.format.output_format = output_format;
         }
         if let Some(language) = cli.language {
-            self.language = language;
+            self.format.language = language;
         }
         if let Some(live_mode_interval) = cli.live_mode_interval {
             self.live_mode_interval = live_mode_interval;
@@ -237,25 +232,25 @@ impl Config {
 
         // Boolean flags are set directly if the flag is present
         if cli.show_city_name {
-            self.show_city_name = true;
+            self.format.show_city_name = true;
         }
         if cli.use_colors {
-            self.use_colors = true;
+            self.format.use_colors = true;
         }
         if cli.use_degrees_for_wind {
-            self.wind_in_degrees = true;
+            self.format.wind_in_degrees = true;
         }
         if cli.compact_mode {
-            self.text_mode = TextMode::Compact;
+            self.format.text_mode = TextMode::Compact;
         }
         if cli.one_line_mode {
-            self.text_mode = TextMode::OneLine;
+            self.format.text_mode = TextMode::OneLine;
         }
         if let Some(text_mode) = cli.text_mode {
-            self.text_mode = text_mode;
+            self.format.text_mode = text_mode;
         }
         if cli.align_right {
-            self.align_right = true;
+            self.format.align_right = true;
         }
         if cli.live_mode {
             self.live_mode = true;
@@ -275,7 +270,7 @@ impl Config {
         }
 
         // Check if city name is to be shown but no city is provided
-        if self.city.is_none() && self.show_city_name {
+        if self.city.is_none() && self.format.show_city_name {
             return Err(RustormyError::InvalidConfiguration(
                 "Cannot show city name when no city is provided",
             ));
@@ -288,18 +283,24 @@ impl Config {
             ));
         }
 
-        // Check if API key is provided for Open Weather Map
+        // Check if API key is provided for OpenWeatherMap
         if self.providers.contains(&Provider::OpenWeatherMap)
-            && self.api_key_owm().is_none_or(str::is_empty)
+            && self.api_keys().open_weather_map.is_empty()
         {
-            return Err(RustormyError::MissingApiKey);
+            return Err(RustormyError::MissingApiKey(Provider::OpenWeatherMap));
         }
 
         // Check if API key is provided for World Weather Online
         if self.providers.contains(&Provider::WorldWeatherOnline)
-            && self.api_key_wwo().is_none_or(str::is_empty)
+            && self.api_keys().world_weather_online.is_empty()
         {
-            return Err(RustormyError::MissingApiKey);
+            return Err(RustormyError::MissingApiKey(Provider::WorldWeatherOnline));
+        }
+
+        // Check if API key is provided for WeatherAPI.com
+        if self.providers.contains(&Provider::WeatherApi) && self.api_keys().weather_api.is_empty()
+        {
+            return Err(RustormyError::MissingApiKey(Provider::WeatherApi));
         }
 
         // Validate coordinates if provided
@@ -312,6 +313,11 @@ impl Config {
         Ok(())
     }
 
+    #[cfg(test)]
+    pub fn providers(&self) -> &Vec<Provider> {
+        &self.providers
+    }
+
     /// Pop the first provider from the list to try
     pub fn provider(&mut self) -> Option<Provider> {
         if self.providers.is_empty() {
@@ -321,28 +327,8 @@ impl Config {
         }
     }
 
-    pub fn api_key_wwo(&self) -> Option<&str> {
-        if self.api_key_wwo.is_empty() {
-            return None;
-        }
-
-        Some(self.api_key_wwo.as_str())
-    }
-
-    pub fn api_key_owm(&self) -> Option<&str> {
-        if self.api_key_owm.is_empty() {
-            return None;
-        }
-
-        Some(self.api_key_owm.as_str())
-    }
-
-    pub fn api_key_wa(&self) -> Option<&str> {
-        if self.api_key_wa.is_empty() {
-            return None;
-        }
-
-        Some(self.api_key_wa.as_str())
+    pub fn api_keys(&self) -> &ApiKeys {
+        &self.api_keys
     }
 
     pub fn city(&self) -> Option<&str> {
@@ -363,64 +349,6 @@ impl Config {
         )
     }
 
-    pub fn units(&self) -> Units {
-        self.units
-    }
-
-    #[cfg(test)]
-    pub fn set_units(&mut self, units: Units) {
-        self.units = units;
-    }
-
-    pub fn language(&self) -> Language {
-        self.language
-    }
-
-    #[cfg(test)]
-    pub fn set_language(&mut self, language: Language) {
-        self.language = language;
-    }
-
-    pub fn output_format(&self) -> OutputFormat {
-        self.output_format
-    }
-
-    pub fn show_city_name(&self) -> bool {
-        self.show_city_name
-    }
-
-    #[cfg(test)]
-    pub fn set_show_city_name(&mut self, show: bool) {
-        self.show_city_name = show;
-    }
-
-    pub fn use_colors(&self) -> bool {
-        self.use_colors
-    }
-
-    #[cfg(test)]
-    pub fn set_use_colors(&mut self, use_colors: bool) {
-        self.use_colors = use_colors;
-    }
-
-    pub fn use_wind_in_degrees(&self) -> bool {
-        self.wind_in_degrees
-    }
-
-    #[cfg(test)]
-    pub fn set_wind_in_degrees(&mut self, use_degrees: bool) {
-        self.wind_in_degrees = use_degrees;
-    }
-
-    pub fn text_mode(&self) -> TextMode {
-        self.text_mode
-    }
-
-    #[cfg(test)]
-    pub fn set_text_mode(&mut self, text_mode: TextMode) {
-        self.text_mode = text_mode;
-    }
-
     pub fn live_mode(&self) -> bool {
         self.live_mode
     }
@@ -432,14 +360,21 @@ impl Config {
             self.live_mode_interval
         }
     }
-
-    pub fn align_right(&self) -> bool {
-        self.align_right
+    pub fn format(&self) -> &FormatterConfig {
+        &self.format
     }
 
     #[cfg(test)]
-    pub fn set_align_right(&mut self, align_right: bool) {
-        self.align_right = align_right;
+    pub fn set_format(&mut self, format: FormatterConfig) {
+        self.format = format;
+    }
+
+    pub fn language(&self) -> Language {
+        self.format.language
+    }
+
+    pub fn units(&self) -> Units {
+        self.format.units
     }
 
     pub fn use_geocoding_cache(&self) -> bool {
@@ -476,31 +411,46 @@ impl From<LegacyConfig> for Config {
         } else {
             value.text_mode
         };
+        let api_keys = if let Some(api_keys) = value.api_keys {
+            api_keys
+        } else {
+            ApiKeys {
+                open_weather_map: if value.api_key_owm.is_empty()
+                    && let Some(api_key) = value.api_key
+                {
+                    api_key
+                } else {
+                    value.api_key_owm
+                },
+                world_weather_online: value.api_key_wwo,
+                weather_api: value.api_key_wa,
+            }
+        };
+        let format = if let Some(format) = value.format {
+            format
+        } else {
+            FormatterConfig {
+                text_mode,
+                units: value.units,
+                output_format: value.output_format,
+                language: value.language,
+                show_city_name: value.show_city_name,
+                use_colors: value.use_colors,
+                wind_in_degrees: value.wind_in_degrees,
+                align_right: value.align_right,
+                color_theme: ColorTheme::default(),
+            }
+        };
 
         Self {
             providers,
-            api_key_owm: if value.api_key_owm.is_empty()
-                && let Some(api_key) = value.api_key
-            {
-                api_key
-            } else {
-                value.api_key_owm
-            },
-            api_key_wwo: value.api_key_wwo,
-            api_key_wa: value.api_key_wa,
+            api_keys,
             city: value.city,
             lat: value.lat,
             lon: value.lon,
-            units: value.units,
-            output_format: value.output_format,
-            language: value.language,
-            show_city_name: value.show_city_name,
-            use_colors: value.use_colors,
-            wind_in_degrees: value.wind_in_degrees,
-            text_mode,
+            format,
             live_mode: value.live_mode,
             live_mode_interval: value.live_mode_interval,
-            align_right: value.align_right,
             use_geocoding_cache: value.use_geocoding_cache,
             verbose: value.verbose,
             connect_timeout: value.connect_timeout,
@@ -511,34 +461,6 @@ impl From<LegacyConfig> for Config {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_migrate_compact_mode_true() {
-        let config = Config::from(LegacyConfig {
-            compact_mode: Some(true),
-            ..Default::default()
-        });
-        assert_eq!(config.text_mode, TextMode::Compact);
-    }
-
-    #[test]
-    fn test_migrate_compact_mode_false() {
-        let config = Config::from(LegacyConfig {
-            compact_mode: Some(false),
-            ..Default::default()
-        });
-        assert_eq!(config.text_mode, TextMode::Full);
-    }
-
-    #[test]
-    fn test_migrate_api_key() {
-        let config = Config::from(LegacyConfig {
-            api_key: Some("test_key".to_string()),
-            ..Default::default()
-        });
-        assert_eq!(config.api_key_owm, "test_key");
-        assert_eq!(config.api_key_wwo, "");
-    }
 
     #[test]
     fn test_validate_no_location() {
@@ -556,7 +478,10 @@ mod tests {
         let config = Config {
             lat: Some(51.5074),
             lon: Some(-0.1278),
-            show_city_name: true,
+            format: FormatterConfig {
+                show_city_name: true,
+                ..Default::default()
+            },
             ..Default::default()
         };
         let result = config.validate();
@@ -576,7 +501,10 @@ mod tests {
         };
         let result = config.validate();
         assert!(
-            matches!(result, Err(RustormyError::MissingApiKey)),
+            matches!(
+                result,
+                Err(RustormyError::MissingApiKey(Provider::OpenWeatherMap))
+            ),
             "Expected MissingApiKey error got {:?}",
             result
         );
@@ -591,7 +519,28 @@ mod tests {
         };
         let result = config.validate();
         assert!(
-            matches!(result, Err(RustormyError::MissingApiKey)),
+            matches!(
+                result,
+                Err(RustormyError::MissingApiKey(Provider::WorldWeatherOnline))
+            ),
+            "Expected MissingApiKey error got {:?}",
+            result
+        );
+    }
+
+    #[test]
+    fn test_validate_missing_api_key_wa() {
+        let config = Config {
+            providers: vec![Provider::WeatherApi],
+            city: Some("TestCity".to_string()),
+            ..Default::default()
+        };
+        let result = config.validate();
+        assert!(
+            matches!(
+                result,
+                Err(RustormyError::MissingApiKey(Provider::WeatherApi))
+            ),
             "Expected MissingApiKey error got {:?}",
             result
         );
@@ -647,8 +596,11 @@ mod tests {
         let config = Config {
             city: Some("TestCity".to_string()),
             providers: vec![Provider::OpenWeatherMap],
-            api_key_owm: "test_key".to_string(),
-            ..Default::default()
+            api_keys: ApiKeys {
+                open_weather_map: "test_key".to_string(),
+                ..ApiKeys::default()
+            },
+            ..Config::default()
         };
         let result = config.validate();
         assert!(
@@ -663,8 +615,11 @@ mod tests {
         let config = Config {
             city: Some("TestCity".to_string()),
             providers: vec![Provider::WorldWeatherOnline],
-            api_key_wwo: "test_key".to_string(),
-            ..Default::default()
+            api_keys: ApiKeys {
+                world_weather_online: "test_key".to_string(),
+                ..ApiKeys::default()
+            },
+            ..Config::default()
         };
         let result = config.validate();
         assert!(
@@ -675,14 +630,16 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_valid_config_with_old_api_key() {
-        let config = Config::from(LegacyConfig {
+    fn test_validate_valid_config_wa() {
+        let config = Config {
             city: Some("TestCity".to_string()),
-            providers: vec![Provider::OpenWeatherMap],
-            api_key: Some("test_key".to_string()),
-            api_key_owm: "".to_string(),
-            ..Default::default()
-        });
+            providers: vec![Provider::WeatherApi],
+            api_keys: ApiKeys {
+                weather_api: "test_key".to_string(),
+                ..ApiKeys::default()
+            },
+            ..Config::default()
+        };
         let result = config.validate();
         assert!(
             result.is_ok(),
@@ -699,28 +656,20 @@ mod tests {
                 Provider::OpenMeteo,
                 Provider::OpenWeatherMap,
                 Provider::WorldWeatherOnline,
+                Provider::WeatherApi,
             ],
-            api_key_owm: "test_key_owm".to_string(),
-            api_key_wwo: "test_key_wwo".to_string(),
-            ..Default::default()
+            api_keys: ApiKeys {
+                open_weather_map: "owm_key".to_string(),
+                world_weather_online: "wwo_key".to_string(),
+                weather_api: "wa_key".to_string(),
+            },
+            ..Config::default()
         };
         let result = config.validate();
         assert!(
             result.is_ok(),
             "Expected valid config, got error {:?}",
             result
-        );
-    }
-
-    #[test]
-    fn test_migrate_provider_to_providers() {
-        let config = Config::from(LegacyConfig {
-            provider: Some(Provider::OpenWeatherMap),
-            ..Default::default()
-        });
-        assert_eq!(
-            config.providers,
-            vec![Provider::OpenWeatherMap, Provider::default()]
         );
     }
 
@@ -738,6 +687,7 @@ mod tests {
         fs::remove_file(config_file_path).unwrap();
     }
 
+    // This test should be in legacy.rs, but uses too much of Config's private API to be there
     #[test]
     fn test_legacy_config_file_migration() {
         let mut legacy_config = LegacyConfig::default();
@@ -752,7 +702,7 @@ mod tests {
 
         // Check that loading the config migrates it correctly
         let config = Config::load_from_file(&config_file_path).unwrap().unwrap();
-        assert_eq!(config.api_key_owm, "legacy_key");
+        assert_eq!(config.api_keys.open_weather_map, "legacy_key");
         assert_eq!(
             config.providers,
             vec![Provider::OpenWeatherMap, Provider::default()]
@@ -762,7 +712,7 @@ mod tests {
         let content = fs::read_to_string(&config_file_path).unwrap();
         assert!(content.starts_with(CONFIG_FILE_HEADER));
         let parsed_config: Config = toml::from_str(&content).unwrap();
-        assert_eq!(parsed_config.api_key_owm, "legacy_key");
+        assert_eq!(parsed_config.api_keys.open_weather_map, "legacy_key");
         assert_eq!(
             parsed_config.providers,
             vec![Provider::OpenWeatherMap, Provider::default()]
@@ -815,7 +765,7 @@ mod tests {
         assert!(result.is_some(), "Expected default config to be created");
         let config = result.unwrap();
         assert_eq!(config.city(), Some("Test City"));
-        assert_eq!(config.api_key_owm(), Some("legacy_key"));
+        assert_eq!(config.api_keys().open_weather_map, "legacy_key");
         assert_eq!(config.providers, vec![Provider::OpenWeatherMap]);
 
         let content = fs::read_to_string(&config_file_path).unwrap();
@@ -831,18 +781,21 @@ mod tests {
         config.lat = Some(10.0);
         config.lon = Some(20.0);
         config.providers = vec![Provider::OpenMeteo];
-        config.units = Units::Metric;
-        config.output_format = OutputFormat::Text;
-        config.language = Language::English;
-        config.show_city_name = false;
-        config.use_colors = false;
-        config.wind_in_degrees = false;
-        config.text_mode = TextMode::Full;
         config.live_mode = false;
         config.live_mode_interval = 300;
-        config.align_right = false;
         config.use_geocoding_cache = true;
         config.verbose = 1;
+        config.format = FormatterConfig {
+            output_format: OutputFormat::Text,
+            text_mode: TextMode::Full,
+            use_colors: false,
+            show_city_name: false,
+            align_right: false,
+            wind_in_degrees: false,
+            units: Units::Metric,
+            language: Language::English,
+            color_theme: ColorTheme::default(),
+        };
 
         let cli = Cli {
             city: Some("CLI City".to_string()),
@@ -869,16 +822,16 @@ mod tests {
         assert_eq!(config.city(), Some("CLI City"));
         assert_eq!(config.coordinates(), Some((30.0, 40.0)));
         assert_eq!(config.providers, vec![Provider::OpenWeatherMap]);
-        assert_eq!(config.units, Units::Imperial);
-        assert_eq!(config.output_format, OutputFormat::Json);
-        assert_eq!(config.language, Language::Spanish);
-        assert!(config.show_city_name);
-        assert!(config.use_colors);
-        assert!(config.wind_in_degrees);
-        assert_eq!(config.text_mode, TextMode::Compact);
+        assert_eq!(config.format.units, Units::Imperial);
+        assert_eq!(config.format.output_format, OutputFormat::Json);
+        assert_eq!(config.format.language, Language::Spanish);
+        assert!(config.format.show_city_name);
+        assert!(config.format.use_colors);
+        assert!(config.format.wind_in_degrees);
+        assert_eq!(config.format.text_mode, TextMode::Compact);
         assert!(config.live_mode);
         assert_eq!(config.live_mode_interval, 600);
-        assert!(config.align_right);
+        assert!(config.format.align_right);
         assert!(!config.use_geocoding_cache);
         assert_eq!(config.verbose, 3);
     }

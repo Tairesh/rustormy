@@ -21,18 +21,17 @@ struct WeatherApiRequest<'a> {
 }
 
 impl<'a> WeatherApiRequest<'a> {
-    pub fn new(config: &'a Config) -> Result<Self, RustormyError> {
+    pub fn new(config: &'a Config) -> Self {
         let q = config.location_name();
-        let key = config.api_key_wa().ok_or(RustormyError::MissingApiKey)?;
         let lang = config.language().code();
 
-        Ok(Self {
-            key,
+        Self {
+            key: &config.api_keys().weather_api,
             q,
             lang,
             // TODO: air quality would be nice to have
             aqi: "no",
-        })
+        }
     }
 }
 
@@ -222,7 +221,7 @@ struct WeatherApiCondition {
 
 impl GetWeather for WeatherApi {
     fn get_weather(&self, client: &Client, config: &Config) -> Result<Weather, RustormyError> {
-        let request = WeatherApiRequest::new(config)?;
+        let request = WeatherApiRequest::new(config);
         let response = client.get(WEATHER_API_URL).query(&request).send()?;
         let data: WeatherApiResponse = response.json()?;
         match data {

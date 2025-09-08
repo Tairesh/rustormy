@@ -17,19 +17,18 @@ struct WwoRequestParams<'a> {
 }
 
 impl<'a> WwoRequestParams<'a> {
-    pub fn new(config: &'a Config) -> Result<Self, RustormyError> {
+    pub fn new(config: &'a Config) -> Self {
         let q = config.location_name();
-        let key = config.api_key_wwo().ok_or(RustormyError::MissingApiKey)?;
         let lang = config.language().code();
 
-        Ok(Self {
+        Self {
             q,
-            key,
+            key: &config.api_keys().world_weather_online,
             lang,
             format: "json",
             fx: "no",
             mca: "no",
-        })
+        }
     }
 }
 
@@ -277,7 +276,7 @@ pub struct WorldWeatherOnline {}
 
 impl GetWeather for WorldWeatherOnline {
     fn get_weather(&self, client: &Client, config: &Config) -> Result<Weather, RustormyError> {
-        let params = WwoRequestParams::new(config)?;
+        let params = WwoRequestParams::new(config);
         let response = client.get(WWO_API_URL).query(&params).send()?;
         let response: WwoResponse = response.json()?;
 

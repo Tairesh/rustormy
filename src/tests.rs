@@ -18,7 +18,7 @@ impl TestProvider {
     }
 
     fn mock_weather(config: &Config, location: Location) -> Weather {
-        let temperature = if config.units() == Units::Metric {
+        let temperature = if config.format().units == Units::Metric {
             20.0
         } else {
             68.0
@@ -28,7 +28,7 @@ impl TestProvider {
             temperature,
             feels_like: 19.5,
             humidity,
-            dew_point: tools::dew_point(temperature, humidity as f64, config.units()),
+            dew_point: tools::dew_point(temperature, humidity as f64, config.format().units),
             precipitation: 0.0,
             pressure: 1013,
             wind_speed: 5.0,

@@ -1,5 +1,4 @@
-use crate::display::color::AnsiColor;
-use crate::models::WeatherConditionIcon;
+use crate::models::{AnsiColor, ColorTheme, WeatherConditionIcon};
 
 pub fn condition_color(icon: WeatherConditionIcon) -> AnsiColor {
     match icon {
@@ -16,23 +15,11 @@ pub fn condition_color(icon: WeatherConditionIcon) -> AnsiColor {
     }
 }
 
-#[derive(Debug)]
-pub struct ColorTheme {
-    pub label: AnsiColor,
-    pub location: AnsiColor,
-    pub temperature: AnsiColor,
-    pub wind: AnsiColor,
-    pub precipitation: AnsiColor,
-    pub pressure: AnsiColor,
-    pub humidity: AnsiColor,
-}
-
 impl Default for ColorTheme {
     fn default() -> Self {
         Self::simple()
     }
 }
-
 impl ColorTheme {
     pub fn simple() -> Self {
         Self {

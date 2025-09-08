@@ -1,78 +1,10 @@
-use crate::config::Config;
-use crate::display::color::{AnsiColor, colored_text};
-use crate::display::theme::{ColorTheme, condition_color};
+use crate::config::{Config, FormatterConfig};
+use crate::display::color::colored_text;
+use crate::display::theme::condition_color;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
-use crate::models::{Language, OutputFormat, TextMode, Units, Weather};
+use crate::models::{AnsiColor, OutputFormat, TextMode, Units, Weather};
 use std::fmt::Display;
-
-#[allow(clippy::struct_excessive_bools)]
-#[derive(Debug)]
-struct FormatterConfig {
-    output_format: OutputFormat,
-    text_mode: TextMode,
-    use_colors: bool,
-    show_city_name: bool,
-    align_right: bool,
-    use_wind_in_degrees: bool,
-    units: Units,
-    language: Language,
-    color_theme: ColorTheme,
-}
-
-impl FormatterConfig {
-    pub fn output_format(&self) -> OutputFormat {
-        self.output_format
-    }
-
-    pub fn text_mode(&self) -> TextMode {
-        self.text_mode
-    }
-
-    pub fn use_colors(&self) -> bool {
-        self.use_colors
-    }
-
-    pub fn show_city_name(&self) -> bool {
-        self.show_city_name
-    }
-
-    pub fn align_right(&self) -> bool {
-        self.align_right
-    }
-
-    pub fn units(&self) -> Units {
-        self.units
-    }
-
-    pub fn language(&self) -> Language {
-        self.language
-    }
-
-    pub fn use_wind_in_degrees(&self) -> bool {
-        self.use_wind_in_degrees
-    }
-
-    pub fn color_theme(&self) -> &ColorTheme {
-        &self.color_theme
-    }
-}
-
-impl From<&Config> for FormatterConfig {
-    fn from(config: &Config) -> Self {
-        Self {
-            output_format: config.output_format(),
-            text_mode: config.text_mode(),
-            use_colors: config.use_colors(),
-            show_city_name: config.show_city_name(),
-            align_right: config.align_right(),
-            units: config.units(),
-            language: config.language(),
-            use_wind_in_degrees: config.use_wind_in_degrees(),
-            color_theme: ColorTheme::default(),
-        }
-    }
-}
 
 pub struct WeatherFormatter {
     config: FormatterConfig,
@@ -85,13 +17,13 @@ fn make_line(
     color: AnsiColor,
     config: &FormatterConfig,
 ) -> String {
-    let value = if config.use_colors() {
+    let value = if config.use_colors {
         colored_text(value, color)
     } else {
         value.to_string()
     };
 
-    if config.text_mode() == TextMode::Compact {
+    if config.text_mode == TextMode::Compact {
         format!("{i} {value}")
     } else {
         format!("{i} {} {value}", label(l, config))
@@ -99,14 +31,14 @@ fn make_line(
 }
 
 fn label(text: &'static str, config: &FormatterConfig) -> String {
-    let lang = config.language();
+    let lang = config.language;
     let translated = ll(lang, text).to_string() + ":";
-    let padded = if config.align_right() {
+    let padded = if config.align_right {
         format!("{translated:>12}")
     } else {
         format!("{translated:<12}")
     };
-    if config.use_colors() {
+    if config.use_colors {
         colored_text(padded, config.color_theme.label)
     } else {
         padded
@@ -122,29 +54,29 @@ const fn wind_deg_to_symbol(deg: u16) -> &'static str {
 impl WeatherFormatter {
     pub fn new(config: &Config) -> Self {
         Self {
-            config: config.into(),
+            config: config.format().clone(),
         }
     }
 
     pub fn display(&self, weather: Weather) {
-        match self.config.output_format() {
+        match self.config.output_format {
             OutputFormat::Json => self.display_json(&weather),
             OutputFormat::Text => self.display_text(weather),
         }
     }
 
     pub fn display_error(&self, error: &RustormyError) -> ! {
-        if self.config.output_format() == OutputFormat::Json {
-            let error_json = serde_json::json!({ "error": format!("{:?}", error) });
+        if self.config.output_format == OutputFormat::Json {
+            let error_json = serde_json::json!({ "error": format!("{}", error) });
             eprintln!("{error_json}");
         } else {
-            eprintln!("Error: {error:?}");
+            eprintln!("Error: {error}");
         }
         std::process::exit(1);
     }
 
     fn display_text(&self, weather: Weather) {
-        if self.config.text_mode() == TextMode::OneLine {
+        if self.config.text_mode == TextMode::OneLine {
             println!("{}", self.format_one_line(weather));
             return;
         }
@@ -155,17 +87,17 @@ impl WeatherFormatter {
     }
 
     fn format_one_line(&self, weather: Weather) -> String {
-        let color_theme = self.config.color_theme();
-        let (temp_unit, wind_unit) = match self.config.units() {
-            Units::Metric => ("°C", ll(self.config.language(), "m/s")),
-            Units::Imperial => ("°F", ll(self.config.language(), "mph")),
+        let color_theme = &self.config.color_theme;
+        let (temp_unit, wind_unit) = match self.config.units {
+            Units::Metric => ("°C", ll(self.config.language, "m/s")),
+            Units::Imperial => ("°F", ll(self.config.language, "mph")),
         };
         let emoji = weather.icon.emoji();
         let mut temperature = format!("{:.1}{}", weather.temperature, temp_unit);
-        if self.config.use_colors() {
+        if self.config.use_colors {
             temperature = colored_text(temperature, color_theme.temperature);
         }
-        let wind = if self.config.use_wind_in_degrees() {
+        let wind = if self.config.wind_in_degrees {
             format!(
                 "{:.1} {wind_unit} {}°",
                 weather.wind_speed, weather.wind_direction
@@ -177,15 +109,15 @@ impl WeatherFormatter {
                 wind_deg_to_symbol(weather.wind_direction)
             )
         };
-        let wind = if self.config.use_colors() {
+        let wind = if self.config.use_colors {
             colored_text(wind, color_theme.wind)
         } else {
             wind
         };
         let value = format!("{emoji} {temperature} {wind}");
 
-        if self.config.show_city_name() {
-            let location = if self.config.use_colors() {
+        if self.config.show_city_name {
+            let location = if self.config.use_colors {
                 colored_text(weather.location_name, color_theme.location)
             } else {
                 weather.location_name
@@ -198,12 +130,12 @@ impl WeatherFormatter {
 
     fn format_text(&self, weather: Weather) -> Vec<String> {
         let (compact, colors, name, lang) = (
-            self.config.text_mode() == TextMode::Compact,
-            self.config.use_colors(),
-            self.config.show_city_name(),
-            self.config.language(),
+            self.config.text_mode == TextMode::Compact,
+            self.config.use_colors,
+            self.config.show_city_name,
+            self.config.language,
         );
-        let (temp_unit, wind_unit, precip_unit) = match self.config.units() {
+        let (temp_unit, wind_unit, precip_unit) = match self.config.units {
             Units::Metric => ("°C", ll(lang, "m/s"), ll(lang, "mm")),
             Units::Imperial => ("°F", ll(lang, "mph"), ll(lang, "inch")),
         };
@@ -212,7 +144,7 @@ impl WeatherFormatter {
         } else {
             weather.icon.icon()
         };
-        let color_theme = self.config.color_theme();
+        let color_theme = &self.config.color_theme;
 
         let mut output = Vec::with_capacity(if compact { 6 } else { 7 });
 
@@ -256,7 +188,7 @@ impl WeatherFormatter {
         output.push(make_line(
             icon[3],
             "Wind",
-            if self.config.use_wind_in_degrees() {
+            if self.config.wind_in_degrees {
                 format!(
                     "{:.1} {wind_unit} {}°",
                     weather.wind_speed, weather.wind_direction
@@ -440,7 +372,10 @@ mod tests {
     fn test_format_text_compact() {
         let weather = sample_weather();
         let mut config = Config::default();
-        config.set_text_mode(TextMode::Compact);
+        config.set_format(FormatterConfig {
+            text_mode: TextMode::Compact,
+            ..Default::default()
+        });
         let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
@@ -557,7 +492,10 @@ mod tests {
     fn test_format_text_with_city_name() {
         let weather = sample_weather();
         let mut config = Config::default();
-        config.set_show_city_name(true);
+        config.set_format(FormatterConfig {
+            show_city_name: true,
+            ..Default::default()
+        });
         let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
@@ -578,7 +516,10 @@ mod tests {
     fn test_format_text_with_color() {
         let weather = sample_weather();
         let mut config = Config::default();
-        config.set_use_colors(true);
+        config.set_format(FormatterConfig {
+            use_colors: true,
+            ..Default::default()
+        });
         let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
@@ -597,7 +538,10 @@ mod tests {
     fn test_format_text_imperial_units() {
         let weather = sample_weather();
         let mut config = Config::default();
-        config.set_units(Units::Imperial);
+        config.set_format(FormatterConfig {
+            units: Units::Imperial,
+            ..Default::default()
+        });
         let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
@@ -623,7 +567,10 @@ mod tests {
     fn test_format_text_wind_degrees() {
         let weather = sample_weather();
         let mut config = Config::default();
-        config.set_wind_in_degrees(true);
+        config.set_format(FormatterConfig {
+            wind_in_degrees: true,
+            ..Default::default()
+        });
         let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
@@ -644,7 +591,10 @@ mod tests {
     fn test_format_text_different_language() {
         let weather = sample_weather();
         let mut config = Config::default();
-        config.set_language(Language::Russian);
+        config.set_format(FormatterConfig {
+            language: Language::Russian,
+            ..Default::default()
+        });
         let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
@@ -660,8 +610,11 @@ mod tests {
     fn test_one_line_mode_with_city_name() {
         let weather = sample_weather();
         let mut config = Config::default();
-        config.set_show_city_name(true);
-        config.set_text_mode(TextMode::OneLine);
+        config.set_format(FormatterConfig {
+            show_city_name: true,
+            text_mode: TextMode::OneLine,
+            ..Default::default()
+        });
         let formatter = WeatherFormatter::new(&config);
         let line = formatter.format_one_line(weather);
 
@@ -691,7 +644,10 @@ mod tests {
     fn test_one_line_mode_without_city_name() {
         let weather = sample_weather();
         let mut config = Config::default();
-        config.set_text_mode(TextMode::OneLine);
+        config.set_format(FormatterConfig {
+            text_mode: TextMode::OneLine,
+            ..Default::default()
+        });
         let formatter = WeatherFormatter::new(&config);
         let line = formatter.format_one_line(weather);
 
@@ -716,7 +672,10 @@ mod tests {
     fn test_align_right() {
         let weather = sample_weather();
         let mut config = Config::default();
-        config.set_align_right(true);
+        config.set_format(FormatterConfig {
+            align_right: true,
+            ..Default::default()
+        });
         let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
