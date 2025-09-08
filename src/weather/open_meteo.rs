@@ -2,8 +2,7 @@ use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
 use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
-use crate::tools;
-use crate::weather::{GetWeather, LookUpCity};
+use crate::weather::{GetWeather, LookUpCity, tools};
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 

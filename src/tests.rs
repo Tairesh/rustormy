@@ -1,12 +1,10 @@
 #![cfg(test)]
 use crate::models::Location;
-use crate::weather::LookUpCity;
+use crate::weather::{LookUpCity, tools};
 use crate::{
-    cli::Cli,
-    config::Config,
+    config::{Cli, Config},
     errors::RustormyError,
     models::{Units, Weather, WeatherConditionIcon},
-    tools,
     weather::GetWeather,
 };
 use clap::Parser;

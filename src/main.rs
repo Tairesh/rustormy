@@ -1,13 +1,11 @@
 mod app;
 mod cache;
-mod cli;
 mod config;
 mod display;
 mod errors;
 mod models;
 #[cfg(test)]
 mod tests;
-mod tools;
 mod weather;
 
 use app::App;

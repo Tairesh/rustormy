@@ -1,8 +1,7 @@
 use crate::config::Config;
 use crate::errors::RustormyError;
 use crate::models::{Language, Units, Weather, WeatherConditionIcon};
-use crate::tools;
-use crate::weather::GetWeather;
+use crate::weather::{GetWeather, tools};
 use reqwest::blocking::Client;
 
 const WWO_API_URL: &str = "https://api.worldweatheronline.com/premium/v1/weather.ashx";

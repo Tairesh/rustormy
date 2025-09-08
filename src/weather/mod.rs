@@ -48,5 +48,6 @@ pub trait LookUpCity {
 mod open_meteo;
 mod open_weather_map;
 mod provider;
+pub mod tools;
 mod weather_api;
 mod world_weather_online;

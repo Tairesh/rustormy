@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Upcoming]
+
+### Fixed
+
+- Refactored config file handling to support backward compatibility and easier future changes.
+
 ## [0.3.4] - 2025-09-08
 
 ### Added

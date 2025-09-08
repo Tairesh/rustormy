@@ -1,5 +1,4 @@
-use crate::cli::Cli;
-use crate::config::Config;
+use crate::config::{Cli, Config};
 use crate::display::formatter::WeatherFormatter;
 use crate::errors::RustormyError;
 use crate::models::Provider;
