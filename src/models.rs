@@ -16,6 +16,9 @@ pub enum Provider {
     #[serde(alias = "wwo")]
     #[value(alias = "wwo")]
     WorldWeatherOnline,
+    #[serde(alias = "wa")]
+    #[value(alias = "wa")]
+    WeatherApi,
 }
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Serialize, Deserialize, ValueEnum)]

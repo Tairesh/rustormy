@@ -3,6 +3,7 @@ use crate::config::Config;
 use crate::models::Provider;
 use crate::weather::open_meteo::OpenMeteo;
 use crate::weather::open_weather_map::OpenWeatherMap;
+use crate::weather::weather_api::WeatherApi;
 use crate::weather::world_weather_online::WorldWeatherOnline;
 use enum_dispatch::enum_dispatch;
 use reqwest::blocking::Client;
@@ -32,6 +33,7 @@ pub enum GetWeatherProvider {
     OpenMeteo,
     OpenWeatherMap,
     WorldWeatherOnline,
+    WeatherApi,
 }
 
 provider_conversions!(
@@ -39,7 +41,8 @@ provider_conversions!(
     Provider,
     OpenMeteo,
     OpenWeatherMap,
-    WorldWeatherOnline
+    WorldWeatherOnline,
+    WeatherApi
 );
 
 impl GetWeatherProvider {

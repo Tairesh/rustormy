@@ -14,15 +14,27 @@ const CONFIG_FILE_EXAMPLE: &str = r#"# Rustormy Configuration File
 # This file is in TOML format. See https://toml.io/ for details
 # For more details, see the documentation at https://github.com/Tairesh/rustormy/tree/main?tab=readme-ov-file#configuration
 #
-# Possible providers: `open_meteo`, `open_weather_map`, `world_weather_online`
-# Note that `open_weather_map` and `world_weather_online` require an API key
-# (`api_key_owm` for Open Weather Map, `api_key_wwo` for World Weather Online)
+# Possible providers: `open_meteo`, `open_weather_map`, `world_weather_online`, `weather_api`
+# Note that all providers except `open_meteo` require an API key
 # You can specify multiple providers in the `providers` array to try them in order
 # Example: `providers = ["world_weather_online", "open_weather_map", "open_meteo"]`
 
 providers = ["open_meteo"]
+
+# API key for Open Weather Map (required if using `open_weather_map` provider)
+# Get your free API key from https://home.openweathermap.org/users/sign_up
+
 api_key_owm = ""
+
+# API key for World Weather Online (required if using `world_weather_online` provider)
+# Get your free API key from https://www.worldweatheronline.com/developer/
+
 api_key_wwo = ""
+
+# API key for WeatherAPI.com (required if using `weather_api` provider)
+# Get your free API key from https://www.weatherapi.com/signup.aspx
+
+api_key_wa = ""
 
 # You can specify location either by `city` name or by `lat` and `lon` coordinates
 # If both are provided, coordinates will be used
@@ -90,18 +102,19 @@ connect_timeout = 10
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
-    /// Weather data provider (`open_meteo`, `open_weather_map`, or `world_weather_online`)
+    /// Weather data provider (`open_meteo`, `open_weather_map`, `world_weather_online`, or `weather_api`)
+    /// Deprecated, kept for migration purposes. Use `providers` instead.
     #[serde(default, skip_serializing)]
-    provider: Option<Provider>, // Deprecated, kept for migration purposes. Use `providers` instead.
+    provider: Option<Provider>,
 
     /// List of providers to try in order (if the first fails, try the next, etc.)
-    /// Example: `["open_meteo", "open_weather_map", "world_weather_online"]`
+    /// Example: `["open_meteo", "open_weather_map", "world_weather_online", "weather_api"]`
     #[serde(default)]
     providers: Vec<Provider>,
 
     /// Deprecated, kept for migration purposes. Use `api_key_owm` or `api_key_wwo` instead.
     #[serde(default, skip_serializing)]
-    api_key: Option<String>, // Deprecated, kept for migration purposes. Use `api_key_owm` or `api_key_wwo` instead.
+    api_key: Option<String>,
 
     // TODO: provide more clear way to specify API keys for different providers (e.g., a map of provider to API key, or separate fields for each provider)
     /// API key for Open Weather Map
@@ -111,6 +124,10 @@ pub struct Config {
     /// API key for World Weather Online
     #[serde(default)]
     api_key_wwo: String,
+
+    /// API key for WeatherAPI.com
+    #[serde(default)]
+    api_key_wa: String,
 
     /// City name (required if lat/lon not provided)
     #[serde(default)]
@@ -153,9 +170,9 @@ pub struct Config {
     #[serde(default)]
     text_mode: TextMode,
 
-    /// Deprecated, kept for migration purposes. Use `text_mode` instead.
+    /// Deprecated, kept for migration purposes. Use `text_mode = "compact"` instead.
     #[serde(default, skip_serializing)]
-    compact_mode: Option<bool>, // Deprecated, kept for migration purposes. Use `text_mode = "compact"` instead.
+    compact_mode: Option<bool>,
 
     /// Live mode - continuously update weather data every `live_mode_interval` seconds (`true` or `false`)
     #[serde(default)]
@@ -165,9 +182,10 @@ pub struct Config {
     #[serde(default = "default_live_mode_interval")]
     live_mode_interval: u64, // in seconds, default to 300 (5 minutes)
 
-    /// Align output to the right (`true` or `false`)
+    /// Align labels in text output to the right (`true` or `false`)
+    /// (Note: only affects text output in `full` mode, not `compact` or `one_line` modes)
     #[serde(default)]
-    align_right: bool, // Actually aligns only labels to the right, not the whole output
+    align_right: bool,
 
     /// Use geocoding cache (`true` or `false`)
     /// (if enabled, previously looked up cities will be cached locally to avoid repeated API calls)
@@ -198,6 +216,7 @@ impl Default for Config {
             api_key: None,
             api_key_wwo: String::default(),
             api_key_owm: String::default(),
+            api_key_wa: String::default(),
             city: None,
             lat: None,
             lon: None,
@@ -459,6 +478,14 @@ impl Config {
         }
 
         Some(self.api_key_owm.as_str())
+    }
+
+    pub fn api_key_wa(&self) -> Option<&str> {
+        if self.api_key_wa.is_empty() {
+            return None;
+        }
+
+        Some(self.api_key_wa.as_str())
     }
 
     pub fn city(&self) -> Option<&str> {
