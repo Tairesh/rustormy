@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Upcoming]
 
+### Changed
+
+- Changed config file structure to use sections for better organization.
+  API keys and text formatting are now grouped under their respective sections.
+  Old config file structure is still supported for backward compatibility.
+  If you encounter any migration issues (from config file v0.3.4 or older),
+  please [report](https://github.com/Tairesh/rustormy/issues/new?template=bug_report.md) them.
+
 ### Fixed
 
 - Refactored config file handling to support backward compatibility and easier future changes.
