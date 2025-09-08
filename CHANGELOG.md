@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.4] - 2025-09-08
+
+### Added
+
+- Added new weather data provider: [WeatherAPI.com](https://weatherapi.com/) (`weather_api` or `wa` in config/CLI).
+- Added `api_key_wa` option to config file for WeatherAPI.com API key.
+
+### Fixed
+
+- Fixed incorrect icon detection for weather conditions provided by World Weather Online provider.
+- Improved code quality and maintainability.
+
 ## [0.3.3] - 2025-09-07
 
 ### Added

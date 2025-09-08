@@ -13,7 +13,7 @@ use std::path::PathBuf;
 const CONFIG_FILE_EXAMPLE: &str = r#"# Rustormy Configuration File
 # This file is in TOML format. See https://toml.io/ for details
 # For more details, see the documentation at https://github.com/Tairesh/rustormy/tree/main?tab=readme-ov-file#configuration
-#
+
 # Possible providers: `open_meteo`, `open_weather_map`, `world_weather_online`, `weather_api`
 # Note that all providers except `open_meteo` require an API key
 # You can specify multiple providers in the `providers` array to try them in order
