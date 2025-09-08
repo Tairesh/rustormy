@@ -14,7 +14,7 @@ impl WeatherConditionIcon {
                 "      •      ",
                 "             ",
             ],
-            Self::Sunny => [
+            Self::Clear => [
                 "             ",
                 "    \\   /    ",
                 "     .-.     ",
@@ -109,7 +109,7 @@ impl WeatherConditionIcon {
                 "      •      ",
                 "             ",
             ],
-            Self::Sunny => [
+            Self::Clear => [
                 "             ",
                 "\x1b[38;5;226m    \\   /    \x1b[0m",
                 "\x1b[38;5;226m     .-.     \x1b[0m",
@@ -196,7 +196,7 @@ impl WeatherConditionIcon {
     pub fn emoji(self) -> &'static str {
         match self {
             WeatherConditionIcon::Unknown => "❓",
-            WeatherConditionIcon::Sunny => "☀️ ",
+            WeatherConditionIcon::Clear => "☀️ ",
             WeatherConditionIcon::PartlyCloudy => "⛅️",
             WeatherConditionIcon::Cloudy => "☁️ ",
             WeatherConditionIcon::LightShowers => "🌦️ ",

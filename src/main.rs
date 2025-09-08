@@ -7,6 +7,7 @@ mod errors;
 mod models;
 #[cfg(test)]
 mod tests;
+mod tools;
 mod weather;
 
 use app::App;

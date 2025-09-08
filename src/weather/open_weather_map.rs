@@ -2,6 +2,7 @@ use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
 use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
+use crate::tools;
 use crate::weather::{GetWeather, LookUpCity};
 use capitalize::Capitalize;
 use reqwest::blocking::Client;
@@ -103,7 +104,7 @@ impl WeatherResponseData {
                 600 | 612 | 615 | 620 => WeatherConditionIcon::LightSnow,
                 601..=622 => WeatherConditionIcon::HeavySnow,
                 701..=781 => WeatherConditionIcon::Fog,
-                800 => WeatherConditionIcon::Sunny,
+                800 => WeatherConditionIcon::Clear,
                 801 | 802 => WeatherConditionIcon::PartlyCloudy,
                 803 | 804 => WeatherConditionIcon::Cloudy,
                 _ => WeatherConditionIcon::Unknown,
@@ -113,11 +114,19 @@ impl WeatherResponseData {
         }
     }
 
+    fn dew_point(&self, units: Units) -> f64 {
+        let t = self.main.temp;
+        let h = self.main.humidity.into();
+
+        tools::dew_point(t, h, units)
+    }
+
     pub fn into_weather(self, config: &Config, location: Location) -> Weather {
         Weather {
             temperature: self.main.temp,
             feels_like: self.main.feels_like,
             humidity: self.main.humidity,
+            dew_point: self.dew_point(config.units()),
             precipitation: self.precipitation(),
             pressure: self.main.pressure,
             wind_speed: self.wind.speed,

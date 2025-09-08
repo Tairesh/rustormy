@@ -1,6 +1,7 @@
 use crate::config::Config;
 use crate::errors::RustormyError;
 use crate::models::{Language, Units, Weather, WeatherConditionIcon};
+use crate::tools;
 use crate::weather::GetWeather;
 use reqwest::blocking::Client;
 
@@ -10,26 +11,23 @@ const WWO_API_URL: &str = "https://api.worldweatheronline.com/premium/v1/weather
 struct WwoRequestParams<'a> {
     q: String,
     key: &'a str,
-    format: &'a str,
     lang: &'a str,
+    format: &'a str,
     fx: &'a str,
     mca: &'a str,
 }
 
 impl<'a> WwoRequestParams<'a> {
     pub fn new(config: &'a Config) -> Result<Self, RustormyError> {
-        let q = match (config.coordinates(), config.city()) {
-            (Some((lat, lon)), _) => format!("{lat},{lon}"),
-            (None, Some(city)) => city.to_string(),
-            (None, None) => return Err(RustormyError::NoLocationProvided),
-        };
+        let q = config.location_name();
         let key = config.api_key_wwo().ok_or(RustormyError::MissingApiKey)?;
+        let lang = config.language().code();
 
         Ok(Self {
             q,
             key,
+            lang,
             format: "json",
-            lang: config.language().code(),
             fx: "no",
             mca: "no",
         })
@@ -60,6 +58,7 @@ impl WwoWeatherData {
             temperature: condition.temperature(config.units())?,
             feels_like: condition.feels_like(config.units())?,
             humidity: condition.humidity()?,
+            dew_point: condition.dew_point(config.units())?,
             precipitation: condition.precipitation(config.units())?,
             pressure: condition.pressure()?,
             wind_speed: condition.wind_speed(config.units())?,
@@ -180,6 +179,12 @@ impl WwoCurrentCondition {
             .map_err(|e| RustormyError::ApiReturnedError(format!("Invalid humidity value: {e:?}")))
     }
 
+    fn dew_point(&self, units: Units) -> Result<f64, RustormyError> {
+        let t = self.temperature(units)?;
+        let h = self.humidity()?.into();
+        Ok(tools::dew_point(t, h, units))
+    }
+
     fn precipitation(&self, units: Units) -> Result<f64, RustormyError> {
         let value = if units == Units::Metric {
             &self.precip_mm
@@ -216,16 +221,24 @@ impl WwoCurrentCondition {
             RustormyError::ApiReturnedError(format!("Invalid weather code value: {e:?}"))
         })?;
         let icon = match code {
-            113 => WeatherConditionIcon::Sunny,
+            // Clear/Sunny
+            113 => WeatherConditionIcon::Clear,
+            // Partly Cloudy
             116 => WeatherConditionIcon::PartlyCloudy,
+            // Cloudy/Overcast
             119 | 122 => WeatherConditionIcon::Cloudy,
+            // Mist/Fog
             143 | 248 | 260 => WeatherConditionIcon::Fog,
-            263 | 266 | 281 | 284 => WeatherConditionIcon::LightShowers,
-            176 | 293 | 296 | 299 | 302 | 308 | 305 | 353 | 356 | 359 | 311 | 314 | 317 | 320
-            | 362 | 365 | 374 | 377 => WeatherConditionIcon::HeavyShowers,
-            179 | 323 | 326 | 329 | 332 | 335 | 338 | 368 | 371 | 227 | 230 => {
-                WeatherConditionIcon::HeavySnow
-            }
+            // Light Rain Showers
+            176 | 263 | 266 | 281 | 284 => WeatherConditionIcon::LightShowers,
+            // Heavy Rain Showers
+            293 | 296 | 299 | 302 | 308 | 305 | 353 | 356 | 359 | 311 | 314 | 317 | 320 | 362
+            | 365 | 374 | 377 => WeatherConditionIcon::HeavyShowers,
+            // Light Snow/Blowing Snow
+            179 | 227 | 326 | 368 | 323 => WeatherConditionIcon::LightSnow,
+            // Heavy Snow/Snow Showers
+            230 | 329 | 332 | 338 | 335 | 371 => WeatherConditionIcon::HeavySnow,
+            // Thunderstorm
             200 | 386 | 389 | 392 | 395 => WeatherConditionIcon::Thunderstorm,
             _ => WeatherConditionIcon::Unknown,
         };

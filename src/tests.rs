@@ -6,6 +6,7 @@ use crate::{
     config::Config,
     errors::RustormyError,
     models::{Units, Weather, WeatherConditionIcon},
+    tools,
     weather::GetWeather,
 };
 use clap::Parser;
@@ -19,21 +20,24 @@ impl TestProvider {
     }
 
     fn mock_weather(config: &Config, location: Location) -> Weather {
+        let temperature = if config.units() == Units::Metric {
+            20.0
+        } else {
+            68.0
+        };
+        let humidity = 65;
         Weather {
-            temperature: if config.units() == Units::Metric {
-                20.0
-            } else {
-                68.0
-            },
+            temperature,
             feels_like: 19.5,
-            humidity: 65,
+            humidity,
+            dew_point: tools::dew_point(temperature, humidity as f64, config.units()),
             precipitation: 0.0,
             pressure: 1013,
             wind_speed: 5.0,
             wind_direction: 180,
             uv_index: None,
             description: "Clear sky".to_string(),
-            icon: WeatherConditionIcon::Sunny,
+            icon: WeatherConditionIcon::Clear,
             location_name: location.name,
         }
     }

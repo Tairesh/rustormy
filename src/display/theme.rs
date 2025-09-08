@@ -6,7 +6,7 @@ pub fn condition_color(icon: WeatherConditionIcon) -> AnsiColor {
         WeatherConditionIcon::Unknown
         | WeatherConditionIcon::Fog
         | WeatherConditionIcon::Cloudy => AnsiColor::White,
-        WeatherConditionIcon::Sunny => AnsiColor::BrightYellow,
+        WeatherConditionIcon::Clear => AnsiColor::BrightYellow,
         WeatherConditionIcon::PartlyCloudy => AnsiColor::Yellow,
         WeatherConditionIcon::LightShowers | WeatherConditionIcon::HeavyShowers => {
             AnsiColor::BrightBlue

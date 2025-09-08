@@ -3,7 +3,7 @@ use crate::errors::RustormyError;
 use crate::models::{Language, OutputFormat, Provider, TextMode, Units};
 #[cfg(not(test))]
 use directories::ProjectDirs;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 #[cfg(not(test))]
 use std::fs;
 #[cfg(not(test))]
@@ -103,6 +103,7 @@ pub struct Config {
     #[serde(default, skip_serializing)]
     api_key: Option<String>, // Deprecated, kept for migration purposes. Use `api_key_owm` or `api_key_wwo` instead.
 
+    // TODO: provide more clear way to specify API keys for different providers (e.g., a map of provider to API key, or separate fields for each provider)
     /// API key for Open Weather Map
     #[serde(default)]
     api_key_owm: String,

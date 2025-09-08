@@ -203,14 +203,9 @@ impl WeatherFormatter {
             self.config.show_city_name(),
             self.config.language(),
         );
-        let (temp_unit, wind_unit, precip_unit, dew_point) = match self.config.units() {
-            Units::Metric => ("°C", ll(lang, "m/s"), ll(lang, "mm"), weather.dew_point()),
-            Units::Imperial => (
-                "°F",
-                ll(lang, "mph"),
-                ll(lang, "inch"),
-                weather.dew_point_f(),
-            ),
+        let (temp_unit, wind_unit, precip_unit) = match self.config.units() {
+            Units::Metric => ("°C", ll(lang, "m/s"), ll(lang, "mm")),
+            Units::Imperial => ("°F", ll(lang, "mph"), ll(lang, "inch")),
         };
         let icon = if colors {
             weather.icon.colored_icon()
@@ -297,9 +292,10 @@ impl WeatherFormatter {
             icon[6],
             "Humidity",
             format!(
-                "{}% ({} {dew_point:.1}{temp_unit})",
+                "{}% ({} {:.1}{temp_unit})",
                 weather.humidity,
-                ll(lang, "dew point")
+                ll(lang, "dew point"),
+                weather.dew_point,
             ),
             color_theme.humidity,
             &self.config,
@@ -327,6 +323,7 @@ mod tests {
             temperature: 22.49,
             feels_like: 21.51,
             humidity: 60,
+            dew_point: 14.34,
             precipitation: 0.5,
             pressure: 1013,
             wind_speed: 5.0,

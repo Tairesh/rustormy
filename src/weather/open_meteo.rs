@@ -2,10 +2,10 @@ use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
 use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
+use crate::tools;
 use crate::weather::{GetWeather, LookUpCity};
 use reqwest::blocking::Client;
-use serde::Deserialize;
-use serde_derive::Serialize;
+use serde::{Deserialize, Serialize};
 
 const GEO_API_URL: &str = "https://geocoding-api.open-meteo.com/v1/search";
 const WEATHER_API_URL: &str = "https://api.open-meteo.com/v1/forecast";
@@ -14,6 +14,7 @@ const WEATHER_API_FIELDS: &str = "temperature_2m,apparent_temperature,relative_h
 #[derive(Debug, Default)]
 pub struct OpenMeteo {}
 
+// TODO: refactor to enum Ok/Err
 #[derive(Debug, Deserialize)]
 struct OpenMeteoResponse {
     current: CurrentWeather,
@@ -69,7 +70,7 @@ impl OpenMeteoResponse {
 
     pub fn icon(&self) -> WeatherConditionIcon {
         match self.current.weather_code {
-            0 => WeatherConditionIcon::Sunny,
+            0 => WeatherConditionIcon::Clear,
             1..=2 => WeatherConditionIcon::PartlyCloudy,
             3 => WeatherConditionIcon::Cloudy,
             45 | 48 => WeatherConditionIcon::Fog,
@@ -80,6 +81,13 @@ impl OpenMeteoResponse {
             95 | 96 | 99 => WeatherConditionIcon::Thunderstorm,
             _ => WeatherConditionIcon::Unknown,
         }
+    }
+
+    pub fn dew_point(&self, units: Units) -> f64 {
+        let t = self.current.temperature;
+        let h = self.current.humidity.into();
+
+        tools::dew_point(t, h, units)
     }
 }
 
@@ -198,6 +206,7 @@ impl GetWeather for OpenMeteo {
 
         let response = client
             .get(WEATHER_API_URL)
+            // TODO: refactor to use WeatherAPIRequest::new()
             .query(&WeatherAPIRequest {
                 latitude: location.latitude,
                 longitude: location.longitude,
@@ -218,6 +227,7 @@ impl GetWeather for OpenMeteo {
             temperature: data.current.temperature,
             feels_like: data.current.apparent_temperature,
             humidity: data.current.humidity,
+            dew_point: data.dew_point(config.units()),
             precipitation: data.current.precipitation,
             pressure: data.current.pressure as u32,
             wind_speed: data.current.wind_speed,
