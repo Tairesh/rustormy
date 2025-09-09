@@ -10,6 +10,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 - Added [Weatherbit.io](https://www.weatherbit.io/) as a new weather data provider option
   (`weather_bit` or `wb` in config/CLI, `api_keys.weather_bit` for API key in config file).
+- Added [Tomorrow.io](https://www.tomorrow.io/) as a new weather data provider option
+  (`tomorrow_io` or `ti` in config/CLI, `api_keys.tomorrow_io` for API key in config file).
 
 ### Changed
 

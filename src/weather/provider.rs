@@ -3,6 +3,7 @@ use crate::config::Config;
 use crate::models::Provider;
 use crate::weather::open_meteo::OpenMeteo;
 use crate::weather::open_weather_map::OpenWeatherMap;
+use crate::weather::tomorrow_io::TomorrowIo;
 use crate::weather::weather_api::WeatherApi;
 use crate::weather::weather_bit::WeatherBit;
 use crate::weather::world_weather_online::WorldWeatherOnline;
@@ -36,6 +37,7 @@ pub enum GetWeatherProvider {
     WorldWeatherOnline,
     WeatherApi,
     WeatherBit,
+    TomorrowIo,
 }
 
 provider_conversions!(
@@ -45,7 +47,8 @@ provider_conversions!(
     OpenWeatherMap,
     WorldWeatherOnline,
     WeatherApi,
-    WeatherBit
+    WeatherBit,
+    TomorrowIo
 );
 
 impl GetWeatherProvider {

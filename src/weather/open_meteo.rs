@@ -34,8 +34,8 @@ impl OpenMeteoResponse {
         ll(
             lang,
             match self.current.weather_code {
-                0 => "Clear sky",
-                1 => "Mainly clear",
+                0 => "Clear",
+                1 => "Mostly clear",
                 2 => "Partly cloudy",
                 3 => "Overcast",
                 45 => "Fog",
@@ -45,7 +45,7 @@ impl OpenMeteoResponse {
                 55 => "Dense drizzle",
                 56 => "Light freezing drizzle",
                 57 => "Dense freezing drizzle",
-                61 => "Slight rain",
+                61 => "Light rain",
                 63 => "Moderate rain",
                 65 => "Heavy rain",
                 66 => "Light freezing rain",

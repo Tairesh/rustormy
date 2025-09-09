@@ -24,6 +24,8 @@ pub struct ApiKeys {
     pub weather_api: String,
     #[serde(default)]
     pub weather_bit: String,
+    #[serde(default)]
+    pub tomorrow_io: String,
 }
 
 #[allow(clippy::struct_excessive_bools)]
@@ -114,17 +116,7 @@ impl Default for Config {
             city: None,
             lat: None,
             lon: None,
-            format: FormatterConfig {
-                output_format: OutputFormat::default(),
-                text_mode: TextMode::default(),
-                use_colors: false,
-                show_city_name: false,
-                align_right: false,
-                wind_in_degrees: false,
-                units: Units::default(),
-                language: Language::default(),
-                color_theme: ColorTheme::default(),
-            },
+            format: FormatterConfig::default(),
             live_mode: false,
             live_mode_interval: default_live_mode_interval(),
             use_geocoding_cache: false,
@@ -311,6 +303,12 @@ impl Config {
             return Err(RustormyError::MissingApiKey(Provider::WeatherBit));
         }
 
+        // Check if API key is provided for Tomorrow.io
+        if self.providers.contains(&Provider::TomorrowIo) && self.api_keys().tomorrow_io.is_empty()
+        {
+            return Err(RustormyError::MissingApiKey(Provider::TomorrowIo));
+        }
+
         // Validate coordinates if provided
         if let Some((lat, lon)) = self.coordinates()
             && !((-90.0..=90.0).contains(&lat) && (-180.0..=180.0).contains(&lon))
@@ -433,6 +431,7 @@ impl From<LegacyConfig> for Config {
                 world_weather_online: value.api_key_wwo,
                 weather_api: value.api_key_wa,
                 weather_bit: String::default(),
+                tomorrow_io: String::default(),
             }
         };
         let format = if let Some(format) = value.format {

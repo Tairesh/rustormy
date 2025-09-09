@@ -67,14 +67,14 @@ static TRANSLATIONS: LazyLock<HashMap<&'static str, HashMap<&'static str, &'stat
         ["es"] => "punto de rocío",
     },
     // Weather conditions
-    "Clear sky" => {
-        ["en"] => "Clear sky",
-        ["ru"] => "Ясное небо",
-        ["es"] => "Cielo despejado",
+    "Clear" => {
+        ["en"] => "Clear",
+        ["ru"] => "Ясно",
+        ["es"] => "Despejado",
     },
-    "Mainly clear" => {
-        ["en"] => "Mainly clear",
-        ["ru"] => "Преимущественно ясно",
+    "Mostly clear" => {
+        ["en"] => "Mostly clear",
+        ["ru"] => "Легкая облачность",
         ["es"] => "Mayormente despejado",
     },
     "Partly cloudy" => {
@@ -82,9 +82,19 @@ static TRANSLATIONS: LazyLock<HashMap<&'static str, HashMap<&'static str, &'stat
         ["ru"] => "Переменная облачность",
         ["es"] => "Parcialmente nublado",
     },
+    "Mostly cloudy" => {
+        ["en"] => "Mostly cloudy",
+        ["ru"] => "Сильная облачность",
+        ["es"] => "Mayormente nublado",
+    },
     "Overcast" => {
         ["en"] => "Overcast",
         ["ru"] => "Пасмурно",
+        ["es"] => "Nublado",
+    },
+    "Cloudy" => {
+        ["en"] => "Cloudy",
+        ["ru"] => "Облачно",
         ["es"] => "Nublado",
     },
     "Fog" => {
@@ -92,10 +102,20 @@ static TRANSLATIONS: LazyLock<HashMap<&'static str, HashMap<&'static str, &'stat
         ["ru"] => "Туман",
         ["es"] => "Niebla",
     },
+    "Light fog" => {
+        ["en"] => "Light fog",
+        ["ru"] => "Легкий туман",
+        ["es"] => "Niebla ligera",
+    },
     "Depositing rime fog" => {
         ["en"] => "Depositing rime fog",
         ["ru"] => "Изморозь",
         ["es"] => "Niebla con escarcha",
+    },
+    "Drizzle" => {
+        ["en"] => "Drizzle",
+        ["ru"] => "Морось",
+        ["es"] => "Llovizna",
     },
     "Light drizzle" => {
         ["en"] => "Light drizzle",
@@ -112,6 +132,11 @@ static TRANSLATIONS: LazyLock<HashMap<&'static str, HashMap<&'static str, &'stat
         ["ru"] => "Сильная морось",
         ["es"] => "Llovizna intensa",
     },
+    "Freezing drizzle" => {
+        ["en"] => "Freezing drizzle",
+        ["ru"] => "Ледяная морось",
+        ["es"] => "Llovizna helada",
+    },
     "Light freezing drizzle" => {
         ["en"] => "Light freezing drizzle",
         ["ru"] => "Слабая ледяная морось",
@@ -122,8 +147,13 @@ static TRANSLATIONS: LazyLock<HashMap<&'static str, HashMap<&'static str, &'stat
         ["ru"] => "Сильная ледяная морось",
         ["es"] => "Llovizna helada intensa",
     },
-    "Slight rain" => {
-        ["en"] => "Slight rain",
+    "Rain" => {
+        ["en"] => "Rain",
+        ["ru"] => "Дождь",
+        ["es"] => "Lluvia",
+    },
+    "Light rain" => {
+        ["en"] => "Light rain",
         ["ru"] => "Небольшой дождь",
         ["es"] => "Lluvia ligera",
     },
@@ -137,6 +167,11 @@ static TRANSLATIONS: LazyLock<HashMap<&'static str, HashMap<&'static str, &'stat
         ["ru"] => "Сильный дождь",
         ["es"] => "Lluvia intensa",
     },
+    "Freezing rain" => {
+        ["en"] => "Freezing rain",
+        ["ru"] => "Ледяной дождь",
+        ["es"] => "Lluvia helada",
+    },
     "Light freezing rain" => {
         ["en"] => "Light freezing rain",
         ["ru"] => "Слабый ледяной дождь",
@@ -146,6 +181,11 @@ static TRANSLATIONS: LazyLock<HashMap<&'static str, HashMap<&'static str, &'stat
         ["en"] => "Heavy freezing rain",
         ["ru"] => "Сильный ледяной дождь",
         ["es"] => "Lluvia helada intensa",
+    },
+    "Snow" => {
+        ["en"] => "Snow",
+        ["ru"] => "Снег",
+        ["es"] => "Nevada",
     },
     "Slight snow fall" => {
         ["en"] => "Slight snow fall",
@@ -162,10 +202,30 @@ static TRANSLATIONS: LazyLock<HashMap<&'static str, HashMap<&'static str, &'stat
         ["ru"] => "Сильный снегопад",
         ["es"] => "Nevada intensa",
     },
+    "Flurries" => {
+        ["en"] => "Flurries",
+        ["ru"] => "Поземок",
+        ["es"] => "Chubascos de nieve",
+    },
     "Snow grains" => {
         ["en"] => "Snow grains",
         ["ru"] => "Снежная крупа",
         ["es"] => "Granos de nieve",
+    },
+    "Ice pellets" => {
+        ["en"] => "Ice pellets",
+        ["ru"] => "Град",
+        ["es"] => "Granizo",
+    },
+    "Light ice pellets" => {
+        ["en"] => "Light ice pellets",
+        ["ru"] => "Небольшой град",
+        ["es"] => "Granizo ligero",
+    },
+    "Heavy ice pellets" => {
+        ["en"] => "Heavy ice pellets",
+        ["ru"] => "Сильный град",
+        ["es"] => "Granizo intenso",
     },
     "Slight rain showers" => {
         ["en"] => "Slight rain showers",
@@ -181,6 +241,16 @@ static TRANSLATIONS: LazyLock<HashMap<&'static str, HashMap<&'static str, &'stat
         ["en"] => "Violent rain showers",
         ["ru"] => "Сильный ливень",
         ["es"] => "Chubascos intensos",
+    },
+    "Light snow" => {
+        ["en"] => "Light snow",
+        ["ru"] => "Небольшой снег",
+        ["es"] => "Nieve ligera",
+    },
+    "Heavy snow" => {
+        ["en"] => "Heavy snow",
+        ["ru"] => "Сильный снег",
+        ["es"] => "Nieve intensa",
     },
     "Slight snow showers" => {
         ["en"] => "Slight snow showers",

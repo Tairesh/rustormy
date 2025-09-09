@@ -14,21 +14,25 @@ various output modes.
 
 ## Current features
 
-- Fetch weather data from multiple providers: [OpenMeteo](https://open-meteo.com/) (default, no API key required),
-  [OpenWeatherMap](https://openweathermap.org/), [World Weather Online](https://www.worldweatheronline.com/),
-  [WeatherAPI.com](https://www.weatherapi.com/), [Weatherbit.io](https://www.weatherbit.io/).
-- Automatically fall back to the next provider if the primary one is unavailable (e.g., due to API limits).
-- Display current temperature, "feels like" temperature, weather conditions, wind speed and direction,
-  humidity, precipitation, atmospheric pressure, dew point, and UV index (if supported by the provider).
-- Render ASCII art icons for weather conditions.
-- Support ANSI colors in terminal output.
-- Provide geocoding by city name or latitude/longitude input.
-- Cache geocoding results to reduce API calls (optional).
-- Support multiple languages (English, Russian, Spanish; more to come).
-- Support automatic conversion between imperial and metric units.
-- Provide various text output modes (full, compact, one-line) and JSON output.
-- Support live mode for periodically updating weather data.
-- Cross-platform (Linux, macOS, Windows).
+- Fetch weather data from multiple providers:
+    - [OpenMeteo](https://open-meteo.com/) (default, no API key required)
+    - [OpenWeatherMap](https://openweathermap.org/)
+    - [World Weather Online](https://www.worldweatheronline.com/)
+    - [WeatherAPI.com](https://www.weatherapi.com/)
+    - [Weatherbit.io](https://www.weatherbit.io/)
+    - [Tomorrow.io](https://www.tomorrow.io/weather-api/)
+- Automatically fall back to the next provider if the primary one is unavailable (e.g., due to API limits)
+- Display current temperature, "feels like" temperature, weather conditions, wind speed and direction
+  humidity, precipitation, atmospheric pressure, dew point, and UV index (if supported by the provider)
+- Render ASCII art icons for weather conditions
+- Support ANSI colors in terminal output
+- Provide geocoding by city name or latitude/longitude input
+- Cache geocoding results to reduce API calls (optional)
+- Support multiple languages (English, Russian, Spanish; more to come)
+- Support automatic conversion between imperial and metric units
+- Provide various text output modes (full, compact, one-line) and JSON output
+- Support live mode for periodically updating weather data
+- Cross-platform (Linux, macOS, Windows)
 
 ## Planned features
 
@@ -80,22 +84,22 @@ Default provider is `open_meteo`.
 providers = ["open_meteo"]
 ```
 
-Possible providers: `open_meteo`, `open_weather_map`, `world_weather_online`, `weather_api`, `weather_bit`.
-You can also use short names: `om`, `owm`, `wwo`, `wa`, `wb`, respectively.
+Possible values: `open_meteo`, `open_weather_map`, `world_weather_online`, `weather_api`, `weather_bit`, `tomorrow_io`.
+You can also use short names: `om`, `owm`, `wwo`, `wa`, `wb`, `ti`, respectively.
 Note that all providers except `open_meteo` require an API key.
 You can specify multiple providers in the `providers` array to try them in order.
 
 Example:
 
 ```toml
-providers = ["weather_api", "world_weather_online", "open_weather_map", "weather_bit", "open_meteo"]
+providers = ["tomorrow_io", "weather_api", "world_weather_online", "open_weather_map", "weather_bit", "open_meteo"]
 ```
 
 ---
 
 #### Location
 
-You can specify location either by `city` name or by `lat` and `lon` coordinates
+You can specify location either by `city` name or by `lat` and `lon` coordinates.
 If both are provided, coordinates will be used.
 You can skip this section to provide location via command line options.
 
@@ -163,6 +167,7 @@ You can obtain free API keys by signing up on their websites:
 - [World Weather Online](https://www.worldweatheronline.com/developer/)
 - [WeatherAPI.com](https://www.weatherapi.com/signup.aspx)
 - [Weatherbit.io](https://www.weatherbit.io/account/create)
+- [Tomorrow.io](https://www.tomorrow.io/weather-api/)
 
 ```toml
 [api_keys]
@@ -170,6 +175,7 @@ open_weather_map = ""
 world_weather_online = ""
 weather_api = ""
 weather_bit = ""
+tomorrow_io = ""
 ```
 
 ---
@@ -230,7 +236,7 @@ Options:
   -x, --lon <LON>
           Longitude (required if city not provided)
   -p, --provider <PROVIDER>
-          Weather data provider (OpenMeteo, OpenWeatherMap, WorldWeatherOnline, WeatherAPI.com, WeatherBit.io) [possible values: om, owm, wwo, wa, wb]
+          Weather data provider [possible values: om, owm, wwo, wa, wb, ti]
   -u, --units <UNITS>
           Units for temperature and wind speed [possible values: metric, imperial]
   -o, --format <OUTPUT_FORMAT>
@@ -305,7 +311,14 @@ cargo run -- -c London --colors
 
 ## Acknowledgements
 
-This project heavily inpired by [stormy](https://github.com/ashish0kumar/stormy). Actually, it started as a clone
+This project was originally heavily inspired by [stormy](https://github.com/ashish0kumar/stormy). Actually, it started
+as a full clone
 of `stormy`, just in Rust. Then I added more features, but kept the name similar to honor the original project.
 
 Also, [wttr.in](https://wttr.in) was a big inspiration for this project.
+
+## Disclaimer
+
+This project is not affiliated with or endorsed by any of the weather data providers mentioned above.
+It's a personal project developed for learning and experimentation purposes.
+
