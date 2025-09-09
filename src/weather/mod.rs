@@ -50,4 +50,5 @@ mod open_weather_map;
 mod provider;
 pub mod tools;
 mod weather_api;
+mod weather_bit;
 mod world_weather_online;

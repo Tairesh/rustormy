@@ -22,6 +22,8 @@ pub struct ApiKeys {
     pub world_weather_online: String,
     #[serde(default)]
     pub weather_api: String,
+    #[serde(default)]
+    pub weather_bit: String,
 }
 
 #[allow(clippy::struct_excessive_bools)]
@@ -303,6 +305,12 @@ impl Config {
             return Err(RustormyError::MissingApiKey(Provider::WeatherApi));
         }
 
+        // Check if API key is provided for WeatherBit
+        if self.providers.contains(&Provider::WeatherBit) && self.api_keys().weather_bit.is_empty()
+        {
+            return Err(RustormyError::MissingApiKey(Provider::WeatherBit));
+        }
+
         // Validate coordinates if provided
         if let Some((lat, lon)) = self.coordinates()
             && !((-90.0..=90.0).contains(&lat) && (-180.0..=180.0).contains(&lon))
@@ -424,6 +432,7 @@ impl From<LegacyConfig> for Config {
                 },
                 world_weather_online: value.api_key_wwo,
                 weather_api: value.api_key_wa,
+                weather_bit: String::default(),
             }
         };
         let format = if let Some(format) = value.format {
@@ -547,6 +556,24 @@ mod tests {
     }
 
     #[test]
+    fn test_validate_missing_api_key_wb() {
+        let config = Config {
+            providers: vec![Provider::WeatherBit],
+            city: Some("TestCity".to_string()),
+            ..Default::default()
+        };
+        let result = config.validate();
+        assert!(
+            matches!(
+                result,
+                Err(RustormyError::MissingApiKey(Provider::WeatherBit))
+            ),
+            "Expected MissingApiKey error got {:?}",
+            result
+        );
+    }
+
+    #[test]
     fn test_validate_invalid_coordinates_lat() {
         let config = Config {
             lat: Some(91.0),
@@ -649,6 +676,25 @@ mod tests {
     }
 
     #[test]
+    fn test_validate_valid_config_wb() {
+        let config = Config {
+            city: Some("TestCity".to_string()),
+            providers: vec![Provider::WeatherBit],
+            api_keys: ApiKeys {
+                weather_bit: "test_key".to_string(),
+                ..ApiKeys::default()
+            },
+            ..Config::default()
+        };
+        let result = config.validate();
+        assert!(
+            result.is_ok(),
+            "Expected valid config, got error {:?}",
+            result
+        );
+    }
+
+    #[test]
     fn test_validate_valid_config_with_all_providers() {
         let config = Config {
             city: Some("TestCity".to_string()),
@@ -662,6 +708,7 @@ mod tests {
                 open_weather_map: "owm_key".to_string(),
                 world_weather_online: "wwo_key".to_string(),
                 weather_api: "wa_key".to_string(),
+                ..ApiKeys::default()
             },
             ..Config::default()
         };

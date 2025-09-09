@@ -16,7 +16,7 @@ various output modes.
 
 - Fetch weather data from multiple providers: [OpenMeteo](https://open-meteo.com/) (default, no API key required),
   [OpenWeatherMap](https://openweathermap.org/), [World Weather Online](https://www.worldweatheronline.com/),
-  and [WeatherAPI.com](https://www.weatherapi.com/).
+  [WeatherAPI.com](https://www.weatherapi.com/), [Weatherbit.io](https://www.weatherbit.io/).
 - Automatically fall back to the next provider if the primary one is unavailable (e.g., due to API limits).
 - Display current temperature, "feels like" temperature, weather conditions, wind speed and direction,
   humidity, precipitation, atmospheric pressure, dew point, and UV index (if supported by the provider).
@@ -80,15 +80,15 @@ Default provider is `open_meteo`.
 providers = ["open_meteo"]
 ```
 
-Possible providers: `open_meteo`, `open_weather_map`, `world_weather_online`, `weather_api`.
-You can also use short names: `om`, `owm`, `wwo`, `wa`, respectively.
+Possible providers: `open_meteo`, `open_weather_map`, `world_weather_online`, `weather_api`, `weather_bit`.
+You can also use short names: `om`, `owm`, `wwo`, `wa`, `wb`, respectively.
 Note that all providers except `open_meteo` require an API key.
 You can specify multiple providers in the `providers` array to try them in order.
 
 Example:
 
 ```toml
-providers = ["weather_api", "world_weather_online", "open_weather_map", "open_meteo"]
+providers = ["weather_api", "world_weather_online", "open_weather_map", "weather_bit", "open_meteo"]
 ```
 
 ---
@@ -162,12 +162,14 @@ You can obtain free API keys by signing up on their websites:
 - [OpenWeatherMap](https://home.openweathermap.org/users/sign_up)
 - [World Weather Online](https://www.worldweatheronline.com/developer/)
 - [WeatherAPI.com](https://www.weatherapi.com/signup.aspx)
+- [Weatherbit.io](https://www.weatherbit.io/account/create)
 
 ```toml
 [api_keys]
 open_weather_map = ""
 world_weather_online = ""
 weather_api = ""
+weather_bit = ""
 ```
 
 ---
@@ -228,7 +230,7 @@ Options:
   -x, --lon <LON>
           Longitude (required if city not provided)
   -p, --provider <PROVIDER>
-          Weather data provider (OpenMeteo, OpenWeatherMap, WorldWeatherOnline, WeatherAPI.com) [possible values: om, owm, wwo, wa]
+          Weather data provider (OpenMeteo, OpenWeatherMap, WorldWeatherOnline, WeatherAPI.com, WeatherBit.io) [possible values: om, owm, wwo, wa, wb]
   -u, --units <UNITS>
           Units for temperature and wind speed [possible values: metric, imperial]
   -o, --format <OUTPUT_FORMAT>

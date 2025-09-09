@@ -19,6 +19,9 @@ pub enum Provider {
     #[serde(alias = "wa")]
     #[value(alias = "wa")]
     WeatherApi,
+    #[serde(alias = "wb")]
+    #[value(alias = "wb")]
+    WeatherBit,
 }
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Serialize, Deserialize, ValueEnum)]

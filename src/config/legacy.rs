@@ -274,6 +274,7 @@ mod tests {
                 open_weather_map: "existing_owm_key".to_string(),
                 world_weather_online: "existing_wwo_key".to_string(),
                 weather_api: "existing_wa_key".to_string(),
+                ..Default::default()
             }),
             api_key_owm: "owm_key".to_string(),
             api_key_wwo: "wwo_key".to_string(),

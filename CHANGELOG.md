@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Upcoming]
 
+### Added
+
+- Added [Weatherbit.io](https://www.weatherbit.io/) as a new weather data provider option
+  (`weather_bit` or `wb` in config/CLI, `api_keys.weather_bit` for API key in config file).
+
 ### Changed
 
 - Changed config file structure to use sections for better organization.
