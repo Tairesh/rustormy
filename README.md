@@ -176,6 +176,7 @@ world_weather_online = ""
 weather_api = ""
 weather_bit = ""
 tomorrow_io = ""
+opebn_uv = ""
 ```
 
 ---

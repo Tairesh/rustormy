@@ -2,13 +2,13 @@ use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
 use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
+use crate::weather::openuv::get_uv_index;
 use crate::weather::{GetWeather, LookUpCity, tools};
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 
 const GEO_API_URL: &str = "https://geocoding-api.open-meteo.com/v1/search";
 const WEATHER_API_URL: &str = "https://api.open-meteo.com/v1/forecast";
-const WEATHER_API_FIELDS: &str = "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,surface_pressure,wind_speed_10m,wind_direction_10m,weather_code";
 
 #[derive(Debug, Default)]
 pub struct OpenMeteo {}
@@ -30,7 +30,29 @@ impl OpenMeteoResponse {
         self.reason.unwrap_or_else(|| "Unknown error".to_string())
     }
 
-    pub fn description(&self, lang: Language) -> &'static str {
+    pub fn into_weather(
+        self,
+        client: &Client,
+        config: &Config,
+        location: &Location,
+    ) -> Result<Weather, RustormyError> {
+        Ok(Weather {
+            temperature: self.current.temperature,
+            feels_like: self.current.apparent_temperature,
+            humidity: self.current.humidity,
+            dew_point: self.dew_point(config.units()),
+            precipitation: self.current.precipitation,
+            pressure: self.current.pressure as u32,
+            wind_speed: self.current.wind_speed,
+            wind_direction: self.current.wind_direction,
+            uv_index: get_uv_index(client, config, location)?,
+            description: self.description(config.language()).to_string(),
+            icon: self.icon(),
+            location_name: location.name.clone(),
+        })
+    }
+
+    fn description(&self, lang: Language) -> &'static str {
         ll(
             lang,
             match self.current.weather_code {
@@ -67,7 +89,7 @@ impl OpenMeteoResponse {
         )
     }
 
-    pub fn icon(&self) -> WeatherConditionIcon {
+    fn icon(&self) -> WeatherConditionIcon {
         match self.current.weather_code {
             0 => WeatherConditionIcon::Clear,
             1..=2 => WeatherConditionIcon::PartlyCloudy,
@@ -82,7 +104,7 @@ impl OpenMeteoResponse {
         }
     }
 
-    pub fn dew_point(&self, units: Units) -> f64 {
+    fn dew_point(&self, units: Units) -> f64 {
         let t = self.current.temperature;
         let h = self.current.humidity.into();
 
@@ -174,6 +196,25 @@ struct WeatherAPIRequest<'a> {
     precipitation_unit: &'a str,
 }
 
+impl<'a> WeatherAPIRequest<'a> {
+    pub fn new(location: &Location, config: &'a Config) -> Self {
+        const CURRENT: &str = "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,surface_pressure,wind_speed_10m,wind_direction_10m,weather_code";
+        let (temperature_unit, wind_speed_unit, precipitation_unit) = match config.units() {
+            Units::Metric => ("celsius", "ms", "mm"),
+            Units::Imperial => ("fahrenheit", "mph", "inch"),
+        };
+
+        Self {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            current: CURRENT,
+            temperature_unit,
+            wind_speed_unit,
+            precipitation_unit,
+        }
+    }
+}
+
 impl LookUpCity for OpenMeteo {
     fn lookup_city(&self, client: &Client, config: &Config) -> Result<Location, RustormyError> {
         let city = config.city().ok_or(RustormyError::NoLocationProvided)?;
@@ -197,44 +238,16 @@ impl LookUpCity for OpenMeteo {
 impl GetWeather for OpenMeteo {
     fn get_weather(&self, client: &Client, config: &Config) -> Result<Weather, RustormyError> {
         let location = self.get_location(client, config)?;
-
-        let (temperature_unit, wind_speed_unit, precipitation_unit) = match config.units() {
-            Units::Metric => ("celsius", "ms", "mm"),
-            Units::Imperial => ("fahrenheit", "mph", "inch"),
-        };
-
         let response = client
             .get(WEATHER_API_URL)
-            // TODO: refactor to use WeatherAPIRequest::new()
-            .query(&WeatherAPIRequest {
-                latitude: location.latitude,
-                longitude: location.longitude,
-                current: WEATHER_API_FIELDS,
-                temperature_unit,
-                wind_speed_unit,
-                precipitation_unit,
-            })
+            .query(&WeatherAPIRequest::new(&location, config))
             .send()?;
-
         let data: OpenMeteoResponse = response.json()?;
 
         if data.is_error() {
             return Err(RustormyError::ApiReturnedError(data.into_error_reason()));
         }
 
-        Ok(Weather {
-            temperature: data.current.temperature,
-            feels_like: data.current.apparent_temperature,
-            humidity: data.current.humidity,
-            dew_point: data.dew_point(config.units()),
-            precipitation: data.current.precipitation,
-            pressure: data.current.pressure as u32,
-            wind_speed: data.current.wind_speed,
-            wind_direction: data.current.wind_direction,
-            uv_index: None,
-            description: data.description(config.language()).to_string(),
-            icon: data.icon(),
-            location_name: location.name,
-        })
+        data.into_weather(client, config, &location)
     }
 }

@@ -47,6 +47,7 @@ pub trait LookUpCity {
 
 mod open_meteo;
 mod open_weather_map;
+mod openuv;
 mod provider;
 mod tomorrow_io;
 pub mod tools;

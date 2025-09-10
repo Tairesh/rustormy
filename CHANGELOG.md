@@ -12,6 +12,9 @@ This project adheres to [Semantic Versioning](https://semver.org/).
   (`weather_bit` or `wb` in config/CLI, `api_keys.weather_bit` for API key in config file).
 - Added [Tomorrow.io](https://www.tomorrow.io/) as a new weather data provider option
   (`tomorrow_io` or `ti` in config/CLI, `api_keys.tomorrow_io` for API key in config file).
+- Added [OpenUV](https://www.openuv.io/) as a new UV index data provider option
+  (`api_keys.open_uv` for API key in config file). If API key is provided, UV index will be fetched
+  and displayed along with other weather data even if the main weather provider does not provide UV index.
 
 ### Changed
 

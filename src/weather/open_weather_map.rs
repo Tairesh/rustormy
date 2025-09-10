@@ -2,6 +2,7 @@ use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
 use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
+use crate::weather::openuv::get_uv_index;
 use crate::weather::{GetWeather, LookUpCity, tools};
 use capitalize::Capitalize;
 use reqwest::blocking::Client;
@@ -119,8 +120,13 @@ impl WeatherResponseData {
         tools::dew_point(t, h, units)
     }
 
-    pub fn into_weather(self, config: &Config, location: Location) -> Weather {
-        Weather {
+    pub fn into_weather(
+        self,
+        client: &Client,
+        config: &Config,
+        location: Location,
+    ) -> Result<Weather, RustormyError> {
+        Ok(Weather {
             temperature: self.main.temp,
             feels_like: self.main.feels_like,
             humidity: self.main.humidity,
@@ -129,13 +135,13 @@ impl WeatherResponseData {
             pressure: self.main.pressure,
             wind_speed: self.wind.speed,
             wind_direction: self.wind.deg,
-            uv_index: None,
+            uv_index: get_uv_index(client, config, &location)?,
             description: self
                 .description()
                 .unwrap_or_else(|| ll(config.language(), "Unknown").to_string()),
             icon: self.icon(),
             location_name: self.name.unwrap_or(location.name),
-        }
+        })
     }
 }
 
@@ -215,7 +221,7 @@ impl GetWeather for OpenWeatherMap {
         let response: WeatherApiResponse = response.json()?;
         match response {
             WeatherApiResponse::Err { message } => Err(RustormyError::ApiReturnedError(message)),
-            WeatherApiResponse::Ok(data) => Ok(data.into_weather(config, location)),
+            WeatherApiResponse::Ok(data) => Ok(data.into_weather(client, config, location)?),
         }
     }
 }

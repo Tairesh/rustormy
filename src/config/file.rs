@@ -26,6 +26,8 @@ pub struct ApiKeys {
     pub weather_bit: String,
     #[serde(default)]
     pub tomorrow_io: String,
+    #[serde(default)]
+    pub open_uv: String,
 }
 
 #[allow(clippy::struct_excessive_bools)]
@@ -432,6 +434,7 @@ impl From<LegacyConfig> for Config {
                 weather_api: value.api_key_wa,
                 weather_bit: String::default(),
                 tomorrow_io: String::default(),
+                open_uv: String::default(),
             }
         };
         let format = if let Some(format) = value.format {
