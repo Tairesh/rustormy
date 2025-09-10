@@ -278,8 +278,8 @@ Options:
 ## Examples
 
 ![Basic usage: `rustormy -c London`](.github/assets/basic.png)
-![Colors: `rustormy -c Milan --colors`](.github/assets/colors.png)
-![Imperial units: `rustormy -c "New York" --colors -u imperial`](.github/assets/imperial.png)
+![Colors: `rustormy -c Rome --colors`](.github/assets/colors.png)
+![Imperial units: `rustormy -c Austin --colors -u imperial`](.github/assets/imperial.png)
 ![Spanish translation: `rustormy -c Valparaiso -g es --name --colors`](.github/assets/spanish.png)
 ![Compact and one-line modes](.github/assets/compact.png)
 ![JSON output: `rustormy -c Ajax -o json`](.github/assets/json.png)
