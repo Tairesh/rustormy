@@ -161,7 +161,8 @@ impl Default for LegacyConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::Config;
+    use crate::config::{Cli, Config};
+    use clap::Parser;
 
     #[test]
     fn test_migrate_compact_mode_true() {
@@ -284,5 +285,324 @@ mod tests {
         assert_eq!(config.api_keys().open_weather_map, "existing_owm_key");
         assert_eq!(config.api_keys().world_weather_online, "existing_wwo_key");
         assert_eq!(config.api_keys().weather_api, "existing_wa_key");
+    }
+
+    #[test]
+    fn test_parse_config_from_v010() {
+        const EXAMPLE: &str = r#"
+            provider = "open_meteo"
+            units = "metric"
+            output_format = "text"
+            show_city_name = true
+            use_colors = true
+        "#;
+        let legacy_config: LegacyConfig = toml::from_str(EXAMPLE).unwrap();
+        let config = Config::from(legacy_config)
+            .merge_cli_test(Cli::parse_from(&["rustormy", "-c", "TestCity"]));
+        assert_eq!(config.city(), Some("TestCity"));
+        assert_eq!(config.providers(), &vec![Provider::OpenMeteo]);
+        assert_eq!(config.format().units, Units::Metric);
+        assert_eq!(config.format().output_format, OutputFormat::Text);
+        assert!(config.format().show_city_name);
+        assert!(config.format().use_colors);
+        let valid = config.validate();
+        assert!(valid.is_ok(), "Expected valid config, got {:?}", valid);
+    }
+
+    #[test]
+    fn test_parse_config_from_v015() {
+        const EXAMPLE: &str = r#"
+            provider = "open_weather_map"
+            api_key = "test_key"
+            units = "metric"
+            output_format = "text"
+            language = "Spanish"
+            show_city_name = true
+            use_colors = true
+            use_degrees_for_wind = false
+            compact_mode = true
+            live_mode = false
+            live_mode_interval = 0
+        "#;
+        let legacy_config: LegacyConfig = toml::from_str(EXAMPLE).unwrap();
+        let config = Config::from(legacy_config)
+            .merge_cli_test(Cli::parse_from(&["rustormy", "-c", "TestCity"]));
+        assert_eq!(config.city(), Some("TestCity"));
+        assert_eq!(config.providers(), &vec![Provider::OpenWeatherMap]);
+        assert_eq!(config.api_keys().open_weather_map, "test_key");
+        assert_eq!(config.format().units, Units::Metric);
+        assert_eq!(config.format().output_format, OutputFormat::Text);
+        assert_eq!(config.format().language, Language::Spanish);
+        assert!(config.format().show_city_name);
+        assert!(config.format().use_colors);
+        assert!(!config.format().wind_in_degrees);
+        assert_eq!(config.format().text_mode, TextMode::Compact);
+        assert!(!config.live_mode());
+        assert_eq!(config.live_mode_interval(), 300); // should default to 300 if 0 is provided
+        let valid = config.validate();
+        assert!(valid.is_ok(), "Expected valid config, got {:?}", valid);
+    }
+
+    #[test]
+    fn test_parse_config_from_v020() {
+        const EXAMPLE: &str = r#"
+            provider = "open_weather_map"
+            api_key = "test_key"
+            units = "metric"
+            output_format = "text"
+            language = "Spanish"
+            show_city_name = true
+            use_colors = true
+            use_degrees_for_wind = false
+            text_mode = "full"
+            live_mode = false
+            live_mode_interval = 301
+        "#;
+        let legacy_config: LegacyConfig = toml::from_str(EXAMPLE).unwrap();
+        let config = Config::from(legacy_config)
+            .merge_cli_test(Cli::parse_from(&["rustormy", "-c", "TestCity"]));
+        assert_eq!(config.city(), Some("TestCity"));
+        assert_eq!(config.providers(), &vec![Provider::OpenWeatherMap]);
+        assert_eq!(config.api_keys().open_weather_map, "test_key");
+        assert_eq!(config.format().units, Units::Metric);
+        assert_eq!(config.format().output_format, OutputFormat::Text);
+        assert_eq!(config.format().language, Language::Spanish);
+        assert!(config.format().show_city_name);
+        assert!(config.format().use_colors);
+        assert!(!config.format().wind_in_degrees);
+        assert_eq!(config.format().text_mode, TextMode::Full);
+        assert!(!config.live_mode());
+        assert_eq!(config.live_mode_interval(), 301);
+        let valid = config.validate();
+        assert!(valid.is_ok(), "Expected valid config, got {:?}", valid);
+    }
+
+    #[test]
+    fn test_parse_config_from_v030() {
+        const EXAMPLE: &str = r#"
+            # Rustormy Configuration File
+            # This file is in TOML format. See https://toml.io/ for details
+            # For more details, see the documentation at https://github.com/Tairesh/rustormy/tree/main?tab=readme-ov-file#configuration
+            #
+            # Possible providers: `open_meteo`, `open_weather_map`, `world_weather_online`
+            # Note that `open_weather_map` and `world_weather_online` require an API key
+            # (`api_key_owm` for Open Weather Map, `api_key_wwo` for World Weather Online)
+            # You can specify multiple providers in the `providers` array to try them in order
+            # Example: `providers = ["world_weather_online", "open_weather_map", "open_meteo"]`
+
+            providers = ["world_weather_online", "open_weather_map", "open_meteo"]
+            api_key_owm = "test_key"
+            api_key_wwo = "test_key_wwo"
+
+            # You can specify location either by `city` name or by `lat` and `lon` coordinates
+            # If both are provided, coordinates will be used
+
+            # city = "London"
+            # lat = 51.5074
+            # lon = -0.1278
+
+            # Units can be `metric` (Celsius, m/s) or `imperial` (Fahrenheit, mph)
+
+            units = "metric"
+
+            # Output format can be `text` or `json`
+
+            output_format = "text"
+
+            # Language codes: `en` (English), `es` (Spanish), `ru` (Russian)
+            # (more languages will be added in future)
+
+            language = "es"
+
+            # Text mode can be `full`, `compact`, or `one_line`
+            # `compact` mode shows same info as `full` but without labels and trailing empty lines
+            # `one_line` mode shows only temperature and weather condition in a single line
+
+            text_mode = "full"
+
+            # Show city name can be enabled with `show_city_name = true` to include the city name in the output
+            # (only works if `city` is provided, not coordinates)
+
+            show_city_name = true
+
+            # Use colors can be enabled with `use_colors = true` to colorize the text output with ANSI colors
+
+            use_colors = true
+
+            # Wind in degrees can be enabled with `wind_in_degrees = true` to show wind direction in degrees
+
+            wind_in_degrees = false
+
+            # Live mode can be enabled with `live_mode = true` to update weather data every
+            # `live_mode_interval` seconds (default is 300 seconds, i.e., 5 minutes)
+
+            live_mode = false
+            live_mode_interval = 302
+
+            # Align right can be enabled with `align_right = true` to align labels to the right
+
+            align_right = true
+
+            # Use geocoding cache can be enabled with `use_geocoding_cache = true` to cache
+            # previously looked up cities locally to avoid repeated API calls
+
+            use_geocoding_cache = true
+
+            # Verbosity level can be set with `verbose` (0 = errors, 1 = warnings, 2 = info, 3 = debug)
+
+            verbose = 1
+        "#;
+        let legacy_config: LegacyConfig = toml::from_str(EXAMPLE).unwrap();
+        let config = Config::from(legacy_config)
+            .merge_cli_test(Cli::parse_from(&["rustormy", "-c", "TestCity"]));
+        assert_eq!(config.city(), Some("TestCity"));
+        assert_eq!(
+            config.providers(),
+            &vec![
+                Provider::WorldWeatherOnline,
+                Provider::OpenWeatherMap,
+                Provider::OpenMeteo
+            ]
+        );
+        assert_eq!(config.api_keys().open_weather_map, "test_key");
+        assert_eq!(config.api_keys().world_weather_online, "test_key_wwo");
+        assert_eq!(config.format().units, Units::Metric);
+        assert_eq!(config.format().output_format, OutputFormat::Text);
+        assert_eq!(config.format().language, Language::Spanish);
+        assert!(config.format().show_city_name);
+        assert!(config.format().use_colors);
+        assert!(!config.format().wind_in_degrees);
+        assert_eq!(config.format().text_mode, TextMode::Full);
+        assert!(!config.live_mode());
+        assert_eq!(config.live_mode_interval(), 302);
+        assert!(config.format().align_right);
+        assert!(config.use_geocoding_cache());
+        assert_eq!(config.verbose(), 1);
+        let valid = config.validate();
+        assert!(valid.is_ok(), "Expected valid config, got {:?}", valid);
+    }
+
+    #[test]
+    fn test_parse_config_from_v034() {
+        const EXAMPLE: &str = r#"
+            # Rustormy Configuration File
+            # This file is in TOML format. See https://toml.io/ for details
+            # For more details, see the documentation at https://github.com/Tairesh/rustormy/tree/main?tab=readme-ov-file#configuration
+
+            # Possible providers: `open_meteo`, `open_weather_map`, `world_weather_online`, `weather_api`
+            # Note that all providers except `open_meteo` require an API key
+            # You can specify multiple providers in the `providers` array to try them in order
+            # Example: `providers = ["world_weather_online", "open_weather_map", "open_meteo"]`
+
+            providers = ["weather_api", "world_weather_online", "open_weather_map", "open_meteo"]
+
+            # API key for Open Weather Map (required if using `open_weather_map` provider)
+            # Get your free API key from https://home.openweathermap.org/users/sign_up
+
+            api_key_owm = "test_key_owm"
+
+            # API key for World Weather Online (required if using `world_weather_online` provider)
+            # Get your free API key from https://www.worldweatheronline.com/developer/
+
+            api_key_wwo = "test_key_wwo"
+
+            # API key for WeatherAPI.com (required if using `weather_api` provider)
+            # Get your free API key from https://www.weatherapi.com/signup.aspx
+
+            api_key_wa = "test_key_wa"
+
+            # You can specify location either by `city` name or by `lat` and `lon` coordinates
+            # If both are provided, coordinates will be used
+
+            # city = "London"
+            # lat = 51.5074
+            # lon = -0.1278
+
+            # Units can be `metric` (Celsius, m/s) or `imperial` (Fahrenheit, mph)
+
+            units = "metric"
+
+            # Output format can be `text` or `json`
+
+            output_format = "text"
+
+            # Language codes: `en` (English), `es` (Spanish), `ru` (Russian)
+            # (more languages will be added in future)
+
+            language = "es"
+
+            # Text mode can be `full`, `compact`, or `one_line`
+            # `compact` mode shows same info as `full` but without labels and trailing empty lines
+            # `one_line` mode shows only temperature and weather condition in a single line
+
+            text_mode = "full"
+
+            # Show city name can be enabled with `show_city_name = true` to include the city name in the output
+            # (only works if `city` is provided, not coordinates)
+
+            show_city_name = true
+
+            # Use colors can be enabled with `use_colors = true` to colorize the text output with ANSI colors
+
+            use_colors = true
+
+            # Wind in degrees can be enabled with `wind_in_degrees = true` to show wind direction in degrees
+
+            wind_in_degrees = false
+
+            # Live mode can be enabled with `live_mode = true` to update weather data every
+            # `live_mode_interval` seconds (default is 300 seconds, i.e., 5 minutes)
+
+            live_mode = false
+            live_mode_interval = 300
+
+            # Align right can be enabled with `align_right = true` to align labels to the right
+
+            align_right = false
+
+            # Use geocoding cache can be enabled with `use_geocoding_cache = true` to cache
+            # previously looked up cities locally to avoid repeated API calls
+
+            use_geocoding_cache = false
+
+            # Verbosity level can be set with `verbose` (0 = errors, 1 = warnings, 2 = info, 3 = debug)
+
+            verbose = 1
+
+            # API HTTP client timeout in seconds (default is 10 seconds)
+
+            connect_timeout = 11
+        "#;
+        let legacy_config: LegacyConfig = toml::from_str(EXAMPLE).unwrap();
+        let config = Config::from(legacy_config)
+            .merge_cli_test(Cli::parse_from(&["rustormy", "-c", "TestCity"]));
+        assert_eq!(config.city(), Some("TestCity"));
+        assert_eq!(
+            config.providers(),
+            &vec![
+                Provider::WeatherApi,
+                Provider::WorldWeatherOnline,
+                Provider::OpenWeatherMap,
+                Provider::OpenMeteo
+            ]
+        );
+        assert_eq!(config.api_keys().open_weather_map, "test_key_owm");
+        assert_eq!(config.api_keys().world_weather_online, "test_key_wwo");
+        assert_eq!(config.api_keys().weather_api, "test_key_wa");
+        assert_eq!(config.format().units, Units::Metric);
+        assert_eq!(config.format().output_format, OutputFormat::Text);
+        assert_eq!(config.format().language, Language::Spanish);
+        assert!(config.format().show_city_name);
+        assert!(config.format().use_colors);
+        assert!(!config.format().wind_in_degrees);
+        assert_eq!(config.format().text_mode, TextMode::Full);
+        assert!(!config.live_mode());
+        assert_eq!(config.live_mode_interval(), 300);
+        assert!(!config.format().align_right);
+        assert!(!config.use_geocoding_cache());
+        assert_eq!(config.verbose(), 1);
+        assert_eq!(config.connect_timeout(), 11);
+        let valid = config.validate();
+        assert!(valid.is_ok(), "Expected valid config, got {:?}", valid);
     }
 }

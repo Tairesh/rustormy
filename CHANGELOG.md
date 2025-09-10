@@ -27,6 +27,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - Refactored config file handling to support backward compatibility and easier future changes.
+- Added more unit tests for checking config file parsing and migration.
+- Improved code quality and maintainability.
 
 ## [0.3.4] - 2025-09-08
 

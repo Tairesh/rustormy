@@ -184,6 +184,12 @@ impl Config {
         Ok(config)
     }
 
+    #[cfg(test)]
+    pub fn merge_cli_test(mut self, cli: Cli) -> Self {
+        self.merge_cli(cli);
+        self
+    }
+
     fn merge_cli(&mut self, cli: Cli) {
         if let Some(city) = cli.city {
             self.city = Some(city);
