@@ -168,6 +168,7 @@ You can obtain free API keys by signing up on their websites:
 - [WeatherAPI.com](https://www.weatherapi.com/signup.aspx)
 - [Weatherbit.io](https://www.weatherbit.io/account/create)
 - [Tomorrow.io](https://www.tomorrow.io/weather-api/)
+- [OpenUV](https://www.openuv.io/)
 
 ```toml
 [api_keys]
@@ -176,7 +177,7 @@ world_weather_online = ""
 weather_api = ""
 weather_bit = ""
 tomorrow_io = ""
-opebn_uv = ""
+open_uv = ""
 ```
 
 ---
