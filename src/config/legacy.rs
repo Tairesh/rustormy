@@ -1,5 +1,4 @@
-use crate::config::FormatterConfig;
-use crate::config::file::ApiKeys;
+use crate::config::{ApiKeys, FormatterConfig};
 use crate::models::{Language, OutputFormat, Provider, TextMode, Units};
 use serde::{Deserialize, Serialize};
 

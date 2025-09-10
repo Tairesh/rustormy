@@ -1,5 +1,5 @@
-use crate::config::Cli;
 use crate::config::legacy::LegacyConfig;
+use crate::config::{ApiKeys, Cli};
 use crate::errors::RustormyError;
 use crate::models::{ColorTheme, Language, OutputFormat, Provider, TextMode, Units};
 #[cfg(not(test))]
@@ -13,22 +13,6 @@ const CONFIG_FILE_HEADER: &str = "# Rustormy Configuration File
 #
 # Check the documentation for configuration options: https://github.com/Tairesh/rustormy/tree/main?tab=readme-ov-file#configuration
 ";
-
-#[derive(Debug, Default, Deserialize, Serialize)]
-pub struct ApiKeys {
-    #[serde(default)]
-    pub open_weather_map: String,
-    #[serde(default)]
-    pub world_weather_online: String,
-    #[serde(default)]
-    pub weather_api: String,
-    #[serde(default)]
-    pub weather_bit: String,
-    #[serde(default)]
-    pub tomorrow_io: String,
-    #[serde(default)]
-    pub open_uv: String,
-}
 
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -279,36 +263,9 @@ impl Config {
             ));
         }
 
-        // Check if API key is provided for OpenWeatherMap
-        if self.providers.contains(&Provider::OpenWeatherMap)
-            && self.api_keys().open_weather_map.is_empty()
-        {
-            return Err(RustormyError::MissingApiKey(Provider::OpenWeatherMap));
-        }
-
-        // Check if API key is provided for World Weather Online
-        if self.providers.contains(&Provider::WorldWeatherOnline)
-            && self.api_keys().world_weather_online.is_empty()
-        {
-            return Err(RustormyError::MissingApiKey(Provider::WorldWeatherOnline));
-        }
-
-        // Check if API key is provided for WeatherAPI.com
-        if self.providers.contains(&Provider::WeatherApi) && self.api_keys().weather_api.is_empty()
-        {
-            return Err(RustormyError::MissingApiKey(Provider::WeatherApi));
-        }
-
-        // Check if API key is provided for WeatherBit
-        if self.providers.contains(&Provider::WeatherBit) && self.api_keys().weather_bit.is_empty()
-        {
-            return Err(RustormyError::MissingApiKey(Provider::WeatherBit));
-        }
-
-        // Check if API key is provided for Tomorrow.io
-        if self.providers.contains(&Provider::TomorrowIo) && self.api_keys().tomorrow_io.is_empty()
-        {
-            return Err(RustormyError::MissingApiKey(Provider::TomorrowIo));
+        // Check if API key is provided for every provider that requires one
+        for provider in &self.providers {
+            self.api_keys.validate(*provider)?;
         }
 
         // Validate coordinates if provided
