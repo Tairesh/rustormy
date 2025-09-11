@@ -72,7 +72,7 @@ The configuration file will be located at `$HOME/Library/Application Support/rus
 
 On Windows, it uses
 the [Known Folder](https://msdn.microsoft.com/en-us/library/windows/desktop/bb776911(v=vs.85).aspx) system.
-The configuration file will be located at `%APPDATA%\Roaming\rustormy\config.toml`.
+The configuration file will be located at `%APPDATA%\rustormy\config\config.toml`.
 
 ### Configuration file options
 
