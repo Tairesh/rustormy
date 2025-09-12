@@ -46,7 +46,7 @@ fn label(text: &'static str, config: &FormatterConfig) -> String {
 }
 
 const fn wind_deg_to_symbol(deg: u16) -> &'static str {
-    let symbols = ["↑", "↗", "→", "↘", "↓", "↙", "←", "↖"];
+    let symbols = ["↓", "↙", "←", "↖", "↑", "↗", "→", "↘"];
     let index = ((deg as f32 + 22.5) / 45.0) as usize % 8;
     symbols[index]
 }
