@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Upcoming]
+
+### Fixed
+
+- Fixed incorrect wind direction arrows (#8). Now these arrows are pointed in the direction the wind blows to, not where
+  it comes from.
+
 ## [0.4.0] - 2025-09-10
 
 ### Added
