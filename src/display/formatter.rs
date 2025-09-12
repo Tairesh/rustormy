@@ -249,7 +249,6 @@ mod tests {
     use super::*;
     use crate::config::Config;
     use crate::models::{Language, TextMode, Units, WeatherConditionIcon};
-    use std::collections::HashMap;
 
     fn sample_weather() -> Weather {
         Weather {
@@ -590,7 +589,7 @@ mod tests {
 
     #[test]
     fn test_format_text_wind_degrees_symbol() {
-        let test_cases: HashMap<u16, char> = HashMap::from([
+        let test_cases = [
             (0, '↓'),
             (45, '↙'),
             (90, '←'),
@@ -599,9 +598,9 @@ mod tests {
             (225, '↗'),
             (270, '→'),
             (315, '↘'),
-        ]);
+        ];
 
-        for (got, want) in test_cases.into_iter() {
+        for &(got, want) in &test_cases {
             let mut weather = sample_weather();
 
             weather.wind_direction = got;
@@ -622,7 +621,7 @@ mod tests {
                 lines[3]
             );
             assert!(
-                !lines[3].contains("90°"),
+                !lines[3].contains("°"),
                 "Did not expect wind direction symbol in wind line, got '{}'",
                 lines[3]
             );
