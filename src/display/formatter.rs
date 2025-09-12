@@ -46,7 +46,7 @@ fn label(text: &'static str, config: &FormatterConfig) -> String {
 }
 
 const fn wind_deg_to_symbol(deg: u16) -> &'static str {
-    let symbols = ["↑", "↗", "→", "↘", "↓", "↙", "←", "↖"];
+    let symbols = ["↓", "↙", "←", "↖", "↑", "↗", "→", "↘"];
     let index = ((deg as f32 + 22.5) / 45.0) as usize % 8;
     symbols[index]
 }
@@ -317,7 +317,7 @@ mod tests {
             lines[3]
         );
         assert!(
-            lines[3].contains("→"),
+            lines[3].contains("←"),
             "Expected wind direction symbol in line 3, got '{}'",
             lines[3]
         );
@@ -421,7 +421,7 @@ mod tests {
             lines[2]
         );
         assert!(
-            lines[2].contains("→"),
+            lines[2].contains("←"),
             "Expected wind direction symbol in line 2, got '{}'",
             lines[2]
         );
@@ -588,6 +588,47 @@ mod tests {
     }
 
     #[test]
+    fn test_format_text_wind_degrees_symbol() {
+        let test_cases = [
+            (0, '↓'),
+            (45, '↙'),
+            (90, '←'),
+            (135, '↖'),
+            (180, '↑'),
+            (225, '↗'),
+            (270, '→'),
+            (315, '↘'),
+        ];
+
+        for &(got, want) in &test_cases {
+            let mut weather = sample_weather();
+
+            weather.wind_direction = got;
+
+            let mut config = Config::default();
+            config.set_format(FormatterConfig {
+                wind_in_degrees: false,
+                ..Default::default()
+            });
+            let formatter = WeatherFormatter::new(&config);
+            let lines = formatter.format_text(weather);
+
+            assert_eq!(lines.len(), 7);
+            assert!(
+                lines[3].contains(want),
+                "Expected '{}' in wind line, got '{}'",
+                want,
+                lines[3]
+            );
+            assert!(
+                !lines[3].contains("°"),
+                "Did not expect wind direction symbol in wind line, got '{}'",
+                lines[3]
+            );
+        }
+    }
+
+    #[test]
     fn test_format_text_different_language() {
         let weather = sample_weather();
         let mut config = Config::default();
@@ -634,7 +675,7 @@ mod tests {
             line
         );
         assert!(
-            line.contains("5.0 m/s →"),
+            line.contains("5.0 m/s ←"),
             "Expected wind info in one-line output, got '{}'",
             line
         );
@@ -691,8 +732,8 @@ mod tests {
             lines[2]
         );
         assert!(
-            lines[3].contains("Wind: 5.0 m/s →"),
-            "Expected 'Wind: 5.0 m/s →' in line 3, got '{}'",
+            lines[3].contains("Wind: 5.0 m/s ←"),
+            "Expected 'Wind: 5.0 m/s ←' in line 3, got '{}'",
             lines[3]
         );
     }
