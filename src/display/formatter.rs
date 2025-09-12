@@ -734,7 +734,7 @@ mod tests {
         );
         assert!(
             lines[3].contains("Wind: 5.0 m/s ←"),
-            "Expected 'Wind: 5.0 m/s →' in line 3, got '{}'",
+            "Expected 'Wind: 5.0 m/s ←' in line 3, got '{}'",
             lines[3]
         );
     }
