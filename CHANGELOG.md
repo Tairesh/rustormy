@@ -4,12 +4,15 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Upcoming]
+## [0.4.1] - 2025-09-15
 
 ### Fixed
 
-- Fixed incorrect wind direction arrows (#8). Now these arrows are pointed in the direction the wind blows to, not where
-  it comes from.
+- Fixed incorrect wind direction arrows [#8](https://github.com/Tairesh/rustormy/issues/8).
+  Now these arrows are pointed in the direction the wind blows to, not where it comes from.
+  Thanks to [@necromeo](https://github.com/necromeo) for the issue and this fix!
+- Fixed incorrect path to config file on Windows in README.
+  Thanks to [@showhwa](https://github.com/showhwa) for this fix!
 
 ## [0.4.0] - 2025-09-10
 
