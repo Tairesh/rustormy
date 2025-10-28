@@ -99,6 +99,8 @@ struct WwoCurrentCondition {
     lang_ru: Vec<WwoWeatherDesc>,
     #[serde(default, rename = "lang_es")]
     lang_es: Vec<WwoWeatherDesc>,
+    #[serde(default, rename = "lang_ko")]
+    lang_ko: Vec<WwoWeatherDesc>,
     windspeed_miles: String,
     windspeed_kmph: String,
     winddir_degree: String,
@@ -121,6 +123,7 @@ impl WwoCurrentCondition {
             Language::English => self.weather_desc.first(),
             Language::Russian => self.lang_ru.first(),
             Language::Spanish => self.lang_es.first(),
+            Language::Korean => self.lang_ko.first(),
         }
         .ok_or_else(|| {
             RustormyError::ApiReturnedError(
