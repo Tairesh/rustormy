@@ -116,6 +116,9 @@ pub enum Language {
     #[value(name = "es")]
     #[serde(rename = "es", alias = "Spanish")]
     Spanish,
+    #[value(name = "ko")]
+    #[serde(rename = "ko", alias = "Korean")]
+    Korean,
 }
 
 impl Language {
@@ -124,6 +127,7 @@ impl Language {
             Self::English => "en",
             Self::Russian => "ru",
             Self::Spanish => "es",
+            Self::Korean => "ko",
         }
     }
 }

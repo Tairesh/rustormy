@@ -3,7 +3,7 @@ use crate::display::color::colored_text;
 use crate::display::theme::condition_color;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
-use crate::models::{AnsiColor, OutputFormat, TextMode, Units, Weather};
+use crate::models::{AnsiColor, Language, OutputFormat, TextMode, Units, Weather};
 use std::fmt::Display;
 
 pub struct WeatherFormatter {
@@ -32,11 +32,16 @@ fn make_line(
 
 fn label(text: &'static str, config: &FormatterConfig) -> String {
     let lang = config.language;
+    let width = if config.language == Language::Korean {
+        4
+    } else {
+        12
+    };
     let translated = ll(lang, text).to_string() + ":";
     let padded = if config.align_right {
-        format!("{translated:>12}")
+        format!("{translated:>width$}")
     } else {
-        format!("{translated:<12}")
+        format!("{translated:<width$}")
     };
     if config.use_colors {
         colored_text(padded, config.color_theme.label)
