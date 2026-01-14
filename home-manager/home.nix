@@ -41,7 +41,7 @@ let
       units = "metric";
       language = "en";
 
-      color_theme = {
+      color-theme = {
         label = "BrightBlue";
         location = "BrightWhite";
         temperature = "BrightYellow";
@@ -66,8 +66,8 @@ in
         {
           city = "London";
           lat = 51.5074;
-          live-mode = false;
-          api-keys = {
+          live_mode = false;
+          api_keys = {
             open_weather_map = "";
           };
         }
