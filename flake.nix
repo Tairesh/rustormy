@@ -5,29 +5,32 @@
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
     naersk.url = "github:nix-community/naersk";
     home-manager.url = "github:nix-community/home-manager";
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs =
-    {
-      nixpkgs,
-      naersk,
-      ...
-    }:
-    let
-      pkgs = nixpkgs.legacyPackages.${builtins.currentSystem};
-      naerskLib = pkgs.callPackage naersk { };
+  outputs = { nixpkgs, naersk, flake-utils, ... }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = import nixpkgs {
+          inherit system;
+        };
 
-      rustormyPkg = naerskLib.buildPackage {
-        src = ./.;
-        buildInputs = [ pkgs.glibc ];
-        nativeBuildInputs = [ pkgs.pkg-config ];
-      };
+        naerskLib = pkgs.callPackage naersk { };
 
-      rustormyModule = import ./home-manager/home.nix;
-    in
-    {
-      packages.${builtins.currentSystem}.default = rustormyPkg;
+        rustormyPkg = naerskLib.buildPackage {
+          src = ./.;
+          buildInputs = [ pkgs.glibc ];
+          nativeBuildInputs = [ pkgs.pkg-config ];
+        };
 
-      homeManagerModules.rustormy = rustormyModule;
-    };
+        rustormyModule = import ./home-manager/home.nix;
+      in
+      {
+        packages.default = rustormyPkg;
+        packages.rustormy = rustormyPkg;
+
+        homeManagerModules.rustormy = rustormyModule;
+      }
+    );
 }
+
