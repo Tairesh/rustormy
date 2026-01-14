@@ -14,7 +14,7 @@
       ...
     }:
     let
-      pkgs = nixpkgs.legacyPackages."x86_64-linux";
+      pkgs = nixpkgs.legacyPackages.${builtins.currentSystem};
       naerskLib = pkgs.callPackage naersk { };
 
       rustormyPkg = naerskLib.buildPackage {
@@ -26,7 +26,7 @@
       rustormyModule = import ./home-manager/home.nix;
     in
     {
-      packages.x86_64-linux.default = rustormyPkg;
+      packages.${builtins.currentSystem}.default = rustormyPkg;
 
       homeManagerModules.rustormy = rustormyModule;
     };

@@ -65,8 +65,8 @@ in
       example = literalExpression ''
         {
           city = "London";
-          lat = 51.5074
-          live-mode = false
+          lat = 51.5074;
+          live-mode = false;
           api-keys = {
             open_weather_map = "";
           };
