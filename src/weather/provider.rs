@@ -7,6 +7,7 @@ use crate::weather::tomorrow_io::TomorrowIo;
 use crate::weather::weather_api::WeatherApi;
 use crate::weather::weather_bit::WeatherBit;
 use crate::weather::world_weather_online::WorldWeatherOnline;
+use crate::weather::yr::Yr;
 use enum_dispatch::enum_dispatch;
 use reqwest::blocking::Client;
 
@@ -38,6 +39,7 @@ pub enum GetWeatherProvider {
     WeatherApi,
     WeatherBit,
     TomorrowIo,
+    Yr,
 }
 
 provider_conversions!(
@@ -48,7 +50,8 @@ provider_conversions!(
     WorldWeatherOnline,
     WeatherApi,
     WeatherBit,
-    TomorrowIo
+    TomorrowIo,
+    Yr
 );
 
 impl GetWeatherProvider {

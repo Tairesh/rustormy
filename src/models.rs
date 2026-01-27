@@ -25,6 +25,9 @@ pub enum Provider {
     #[serde(alias = "ti")]
     #[value(alias = "ti")]
     TomorrowIo,
+    #[serde(alias = "yr")]
+    #[value(alias = "yr")]
+    Yr,
 }
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Serialize, Deserialize, ValueEnum)]
