@@ -2,10 +2,11 @@ use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
 use crate::models::{Language, Weather, WeatherConditionIcon};
-use crate::weather::GetWeather;
 use crate::weather::Location;
+use crate::weather::open_meteo::OpenMeteo;
 use crate::weather::openuv::get_uv_index;
 use crate::weather::tools::{apparent_temperature, dew_point};
+use crate::weather::{GetWeather, LookUpCity};
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 
@@ -137,7 +138,7 @@ impl YrResponse {
 
 impl GetWeather for Yr {
     fn get_weather(&self, client: &Client, config: &Config) -> Result<Weather, RustormyError> {
-        let location = get_location(config)?;
+        let location = get_location(client, config)?;
         let response = client
             .get(YR_API_URL)
             .query(&YrRequest::new(&location))
@@ -179,16 +180,14 @@ fn symbol_code_to_icon(code: &str) -> WeatherConditionIcon {
     }
 }
 
-fn get_location(config: &Config) -> Result<Location, RustormyError> {
+fn get_location(client: &Client, config: &Config) -> Result<Location, RustormyError> {
     match (config.coordinates(), config.city()) {
         (Some((lat, lon)), _) => Ok(Location {
             name: config.location_name(),
             latitude: lat,
             longitude: lon,
         }),
-        (None, Some(city)) if !city.is_empty() => Err(RustormyError::InvalidConfiguration(
-            "City name lookup not implemented for Yr provider",
-        )),
+        (None, Some(city)) if !city.is_empty() => (OpenMeteo {}).lookup_city_cached(client, config),
         _ => Err(RustormyError::NoLocationProvided),
     }
 }
