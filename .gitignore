@@ -1,6 +1,5 @@
 # Rust stuff
 /target/
-/Cargo.lock
 
 # IDEA stuff
 /.idea
