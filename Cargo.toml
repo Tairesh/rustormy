@@ -1,6 +1,6 @@
 [package]
 name = "rustormy"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2024"
 description = "Minimal neofetch-like weather CLI"
 license = "MIT"

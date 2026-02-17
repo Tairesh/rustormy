@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.4.2] - 2026-02-18
+
+### Added
+
+- Added Yr.no as a new weather data provider option (`yr` in config/CLI, no API key required).
+- Added naive Korean translations (mostly machine-generated, so may contain errors)
+
+### Changed
+
+- Updated dependencies to their latest versions.
+
 ## [0.4.1] - 2025-09-15
 
 ### Fixed

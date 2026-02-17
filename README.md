@@ -16,11 +16,13 @@ various output modes.
 
 - Fetch weather data from multiple providers:
     - [OpenMeteo](https://open-meteo.com/) (default, no API key required)
+    - [Yr.no](https://www.yr.no/) (no API key required)
     - [OpenWeatherMap](https://openweathermap.org/)
     - [World Weather Online](https://www.worldweatheronline.com/)
     - [WeatherAPI.com](https://www.weatherapi.com/)
     - [Weatherbit.io](https://www.weatherbit.io/)
     - [Tomorrow.io](https://www.tomorrow.io/weather-api/)
+    - [OpenUV](https://www.openuv.io/) (for UV index data, can be used alongside any main weather provider)
 - Automatically fall back to the next provider if the primary one is unavailable (e.g., due to API limits)
 - Display current temperature, "feels like" temperature, weather conditions, wind speed and direction
   humidity, precipitation, atmospheric pressure, dew point, and UV index (if supported by the provider)
@@ -84,15 +86,16 @@ Default provider is `open_meteo`.
 providers = ["open_meteo"]
 ```
 
-Possible values: `open_meteo`, `open_weather_map`, `world_weather_online`, `weather_api`, `weather_bit`, `tomorrow_io`.
-You can also use short names: `om`, `owm`, `wwo`, `wa`, `wb`, `ti`, respectively.
-Note that all providers except `open_meteo` require an API key.
+Possible values: `open_meteo`, `open_weather_map`, `world_weather_online`, `weather_api`, `weather_bit`, `tomorrow_io`,
+`yr`.
+You can also use short names: `om`, `owm`, `wwo`, `wa`, `wb`, `ti`, `yr`, respectively.
+Note that all providers except `open_meteo` and `yr` require an API key.
 You can specify multiple providers in the `providers` array to try them in order.
 
 Example:
 
 ```toml
-providers = ["tomorrow_io", "weather_api", "world_weather_online", "open_weather_map", "weather_bit", "open_meteo"]
+providers = ["tomorrow_io", "weather_api", "world_weather_online", "open_weather_map", "weather_bit", "yr", "open_meteo"]
 ```
 
 ---
@@ -238,7 +241,7 @@ Options:
   -x, --lon <LON>
           Longitude (required if city not provided)
   -p, --provider <PROVIDER>
-          Weather data provider [possible values: om, owm, wwo, wa, wb, ti]
+          Weather data provider [possible values: om, owm, wwo, wa, wb, ti, yr]
   -u, --units <UNITS>
           Units for temperature and wind speed [possible values: metric, imperial]
   -o, --format <OUTPUT_FORMAT>
