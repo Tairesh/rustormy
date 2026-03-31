@@ -88,19 +88,33 @@ mod test {
 #[serde(rename_all = "camelCase")]
 #[allow(dead_code)]
 struct SunTimes {
+    /// sunrise (top edge of the sun appears on the horizon)
     sunrise: Option<DateTime<Utc>>,
+    /// sunrise ends (bottom edge of the sun touches the horizon)
     sunrise_end: Option<DateTime<Utc>>,
+    /// morning golden hour (soft light, best time for photography) ends
     golden_hour_end: Option<DateTime<Utc>>,
+    /// solar noon (sun is in the highest position)
     solar_noon: Option<DateTime<Utc>>,
+    /// evening golden hour starts
     golden_hour: Option<DateTime<Utc>>,
+    /// sunset starts (bottom edge of the sun touches the horizon)
     sunset_start: Option<DateTime<Utc>>,
+    /// sunset starts (bottom edge of the sun touches the horizon)
     sunset: Option<DateTime<Utc>>,
+    /// dusk (evening nautical twilight starts)
     dusk: Option<DateTime<Utc>>,
+    /// nautical dusk (evening astronomical twilight starts)
     nautical_dusk: Option<DateTime<Utc>>,
+    /// night starts (dark enough for astronomical observations)
     night: Option<DateTime<Utc>>,
+    /// nadir (darkest moment of the night, sun is in the lowest position)
     nadir: Option<DateTime<Utc>>,
+    /// night ends (morning astronomical twilight starts)
     night_end: Option<DateTime<Utc>>,
+    /// nautical dawn (morning nautical twilight starts)
     nautical_dawn: Option<DateTime<Utc>>,
+    /// dawn (morning nautical twilight ends, morning civil twilight starts)
     dawn: Option<DateTime<Utc>>,
 }
 
