@@ -296,7 +296,8 @@ mod tests {
         "#;
         let legacy_config: LegacyConfig = toml::from_str(EXAMPLE).unwrap();
         let config = Config::from(legacy_config)
-            .merge_cli_test(Cli::parse_from(["rustormy", "-c", "TestCity"]));
+            .merge_cli_test(Cli::parse_from(["rustormy", "-c", "TestCity"]))
+            .unwrap();
         assert_eq!(config.city(), Some("TestCity"));
         assert_eq!(config.providers(), &vec![Provider::OpenMeteo]);
         assert_eq!(config.format().units, Units::Metric);
@@ -324,7 +325,8 @@ mod tests {
         "#;
         let legacy_config: LegacyConfig = toml::from_str(EXAMPLE).unwrap();
         let config = Config::from(legacy_config)
-            .merge_cli_test(Cli::parse_from(["rustormy", "-c", "TestCity"]));
+            .merge_cli_test(Cli::parse_from(["rustormy", "-c", "TestCity"]))
+            .unwrap();
         assert_eq!(config.city(), Some("TestCity"));
         assert_eq!(config.providers(), &vec![Provider::OpenWeatherMap]);
         assert_eq!(config.api_keys().open_weather_map, "test_key");
@@ -358,7 +360,8 @@ mod tests {
         "#;
         let legacy_config: LegacyConfig = toml::from_str(EXAMPLE).unwrap();
         let config = Config::from(legacy_config)
-            .merge_cli_test(Cli::parse_from(["rustormy", "-c", "TestCity"]));
+            .merge_cli_test(Cli::parse_from(["rustormy", "-c", "TestCity"]))
+            .unwrap();
         assert_eq!(config.city(), Some("TestCity"));
         assert_eq!(config.providers(), &vec![Provider::OpenWeatherMap]);
         assert_eq!(config.api_keys().open_weather_map, "test_key");
@@ -452,7 +455,8 @@ mod tests {
         "#;
         let legacy_config: LegacyConfig = toml::from_str(EXAMPLE).unwrap();
         let config = Config::from(legacy_config)
-            .merge_cli_test(Cli::parse_from(["rustormy", "-c", "TestCity"]));
+            .merge_cli_test(Cli::parse_from(["rustormy", "-c", "TestCity"]))
+            .unwrap();
         assert_eq!(config.city(), Some("TestCity"));
         assert_eq!(
             config.providers(),
@@ -573,7 +577,8 @@ mod tests {
         "#;
         let legacy_config: LegacyConfig = toml::from_str(EXAMPLE).unwrap();
         let config = Config::from(legacy_config)
-            .merge_cli_test(Cli::parse_from(["rustormy", "-c", "TestCity"]));
+            .merge_cli_test(Cli::parse_from(["rustormy", "-c", "TestCity"]))
+            .unwrap();
         assert_eq!(config.city(), Some("TestCity"));
         assert_eq!(
             config.providers(),
