@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- Replaced `.unwrap()` and `unreachable!()` in production code with proper error propagation for safer runtime behavior.
+
 ## [0.4.2] - 2026-02-18
 
 ### Added
