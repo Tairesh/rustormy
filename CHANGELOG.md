@@ -8,7 +8,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
-- Replaced `.unwrap()` and `unreachable!()` in production code with proper error propagation for safer runtime behavior.
+- Improve code quality and maintainability by refactoring and adding prehooks with correct clippy --all-targets check.
 
 ## [0.4.2] - 2026-02-18
 
