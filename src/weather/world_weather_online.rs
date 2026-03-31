@@ -162,18 +162,15 @@ impl WwoCurrentCondition {
             Units::Imperial => &self.windspeed_miles,
         };
 
-        let mut value = value.parse::<f64>().map_err(|e| {
+        let value = value.parse::<f64>().map_err(|e| {
             RustormyError::ApiReturnedError(format!("Invalid wind speed value: {e:?}"))
         })?;
 
-        // TODO: move wind speed conversion to tools
-        if units == Units::Metric {
-            // Convert km/h to m/s for Metric
-            value /= 3.6;
-        }
-        value = (value * 10.0).round() / 10.0; // Round to 1 decimal place
-
-        Ok(value)
+        Ok(if units == Units::Metric {
+            tools::kph_to_ms(value)
+        } else {
+            (value * 10.0).round() / 10.0
+        })
     }
 
     fn humidity(&self) -> Result<u8, RustormyError> {

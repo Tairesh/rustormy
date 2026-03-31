@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::errors::RustormyError;
 use crate::models::{Units, Weather, WeatherConditionIcon};
-use crate::weather::GetWeather;
+use crate::weather::{GetWeather, tools};
 use reqwest::blocking::Client;
 
 const WEATHER_API_URL: &str = "https://api.weatherapi.com/v1/current.json";
@@ -158,13 +158,10 @@ impl WeatherApiCurrent {
     }
 
     fn wind_speed(&self, units: Units) -> f64 {
-        // TODO: move wind speed conversion to tools
-        let value = match units {
-            Units::Metric => self.wind_kph / 3.6, // Convert kph to m/s
-            Units::Imperial => self.wind_mph,
-        };
-
-        (value * 10.0).round() / 10.0 // Round to 1 decimal place
+        match units {
+            Units::Metric => tools::kph_to_ms(self.wind_kph),
+            Units::Imperial => (self.wind_mph * 10.0).round() / 10.0,
+        }
     }
 
     fn uv_index(&self) -> f64 {
