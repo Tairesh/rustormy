@@ -8,7 +8,7 @@ use std::time::Duration;
 
 fn clear_screen() {
     print!("\x1B[2J\x1B[1;1H\x1B[?25l");
-    std::io::Write::flush(&mut std::io::stdout()).unwrap();
+    std::io::Write::flush(&mut std::io::stdout()).ok();
 }
 
 pub struct App {
@@ -51,10 +51,10 @@ impl App {
                             // TODO: Log this instead of printing to stderr
                             eprintln!("Provider {p:?} failed: {error:?}");
                         }
-                        self.provider =
-                            GetWeatherProvider::new(self.config.provider().unwrap_or_else(|| {
-                                self.formatter.display_error(&error);
-                            }));
+                        let Some(next) = self.config.provider() else {
+                            self.formatter.display_error(&error);
+                        };
+                        self.provider = GetWeatherProvider::new(next);
                         continue;
                     }
                     _ => {

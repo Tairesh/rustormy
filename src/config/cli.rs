@@ -93,7 +93,10 @@ impl Cli {
         let cli = Cli::parse();
 
         if cli.clear_cache {
-            clear_cache().expect("Failed to clear cache");
+            if let Err(e) = clear_cache() {
+                eprintln!("Failed to clear cache: {e}");
+                std::process::exit(1);
+            }
             println!("Cache cleared successfully.");
             std::process::exit(0);
         }

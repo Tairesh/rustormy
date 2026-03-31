@@ -20,17 +20,13 @@ pub struct ApiKeys {
 
 impl ApiKeys {
     pub fn validate(&self, provider: Provider) -> Result<(), RustormyError> {
-        let no_api_key = matches!(provider, Provider::OpenMeteo | Provider::Yr);
-        if no_api_key {
-            return Ok(());
-        }
         let has_api_key = match provider {
+            Provider::OpenMeteo | Provider::Yr => return Ok(()),
             Provider::OpenWeatherMap => !self.open_weather_map.is_empty(),
             Provider::WorldWeatherOnline => !self.world_weather_online.is_empty(),
             Provider::WeatherApi => !self.weather_api.is_empty(),
             Provider::WeatherBit => !self.weather_bit.is_empty(),
             Provider::TomorrowIo => !self.tomorrow_io.is_empty(),
-            _ => unreachable!(),
         };
         if has_api_key {
             Ok(())
