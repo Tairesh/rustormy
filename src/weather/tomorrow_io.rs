@@ -65,7 +65,7 @@ struct WeatherValues {
     pressure_surface_level: f64,
     wind_speed: f64,
     wind_direction: u16,
-    uv_index: u8,
+    uv_index: f64,
     weather_code: u16,
     dew_point: f64,
     // pressure_sea_level: f64,
@@ -259,7 +259,7 @@ mod test {
         assert_eq!(weather.pressure, 1012);
         assert_eq!(weather.wind_speed, 5.4);
         assert_eq!(weather.wind_direction, 219);
-        assert_eq!(weather.uv_index, Some(2));
+        assert_eq!(weather.uv_index, Some(2.));
         assert_eq!(weather.icon, WeatherConditionIcon::LightShowers);
         assert_eq!(weather.description, "Light rain");
         assert_eq!(weather.location_name, "ბათუმი, საქართველო"); // shortened name

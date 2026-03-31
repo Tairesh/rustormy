@@ -93,7 +93,7 @@ pub struct Weather {
     pub pressure: u32,
     pub wind_speed: f64,
     pub wind_direction: u16,
-    pub uv_index: Option<u8>,
+    pub uv_index: Option<f64>,
     pub description: String,
     pub icon: WeatherConditionIcon,
     pub location_name: String,
