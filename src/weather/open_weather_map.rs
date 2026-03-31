@@ -95,22 +95,11 @@ impl WeatherResponseData {
     }
 
     pub fn icon(&self) -> WeatherConditionIcon {
-        if let Some(weather) = self.weather.first() {
-            match weather.id {
-                200..=232 => WeatherConditionIcon::Thunderstorm,
-                300..=321 | 500 | 520 => WeatherConditionIcon::LightShowers,
-                500..=531 => WeatherConditionIcon::HeavyShowers,
-                600 | 612 | 615 | 620 => WeatherConditionIcon::LightSnow,
-                601..=622 => WeatherConditionIcon::HeavySnow,
-                701..=781 => WeatherConditionIcon::Fog,
-                800 => WeatherConditionIcon::Clear,
-                801 | 802 => WeatherConditionIcon::PartlyCloudy,
-                803 | 804 => WeatherConditionIcon::Cloudy,
-                _ => WeatherConditionIcon::Unknown,
-            }
-        } else {
-            WeatherConditionIcon::Unknown
-        }
+        self.weather
+            .first()
+            .map_or(WeatherConditionIcon::Unknown, |w| {
+                tools::owm_code_to_icon(w.id)
+            })
     }
 
     fn dew_point(&self, units: Units) -> f64 {

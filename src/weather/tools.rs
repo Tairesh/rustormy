@@ -1,4 +1,4 @@
-use crate::models::Units;
+use crate::models::{Units, WeatherConditionIcon};
 
 /// Convert Celsius to Fahrenheit
 pub fn c_to_f(c: f64) -> f64 {
@@ -39,4 +39,26 @@ pub fn apparent_temperature(t: f64, w: f64, h: f64) -> f64 {
     let e = (h / 100.0) * 6.105 * (17.27 * t / (237.7 + t)).exp();
     let at = t + 0.33 * e - 0.70 * w - 4.00;
     (at * 10.0).round() / 10.0 // Round to one decimal place
+}
+
+/// Convert km/h to m/s, rounded to 1 decimal place
+pub fn kph_to_ms(kph: f64) -> f64 {
+    (kph / 3.6 * 10.0).round() / 10.0
+}
+
+/// Map OpenWeatherMap-style weather codes to icons.
+/// Used by `OpenWeatherMap` and `WeatherBit` (same code scheme).
+pub fn owm_code_to_icon(code: u32) -> WeatherConditionIcon {
+    match code {
+        200..=232 => WeatherConditionIcon::Thunderstorm,
+        300..=321 | 500 | 520 => WeatherConditionIcon::LightShowers,
+        500..=531 => WeatherConditionIcon::HeavyShowers,
+        600 | 612 | 615 | 620 => WeatherConditionIcon::LightSnow,
+        601..=622 => WeatherConditionIcon::HeavySnow,
+        701..=781 => WeatherConditionIcon::Fog,
+        800 => WeatherConditionIcon::Clear,
+        801 | 802 => WeatherConditionIcon::PartlyCloudy,
+        803 | 804 => WeatherConditionIcon::Cloudy,
+        _ => WeatherConditionIcon::Unknown,
+    }
 }

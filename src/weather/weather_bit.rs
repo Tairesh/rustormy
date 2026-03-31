@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::errors::RustormyError;
 use crate::models::{Location, Units, Weather, WeatherConditionIcon};
-use crate::weather::{GetWeather, LookUpCity};
+use crate::weather::{GetWeather, LookUpCity, tools};
 use reqwest::blocking::Client;
 
 const GEOCODING_API_URL: &str = "https://api.weatherbit.io/v2.0/geocode";
@@ -179,18 +179,7 @@ struct WeatherDescription {
 
 impl WeatherDescription {
     fn icon(&self) -> WeatherConditionIcon {
-        match self.code {
-            200..=232 => WeatherConditionIcon::Thunderstorm,
-            300..=321 | 500 | 520 => WeatherConditionIcon::LightShowers,
-            500..=531 => WeatherConditionIcon::HeavyShowers,
-            600 | 612 | 615 | 620 => WeatherConditionIcon::LightSnow,
-            601..=622 => WeatherConditionIcon::HeavySnow,
-            701..=781 => WeatherConditionIcon::Fog,
-            800 => WeatherConditionIcon::Clear,
-            801 | 802 => WeatherConditionIcon::PartlyCloudy,
-            803 | 804 => WeatherConditionIcon::Cloudy,
-            _ => WeatherConditionIcon::Unknown,
-        }
+        tools::owm_code_to_icon(self.code)
     }
 }
 
