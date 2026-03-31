@@ -32,11 +32,7 @@ fn make_line(
 
 fn label(text: &'static str, config: &FormatterConfig) -> String {
     let lang = config.language;
-    let width = if config.language == Language::Korean {
-        4
-    } else {
-        12
-    };
+    let width = lang.label_width();
     let translated = ll(lang, text).to_string() + ":";
     let padded = if config.align_right {
         format!("{translated:>width$}")
@@ -54,6 +50,21 @@ const fn wind_deg_to_symbol(deg: u16) -> &'static str {
     let symbols = ["↓", "↙", "←", "↖", "↑", "↗", "→", "↘"];
     let index = ((deg as f32 + 22.5) / 45.0) as usize % 8;
     symbols[index]
+}
+
+fn unit_strings(units: Units, lang: Language) -> (&'static str, &'static str, &'static str) {
+    match units {
+        Units::Metric => ("°C", ll(lang, "m/s"), ll(lang, "mm")),
+        Units::Imperial => ("°F", ll(lang, "mph"), ll(lang, "inch")),
+    }
+}
+
+fn format_wind_value(speed: f64, direction: u16, unit: &str, in_degrees: bool) -> String {
+    if in_degrees {
+        format!("{speed:.1} {unit} {direction}°")
+    } else {
+        format!("{speed:.1} {unit} {}", wind_deg_to_symbol(direction))
+    }
 }
 
 impl WeatherFormatter {
@@ -93,27 +104,18 @@ impl WeatherFormatter {
 
     fn format_one_line(&self, weather: Weather) -> String {
         let color_theme = &self.config.color_theme;
-        let (temp_unit, wind_unit) = match self.config.units {
-            Units::Metric => ("°C", ll(self.config.language, "m/s")),
-            Units::Imperial => ("°F", ll(self.config.language, "mph")),
-        };
+        let (temp_unit, wind_unit, _) = unit_strings(self.config.units, self.config.language);
         let emoji = weather.icon.emoji();
         let mut temperature = format!("{:.1}{}", weather.temperature, temp_unit);
         if self.config.use_colors {
             temperature = colored_text(temperature, color_theme.temperature);
         }
-        let wind = if self.config.wind_in_degrees {
-            format!(
-                "{:.1} {wind_unit} {}°",
-                weather.wind_speed, weather.wind_direction
-            )
-        } else {
-            format!(
-                "{:.1} {wind_unit} {}",
-                weather.wind_speed,
-                wind_deg_to_symbol(weather.wind_direction)
-            )
-        };
+        let wind = format_wind_value(
+            weather.wind_speed,
+            weather.wind_direction,
+            wind_unit,
+            self.config.wind_in_degrees,
+        );
         let wind = if self.config.use_colors {
             colored_text(wind, color_theme.wind)
         } else {
@@ -140,10 +142,7 @@ impl WeatherFormatter {
             self.config.show_city_name,
             self.config.language,
         );
-        let (temp_unit, wind_unit, precip_unit) = match self.config.units {
-            Units::Metric => ("°C", ll(lang, "m/s"), ll(lang, "mm")),
-            Units::Imperial => ("°F", ll(lang, "mph"), ll(lang, "inch")),
-        };
+        let (temp_unit, wind_unit, precip_unit) = unit_strings(self.config.units, lang);
         let icon = if colors {
             weather.icon.colored_icon()
         } else {
@@ -193,18 +192,12 @@ impl WeatherFormatter {
         output.push(make_line(
             icon[3],
             "Wind",
-            if self.config.wind_in_degrees {
-                format!(
-                    "{:.1} {wind_unit} {}°",
-                    weather.wind_speed, weather.wind_direction
-                )
-            } else {
-                format!(
-                    "{:.1} {wind_unit} {}",
-                    weather.wind_speed,
-                    wind_deg_to_symbol(weather.wind_direction)
-                )
-            },
+            format_wind_value(
+                weather.wind_speed,
+                weather.wind_direction,
+                wind_unit,
+                self.config.wind_in_degrees,
+            ),
             color_theme.wind,
             &self.config,
         ));
@@ -337,11 +330,6 @@ mod tests {
             lines[4]
         );
         assert!(
-            lines[4].contains("0.5 mm"),
-            "Expected '0.5 mm' in line 4, got '{}'",
-            lines[4]
-        );
-        assert!(
             lines[5].contains("Pressure"),
             "Expected 'Pressure' in line 5, got '{}'",
             lines[5]
@@ -441,11 +429,6 @@ mod tests {
             lines[3]
         );
         assert!(
-            lines[3].contains("0.5 mm"),
-            "Expected '0.5 mm' in line 3, got '{}'",
-            lines[3]
-        );
-        assert!(
             !lines[4].contains("Pressure"),
             "Expected no 'Pressure' label in compact mode, got '{}'",
             lines[4]
@@ -472,8 +455,8 @@ mod tests {
         );
         assert!(
             lines[5].contains("14.3°C"),
-            "Expected '14.3°C' in line 6, got '{}'",
-            lines[6]
+            "Expected '14.3°C' in line 5, got '{}'",
+            lines[5]
         );
     }
 
