@@ -6,6 +6,8 @@ use crate::models::{ColorTheme, Language, OutputFormat, Provider, TextMode, Unit
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::path::Path;
+#[cfg(not(test))]
 use std::path::PathBuf;
 
 const CONFIG_FILE_HEADER: &str = "# Rustormy Configuration File
@@ -113,34 +115,41 @@ impl Default for Config {
 }
 
 impl Config {
-    #[cfg(not(test))]
     pub fn new(cli: Cli) -> Result<Self, RustormyError> {
-        // Try to load config from file first
-        let file_path = Self::get_config_path()?;
-        let mut config = Self::load_from_file(&file_path)?.unwrap_or_default();
-
-        // Merge CLI arguments on top of file config
-        config.merge_cli(cli);
-        config.validate()?;
-        Ok(config)
-    }
-
-    #[cfg(test)]
-    pub fn new(cli: Cli) -> Result<Self, RustormyError> {
+        // test builds skip file I/O and use defaults
+        #[cfg(not(test))]
+        let mut config = {
+            let file_path = Self::get_config_path()?;
+            Self::load_from_file(&file_path)?.unwrap_or_default()
+        };
+        #[cfg(test)]
         let mut config = Self::default();
-        config.merge_cli(cli);
+        config.merge_cli(cli)?;
         config.validate()?;
         Ok(config)
     }
 
-    fn load_from_file(config_path: &PathBuf) -> Result<Option<Self>, RustormyError> {
+    fn load_from_file(config_path: &Path) -> Result<Option<Self>, RustormyError> {
         if !config_path.exists() {
             let default_config = Self::create_default_config_file(config_path)?;
             return Ok(Some(default_config));
         }
 
-        let config = Self::read_and_parse_config_file(config_path)?;
+        let content = fs::read_to_string(config_path)?;
+        let (config, migrated) = Self::parse_config(&content)?;
+        if migrated {
+            config.write_to_file(config_path)?;
+        }
         Ok(Some(config))
+    }
+
+    fn parse_config(content: &str) -> Result<(Self, bool), RustormyError> {
+        match toml::from_str::<Self>(content) {
+            Ok(config) => Ok((config, false)),
+            Err(modern_err) => toml::from_str::<LegacyConfig>(content)
+                .map(|legacy| (Config::from(legacy), true))
+                .map_err(|_| RustormyError::ConfigParseError(modern_err)),
+        }
     }
 
     #[cfg(not(test))]
@@ -154,13 +163,13 @@ impl Config {
         Ok(config_path)
     }
 
-    fn create_default_config_file(config_path: &PathBuf) -> Result<Self, RustormyError> {
+    fn create_default_config_file(config_path: &Path) -> Result<Self, RustormyError> {
         let default_config = Self::default();
         default_config.write_to_file(config_path)?;
         Ok(default_config)
     }
 
-    fn write_to_file(&self, config_path: &PathBuf) -> Result<(), RustormyError> {
+    fn write_to_file(&self, config_path: &Path) -> Result<(), RustormyError> {
         // Create parent directories if they don't exist
         if let Some(parent) = config_path.parent() {
             fs::create_dir_all(parent)?;
@@ -173,24 +182,13 @@ impl Config {
         Ok(())
     }
 
-    fn read_and_parse_config_file(config_path: &PathBuf) -> Result<Self, RustormyError> {
-        let content = fs::read_to_string(config_path)?;
-        let config: Self = toml::from_str(&content).or_else(|_| {
-            let legacy_config: LegacyConfig = toml::from_str(&content)?;
-            let config = Config::from(legacy_config);
-            config.write_to_file(config_path)?;
-            Ok::<Config, RustormyError>(config)
-        })?;
-        Ok(config)
-    }
-
     #[cfg(test)]
-    pub fn merge_cli_test(mut self, cli: Cli) -> Self {
-        self.merge_cli(cli);
-        self
+    pub fn merge_cli_test(mut self, cli: Cli) -> Result<Self, RustormyError> {
+        self.merge_cli(cli)?;
+        Ok(self)
     }
 
-    fn merge_cli(&mut self, cli: Cli) {
+    fn merge_cli(&mut self, cli: Cli) -> Result<(), RustormyError> {
         if let Some(city) = cli.city {
             self.city = Some(city);
         }
@@ -216,37 +214,34 @@ impl Config {
             self.live_mode_interval = live_mode_interval;
         }
 
-        // Boolean flags are set directly if the flag is present
-        if cli.show_city_name {
-            self.format.show_city_name = true;
-        }
-        if cli.use_colors {
-            self.format.use_colors = true;
-        }
-        if cli.use_degrees_for_wind {
-            self.format.wind_in_degrees = true;
-        }
-        if cli.compact_mode {
-            self.format.text_mode = TextMode::Compact;
-        }
-        if cli.one_line_mode {
-            self.format.text_mode = TextMode::OneLine;
-        }
-        if let Some(text_mode) = cli.text_mode {
-            self.format.text_mode = text_mode;
-        }
-        if cli.align_right {
-            self.format.align_right = true;
-        }
-        if cli.live_mode {
-            self.live_mode = true;
-        }
-        if cli.no_cache {
-            self.use_geocoding_cache = false;
-        }
+        self.format.show_city_name |= cli.show_city_name;
+        self.format.use_colors |= cli.use_colors;
+        self.format.wind_in_degrees |= cli.use_degrees_for_wind;
+        self.format.align_right |= cli.align_right;
+        self.live_mode |= cli.live_mode;
+        self.use_geocoding_cache &= !cli.no_cache;
         if cli.verbose > 0 {
             self.verbose = cli.verbose;
         }
+
+        let text_mode_count = [cli.compact_mode, cli.one_line_mode, cli.text_mode.is_some()]
+            .iter()
+            .filter(|&&f| f)
+            .count();
+        if text_mode_count > 1 {
+            return Err(RustormyError::InvalidConfiguration(
+                "Only one of --compact, --one-line, or --text-mode may be specified at a time",
+            ));
+        }
+        if let Some(mode) = cli
+            .text_mode
+            .or(cli.compact_mode.then_some(TextMode::Compact))
+            .or(cli.one_line_mode.then_some(TextMode::OneLine))
+        {
+            self.format.text_mode = mode;
+        }
+
+        Ok(())
     }
 
     pub fn validate(&self) -> Result<(), RustormyError> {
@@ -289,13 +284,9 @@ impl Config {
         &self.providers
     }
 
-    /// Pop the first provider from the list to try
-    pub fn provider(&mut self) -> Option<Provider> {
-        if self.providers.is_empty() {
-            None
-        } else {
-            Some(self.providers.remove(0))
-        }
+    /// Take the next provider from the front of the list to try
+    pub fn take_next_provider(&mut self) -> Option<Provider> {
+        self.providers.drain(..1).next()
     }
 
     pub fn api_keys(&self) -> &ApiKeys {
@@ -825,7 +816,7 @@ mod tests {
             verbose: 3,
             clear_cache: false,
         };
-        config.merge_cli(cli);
+        config.merge_cli(cli).unwrap();
         assert_eq!(config.city(), Some("CLI City"));
         assert_eq!(config.coordinates(), Some((30.0, 40.0)));
         assert_eq!(config.providers, vec![Provider::OpenWeatherMap]);
@@ -841,5 +832,114 @@ mod tests {
         assert!(config.format.align_right);
         assert!(!config.use_geocoding_cache);
         assert_eq!(config.verbose, 3);
+    }
+
+    fn base_cli() -> Cli {
+        Cli {
+            city: Some("TestCity".to_string()),
+            lat: None,
+            lon: None,
+            provider: None,
+            units: None,
+            output_format: None,
+            language: None,
+            show_city_name: false,
+            use_colors: false,
+            use_degrees_for_wind: false,
+            compact_mode: false,
+            one_line_mode: false,
+            text_mode: None,
+            align_right: false,
+            live_mode: false,
+            live_mode_interval: None,
+            no_cache: false,
+            verbose: 0,
+            clear_cache: false,
+        }
+    }
+
+    #[test]
+    fn test_text_mode_compact_only() {
+        let mut config = Config::default();
+        config
+            .merge_cli(Cli {
+                compact_mode: true,
+                ..base_cli()
+            })
+            .unwrap();
+        assert_eq!(config.format.text_mode, TextMode::Compact);
+    }
+
+    #[test]
+    fn test_text_mode_one_line_only() {
+        let mut config = Config::default();
+        config
+            .merge_cli(Cli {
+                one_line_mode: true,
+                ..base_cli()
+            })
+            .unwrap();
+        assert_eq!(config.format.text_mode, TextMode::OneLine);
+    }
+
+    #[test]
+    fn test_text_mode_flag_only() {
+        let mut config = Config::default();
+        config
+            .merge_cli(Cli {
+                text_mode: Some(TextMode::Full),
+                ..base_cli()
+            })
+            .unwrap();
+        assert_eq!(config.format.text_mode, TextMode::Full);
+    }
+
+    #[test]
+    fn test_text_mode_compact_and_one_line_conflict() {
+        let mut config = Config::default();
+        let result = config.merge_cli(Cli {
+            compact_mode: true,
+            one_line_mode: true,
+            ..base_cli()
+        });
+        assert!(
+            matches!(result, Err(RustormyError::InvalidConfiguration(_))),
+            "Expected conflict error, got {result:?}",
+        );
+    }
+
+    #[test]
+    fn test_text_mode_compact_and_flag_conflict() {
+        let mut config = Config::default();
+        let result = config.merge_cli(Cli {
+            compact_mode: true,
+            text_mode: Some(TextMode::OneLine),
+            ..base_cli()
+        });
+        assert!(
+            matches!(result, Err(RustormyError::InvalidConfiguration(_))),
+            "Expected conflict error, got {result:?}",
+        );
+    }
+
+    #[test]
+    fn test_text_mode_one_line_and_flag_conflict() {
+        let mut config = Config::default();
+        let result = config.merge_cli(Cli {
+            one_line_mode: true,
+            text_mode: Some(TextMode::Compact),
+            ..base_cli()
+        });
+        assert!(
+            matches!(result, Err(RustormyError::InvalidConfiguration(_))),
+            "Expected conflict error, got {result:?}",
+        );
+    }
+
+    #[test]
+    fn test_text_mode_none_unchanged() {
+        let mut config = Config::default();
+        config.merge_cli(base_cli()).unwrap();
+        assert_eq!(config.format.text_mode, TextMode::default());
     }
 }

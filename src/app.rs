@@ -25,7 +25,7 @@ impl App {
             .user_agent(concat!("rustormy/", env!("CARGO_PKG_VERSION")))
             .timeout(Duration::from_secs(config.connect_timeout()))
             .build()?;
-        let provider = GetWeatherProvider::new(config.provider().unwrap_or_default());
+        let provider = GetWeatherProvider::new(config.take_next_provider().unwrap_or_default());
         let formatter = WeatherFormatter::new(&config);
         Ok(Self {
             client,
@@ -51,7 +51,7 @@ impl App {
                             // TODO: Log this instead of printing to stderr
                             eprintln!("Provider {p:?} failed: {error:?}");
                         }
-                        let Some(next) = self.config.provider() else {
+                        let Some(next) = self.config.take_next_provider() else {
                             self.formatter.display_error(&error);
                         };
                         self.provider = GetWeatherProvider::new(next);
