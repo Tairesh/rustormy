@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - Improve code quality and maintainability by refactoring and adding prehooks with correct clippy --all-targets check.
+- Fixed Yr.no provider showing "Unknown" for many valid weather conditions (sleet, thunderstorms, showers, fair weather, etc.).
 
 ## [0.4.2] - 2026-02-18
 

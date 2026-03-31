@@ -161,35 +161,209 @@ impl GetWeather for Yr {
     }
 }
 
-fn symbol_code_to_description(code: &str, lang: Language) -> String {
-    match code {
-        "clearsky" | "clearsky_day" | "clearsky_night" => ll(lang, "Clear sky").to_string(),
-        "partlycloudy" | "partlycloudy_day" | "partlycloudy_night" => {
-            ll(lang, "Partly cloudy").to_string()
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum YrWeatherCode {
+    ClearSky,
+    Fair,
+    PartlyCloudy,
+    Cloudy,
+    LightRainShowers,
+    RainShowers,
+    HeavyRainShowers,
+    LightRainShowersAndThunder,
+    RainShowersAndThunder,
+    HeavyRainShowersAndThunder,
+    LightSleetShowers,
+    SleetShowers,
+    HeavySleetShowers,
+    LightSleetShowersAndThunder,
+    SleetShowersAndThunder,
+    HeavySleetShowersAndThunder,
+    LightSnowShowers,
+    SnowShowers,
+    HeavySnowShowers,
+    LightSnowShowersAndThunder,
+    SnowShowersAndThunder,
+    HeavySnowShowersAndThunder,
+    LightRain,
+    Rain,
+    HeavyRain,
+    LightRainAndThunder,
+    RainAndThunder,
+    HeavyRainAndThunder,
+    LightSleet,
+    Sleet,
+    HeavySleet,
+    LightSleetAndThunder,
+    SleetAndThunder,
+    HeavySleetAndThunder,
+    LightSnow,
+    Snow,
+    HeavySnow,
+    LightSnowAndThunder,
+    SnowAndThunder,
+    HeavySnowAndThunder,
+    Fog,
+}
+
+impl YrWeatherCode {
+    fn description(self, lang: Language) -> String {
+        let key = match self {
+            Self::ClearSky => "Clear",
+            Self::Fair => "Mostly clear",
+            Self::PartlyCloudy => "Partly cloudy",
+            Self::Cloudy => "Cloudy",
+            Self::LightRainShowers => "Slight rain showers",
+            Self::RainShowers => "Moderate rain showers",
+            Self::HeavyRainShowers => "Violent rain showers",
+            Self::LightSleetShowers => "Light sleet showers",
+            Self::SleetShowers => "Sleet showers",
+            Self::HeavySleetShowers => "Heavy sleet showers",
+            Self::LightSnowShowers => "Slight snow showers",
+            Self::SnowShowers => "Snow showers",
+            Self::HeavySnowShowers => "Heavy snow showers",
+            Self::LightRain => "Light rain",
+            Self::Rain => "Rain",
+            Self::HeavyRain => "Heavy rain",
+            Self::LightSleet => "Light sleet",
+            Self::Sleet => "Sleet",
+            Self::HeavySleet => "Heavy sleet",
+            Self::LightSnow => "Light snow",
+            Self::Snow => "Snow",
+            Self::HeavySnow => "Heavy snow",
+            Self::Fog => "Fog",
+            Self::LightRainShowersAndThunder
+            | Self::RainShowersAndThunder
+            | Self::HeavyRainShowersAndThunder
+            | Self::LightSleetShowersAndThunder
+            | Self::SleetShowersAndThunder
+            | Self::HeavySleetShowersAndThunder
+            | Self::LightSnowShowersAndThunder
+            | Self::SnowShowersAndThunder
+            | Self::HeavySnowShowersAndThunder
+            | Self::LightRainAndThunder
+            | Self::RainAndThunder
+            | Self::HeavyRainAndThunder
+            | Self::LightSleetAndThunder
+            | Self::SleetAndThunder
+            | Self::HeavySleetAndThunder
+            | Self::LightSnowAndThunder
+            | Self::SnowAndThunder
+            | Self::HeavySnowAndThunder => "Thunderstorm",
+        };
+        ll(lang, key).to_string()
+    }
+
+    fn to_icon(self) -> WeatherConditionIcon {
+        match self {
+            Self::ClearSky => WeatherConditionIcon::Clear,
+            Self::Fair | Self::PartlyCloudy => WeatherConditionIcon::PartlyCloudy,
+            Self::Cloudy => WeatherConditionIcon::Cloudy,
+            Self::LightRainShowers | Self::RainShowers | Self::LightRain | Self::Rain => {
+                WeatherConditionIcon::LightShowers
+            }
+            Self::HeavyRainShowers
+            | Self::HeavyRain
+            | Self::HeavySleetShowers
+            | Self::HeavySleet => WeatherConditionIcon::HeavyShowers,
+            Self::LightSleetShowers
+            | Self::SleetShowers
+            | Self::LightSleet
+            | Self::Sleet
+            | Self::LightSnowShowers
+            | Self::SnowShowers
+            | Self::LightSnow
+            | Self::Snow => WeatherConditionIcon::LightSnow,
+            Self::HeavySnowShowers | Self::HeavySnow => WeatherConditionIcon::HeavySnow,
+            Self::Fog => WeatherConditionIcon::Fog,
+            Self::LightRainShowersAndThunder
+            | Self::RainShowersAndThunder
+            | Self::HeavyRainShowersAndThunder
+            | Self::LightSleetShowersAndThunder
+            | Self::SleetShowersAndThunder
+            | Self::HeavySleetShowersAndThunder
+            | Self::LightSnowShowersAndThunder
+            | Self::SnowShowersAndThunder
+            | Self::HeavySnowShowersAndThunder
+            | Self::LightRainAndThunder
+            | Self::RainAndThunder
+            | Self::HeavyRainAndThunder
+            | Self::LightSleetAndThunder
+            | Self::SleetAndThunder
+            | Self::HeavySleetAndThunder
+            | Self::LightSnowAndThunder
+            | Self::SnowAndThunder
+            | Self::HeavySnowAndThunder => WeatherConditionIcon::Thunderstorm,
         }
-        "cloudy" => ll(lang, "Cloudy").to_string(),
-        "rain" | "lightrain" | "lightrainshowers_day" => ll(lang, "Rain").to_string(),
-        "heavyrain" => ll(lang, "Heavy rain").to_string(),
-        "snow" | "lightsnow" | "heavysnow" => ll(lang, "Snow").to_string(),
-        "fog" => ll(lang, "Fog").to_string(),
-        _ => format!("{} ({code})", ll(lang, "Unknown")),
     }
 }
 
-fn symbol_code_to_icon(code: &str) -> WeatherConditionIcon {
-    match code {
-        "clearsky" | "clearsky_day" | "clearsky_night" => WeatherConditionIcon::Clear,
-        "partlycloudy" | "partlycloudy_day" | "partlycloudy_night" => {
-            WeatherConditionIcon::PartlyCloudy
+fn yr_weather_code(code: &str) -> Option<YrWeatherCode> {
+    let base = code
+        .strip_suffix("_day")
+        .or_else(|| code.strip_suffix("_night"))
+        .unwrap_or(code);
+    match base {
+        "clearsky" => Some(YrWeatherCode::ClearSky),
+        "fair" => Some(YrWeatherCode::Fair),
+        "partlycloudy" => Some(YrWeatherCode::PartlyCloudy),
+        "cloudy" => Some(YrWeatherCode::Cloudy),
+        "lightrainshowers" => Some(YrWeatherCode::LightRainShowers),
+        "rainshowers" => Some(YrWeatherCode::RainShowers),
+        "heavyrainshowers" => Some(YrWeatherCode::HeavyRainShowers),
+        "lightrainshowersandthunder" => Some(YrWeatherCode::LightRainShowersAndThunder),
+        "rainshowersandthunder" => Some(YrWeatherCode::RainShowersAndThunder),
+        "heavyrainshowersandthunder" => Some(YrWeatherCode::HeavyRainShowersAndThunder),
+        "lightsleetshowers" => Some(YrWeatherCode::LightSleetShowers),
+        "sleetshowers" => Some(YrWeatherCode::SleetShowers),
+        "heavysleetshowers" => Some(YrWeatherCode::HeavySleetShowers),
+        // "lightssleet..." is a typo in the legend CSV; match both spellings
+        "lightsleetshowersandthunder" | "lightssleetshowersandthunder" => {
+            Some(YrWeatherCode::LightSleetShowersAndThunder)
         }
-        "cloudy" => WeatherConditionIcon::Cloudy,
-        "rain" | "lightrain" | "lightrainshowers_day" => WeatherConditionIcon::LightShowers,
-        "heavyrain" => WeatherConditionIcon::HeavyShowers,
-        "snow" | "lightsnow" => WeatherConditionIcon::LightSnow,
-        "heavysnow" => WeatherConditionIcon::HeavySnow,
-        "fog" => WeatherConditionIcon::Fog,
-        _ => WeatherConditionIcon::Unknown,
+        "sleetshowersandthunder" => Some(YrWeatherCode::SleetShowersAndThunder),
+        "heavysleetshowersandthunder" => Some(YrWeatherCode::HeavySleetShowersAndThunder),
+        "lightsnowshowers" => Some(YrWeatherCode::LightSnowShowers),
+        "snowshowers" => Some(YrWeatherCode::SnowShowers),
+        "heavysnowshowers" => Some(YrWeatherCode::HeavySnowShowers),
+        // "lightssnow..." is a typo in the legend CSV; match both spellings
+        "lightsnowshowersandthunder" | "lightssnowshowersandthunder" => {
+            Some(YrWeatherCode::LightSnowShowersAndThunder)
+        }
+        "snowshowersandthunder" => Some(YrWeatherCode::SnowShowersAndThunder),
+        "heavysnowshowersandthunder" => Some(YrWeatherCode::HeavySnowShowersAndThunder),
+        "lightrain" => Some(YrWeatherCode::LightRain),
+        "rain" => Some(YrWeatherCode::Rain),
+        "heavyrain" => Some(YrWeatherCode::HeavyRain),
+        "lightrainandthunder" => Some(YrWeatherCode::LightRainAndThunder),
+        "rainandthunder" => Some(YrWeatherCode::RainAndThunder),
+        "heavyrainandthunder" => Some(YrWeatherCode::HeavyRainAndThunder),
+        "lightsleet" => Some(YrWeatherCode::LightSleet),
+        "sleet" => Some(YrWeatherCode::Sleet),
+        "heavysleet" => Some(YrWeatherCode::HeavySleet),
+        "lightsleetandthunder" => Some(YrWeatherCode::LightSleetAndThunder),
+        "sleetandthunder" => Some(YrWeatherCode::SleetAndThunder),
+        "heavysleetandthunder" => Some(YrWeatherCode::HeavySleetAndThunder),
+        "lightsnow" => Some(YrWeatherCode::LightSnow),
+        "snow" => Some(YrWeatherCode::Snow),
+        "heavysnow" => Some(YrWeatherCode::HeavySnow),
+        "lightsnowandthunder" => Some(YrWeatherCode::LightSnowAndThunder),
+        "snowandthunder" => Some(YrWeatherCode::SnowAndThunder),
+        "heavysnowandthunder" => Some(YrWeatherCode::HeavySnowAndThunder),
+        "fog" => Some(YrWeatherCode::Fog),
+        _ => None,
     }
+}
+
+fn symbol_code_to_description(code: &str, lang: Language) -> String {
+    yr_weather_code(code).map_or_else(
+        || format!("{} ({code})", ll(lang, "Unknown")),
+        |c| c.description(lang),
+    )
+}
+
+fn symbol_code_to_icon(code: &str) -> WeatherConditionIcon {
+    yr_weather_code(code).map_or(WeatherConditionIcon::Unknown, YrWeatherCode::to_icon)
 }
 
 fn get_location(client: &Client, config: &Config) -> Result<Location, RustormyError> {
@@ -209,6 +383,67 @@ mod test {
     use super::*;
 
     const TEST_API_RESPONSE: &str = include_str!("../../tests/data/yr.json");
+
+    #[test]
+    fn test_yr_weather_code_known() {
+        assert_eq!(yr_weather_code("clearsky"), Some(YrWeatherCode::ClearSky));
+        assert_eq!(
+            yr_weather_code("clearsky_day"),
+            Some(YrWeatherCode::ClearSky)
+        );
+        assert_eq!(
+            yr_weather_code("clearsky_night"),
+            Some(YrWeatherCode::ClearSky)
+        );
+        assert_eq!(yr_weather_code("fair"), Some(YrWeatherCode::Fair));
+        assert_eq!(yr_weather_code("fair_day"), Some(YrWeatherCode::Fair));
+        assert_eq!(yr_weather_code("fair_night"), Some(YrWeatherCode::Fair));
+        assert_eq!(yr_weather_code("fog"), Some(YrWeatherCode::Fog));
+        assert_eq!(yr_weather_code("heavyrain"), Some(YrWeatherCode::HeavyRain));
+        assert_eq!(
+            yr_weather_code("snowandthunder"),
+            Some(YrWeatherCode::SnowAndThunder)
+        );
+    }
+
+    #[test]
+    fn test_yr_weather_code_unknown() {
+        assert_eq!(yr_weather_code("notacode"), None);
+        assert_eq!(yr_weather_code(""), None);
+    }
+
+    #[test]
+    fn test_yr_weather_code_csv_typos() {
+        assert_eq!(
+            yr_weather_code("lightssleetshowersandthunder"),
+            Some(YrWeatherCode::LightSleetShowersAndThunder)
+        );
+        assert_eq!(
+            yr_weather_code("lightssnowshowersandthunder"),
+            Some(YrWeatherCode::LightSnowShowersAndThunder)
+        );
+    }
+
+    #[test]
+    fn test_fair_night_description_and_icon() {
+        assert_eq!(
+            symbol_code_to_description("fair_night", Language::English),
+            "Mostly clear"
+        );
+        assert_eq!(
+            symbol_code_to_icon("fair_night"),
+            WeatherConditionIcon::PartlyCloudy
+        );
+    }
+
+    #[test]
+    fn test_unknown_code_fallback() {
+        assert_eq!(
+            symbol_code_to_description("xyzzy", Language::English),
+            "Unknown (xyzzy)"
+        );
+        assert_eq!(symbol_code_to_icon("xyzzy"), WeatherConditionIcon::Unknown);
+    }
 
     #[test]
     #[allow(clippy::float_cmp)]
