@@ -1,0 +1,3 @@
+Install the hook by running
+
+cp .githooks/pre-commit .git/hooks/
