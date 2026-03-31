@@ -99,7 +99,14 @@ impl YrResponse {
                 "No timeseries returned".to_string(),
             ))?;
         let details = &timeseries.data.instant.details;
-        let next_hours = timeseries.data.next_1_hours.as_ref().unwrap();
+        let next_hours =
+            timeseries
+                .data
+                .next_1_hours
+                .as_ref()
+                .ok_or(RustormyError::ApiReturnedError(
+                    "No forecast data returned".to_string(),
+                ))?;
         let description =
             symbol_code_to_description(&next_hours.summary.symbol_code, config.language());
         let icon = symbol_code_to_icon(&next_hours.summary.symbol_code);
@@ -107,7 +114,12 @@ impl YrResponse {
         Ok(Weather {
             temperature: details.air_temperature,
             wind_speed: details.wind_speed,
-            wind_direction: details.wind_from_direction.unwrap().round() as u16,
+            wind_direction: details
+                .wind_from_direction
+                .ok_or(RustormyError::ApiReturnedError(
+                    "No wind direction returned".to_string(),
+                ))?
+                .round() as u16,
             uv_index: get_uv_index(client, config, location)?,
             description,
             icon,
