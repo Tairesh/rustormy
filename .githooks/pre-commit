@@ -1,60 +1,7 @@
-#!/bin/sh
-######################################################################
-# This is taken from
-# https://heuristicpedals.com/blog/posts/rust-pre-commits/index.html
-######################################################################
-set -eu
-
-# formatting variables
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
-BOLD=$(tput bold)
-NORM=$(tput sgr0)
-
-echo "Running pre-commit checks..."
-
-# cargo check hook
-if ! cargo check --workspace
-then
-    echo -e "cargo check: ......... ${RED}nok${NC}"
-    echo -e "${RED}Pre-commit: Issues detected when calling 'cargo check'."
+#!/usr/bin/env sh
+if [ $(command -v just) ]; then
+    just before-commit
+else
+    echo "Install just https://github.com/casey/just"
     exit 1
 fi
-
-echo -e "cargo check: ......... ${GREEN}ok${NC}"
-
-# cargo rustfmt hook
-if ! cargo fmt -- --check
-then
-    echo -e "cargo rustfmt: ....... ${RED}nok${NC}"
-    echo -e "${RED}Pre-commit: Code style issues detected with rustfmt."
-    exit 1
-fi
-
-echo -e "cargo rustfmt: ....... ${GREEN}ok${NC}"
-
-# cargo clippy hook
-# SHOULD BE if ! cargo clippy --all-targets -- -D warnings
-if ! cargo clippy -- -D warnings
-then
-    echo -e "cargo clippy: ........ ${RED}nok${NC}"
-    echo -e "${RED}Pre-commit: Issues detected by clippy."
-    exit 1
-fi
-
-echo -e "cargo clippy: ........ ${GREEN}ok${NC}"
-
-# cargo test hook
-if ! cargo test
-then
-    echo -e "cargo test: .......... ${RED}nok${NC}"
-    echo -e "${RED}Pre-commit: Issues were detected when running the test suite."
-    exit 1
-fi
-
-echo -e "cargo test: .......... ${GREEN}ok${NC}"
-
-echo -e "\n${GREEN}${BOLD}Success: ${NC}${NORM}All pre-commit checks passed ✅\n"
-
-exit 0
