@@ -100,7 +100,7 @@ struct SunTimes {
     golden_hour: Option<DateTime<Utc>>,
     /// sunset starts (bottom edge of the sun touches the horizon)
     sunset_start: Option<DateTime<Utc>>,
-    /// sunset starts (bottom edge of the sun touches the horizon)
+    /// sunset (top edge of the sun touches the horizon)
     sunset: Option<DateTime<Utc>>,
     /// dusk (evening nautical twilight starts)
     dusk: Option<DateTime<Utc>>,
