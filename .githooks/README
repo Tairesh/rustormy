@@ -1,0 +1,6 @@
+Install hooks by running:
+
+    just install-hooks
+
+This sets git's hooksPath to .githooks so all hooks are picked up automatically.
+Requires git 2.9+ and just (https://github.com/casey/just).

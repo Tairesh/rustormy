@@ -28,7 +28,7 @@ impl TestProvider {
             temperature,
             feels_like: 19.5,
             humidity,
-            dew_point: tools::dew_point(temperature, humidity as f64, config.format().units),
+            dew_point: tools::dew_point(temperature, f64::from(humidity), config.format().units),
             precipitation: 0.0,
             pressure: 1013,
             wind_speed: 5.0,
@@ -47,7 +47,7 @@ impl LookUpCity for TestProvider {
         if city == "NonexistentCity" {
             return Err(RustormyError::CityNotFound(city.to_string()));
         }
-        if city == "" {
+        if city.is_empty() {
             return Err(RustormyError::CityNotFound(city.to_string()));
         }
         Ok(Location {
@@ -68,9 +68,10 @@ impl GetWeather for TestProvider {
 }
 
 #[test]
+#[allow(clippy::float_cmp)]
 fn test_valid_city_lookup() {
     let client = Client::new();
-    let config = Config::new(Cli::parse_from(&["rustormy", "-c", "Test City"])).unwrap();
+    let config = Config::new(Cli::parse_from(["rustormy", "-c", "Test City"])).unwrap();
     let provider = TestProvider::new();
 
     let result = provider.get_weather(&client, &config);
@@ -84,7 +85,7 @@ fn test_valid_city_lookup() {
 #[test]
 fn test_nonexistent_city() {
     let client = Client::new();
-    let config = Config::new(Cli::parse_from(&["rustormy", "-c", "NonexistentCity"])).unwrap();
+    let config = Config::new(Cli::parse_from(["rustormy", "-c", "NonexistentCity"])).unwrap();
     let provider = TestProvider::new();
 
     let result = provider.get_weather(&client, &config);
@@ -95,15 +96,10 @@ fn test_nonexistent_city() {
 }
 
 #[test]
+#[allow(clippy::float_cmp)]
 fn test_valid_coordinates() {
     let client = Client::new();
-    let config = Config::new(Cli::parse_from(&[
-        "rustormy",
-        "-y",
-        "51.5074",
-        "-x=-0.1278",
-    ]))
-    .unwrap();
+    let config = Config::new(Cli::parse_from(["rustormy", "-y", "51.5074", "-x=-0.1278"])).unwrap();
     let provider = TestProvider::new();
 
     let result = provider.get_weather(&client, &config);
@@ -116,7 +112,7 @@ fn test_valid_coordinates() {
 
 #[test]
 fn test_invalid_coordinates() {
-    let config = Config::new(Cli::parse_from(&["rustormy", "-y", "91.0", "-x", "0.0"]));
+    let config = Config::new(Cli::parse_from(["rustormy", "-y", "91.0", "-x", "0.0"]));
     assert!(matches!(
         config,
         Err(RustormyError::InvalidCoordinates {
@@ -135,15 +131,14 @@ fn test_no_location_provided() {
     let result = provider.get_weather(&client, &config);
     assert!(
         matches!(result, Err(RustormyError::NoLocationProvided)),
-        "No location provided should result in an error, got {:?}",
-        result
+        "No location provided should result in an error, got {result:?}",
     );
 }
 
 #[test]
 fn test_empty_city() {
     let client = Client::new();
-    let config = Config::new(Cli::parse_from(&["rustormy", "-c", ""])).unwrap();
+    let config = Config::new(Cli::parse_from(["rustormy", "-c", ""])).unwrap();
     let provider = TestProvider::new();
 
     let result = provider.get_weather(&client, &config);
@@ -151,10 +146,11 @@ fn test_empty_city() {
 }
 
 #[test]
+#[allow(clippy::float_cmp)]
 fn test_different_units() {
     let client = Client::new();
-    let config_metric = Config::new(Cli::parse_from(&["rustormy", "-c", "Test"])).unwrap();
-    let config_imperial = Config::new(Cli::parse_from(&[
+    let config_metric = Config::new(Cli::parse_from(["rustormy", "-c", "Test"])).unwrap();
+    let config_imperial = Config::new(Cli::parse_from([
         "rustormy", "-c", "London", "-u", "imperial",
     ]))
     .unwrap();

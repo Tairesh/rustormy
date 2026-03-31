@@ -442,8 +442,7 @@ mod tests {
         let result = config.validate();
         assert!(
             matches!(result, Err(RustormyError::NoLocationProvided)),
-            "Expected NoLocationProvided error got {:?}",
-            result
+            "Expected NoLocationProvided error got {result:?}",
         );
     }
 
@@ -461,8 +460,7 @@ mod tests {
         let result = config.validate();
         assert!(
             matches!(result, Err(RustormyError::InvalidConfiguration(_))),
-            "Expected InvalidConfiguration error got {:?}",
-            result
+            "Expected InvalidConfiguration error got {result:?}",
         );
     }
 
@@ -479,8 +477,7 @@ mod tests {
                 result,
                 Err(RustormyError::MissingApiKey(Provider::OpenWeatherMap))
             ),
-            "Expected MissingApiKey error got {:?}",
-            result
+            "Expected MissingApiKey error got {result:?}",
         );
     }
 
@@ -497,8 +494,7 @@ mod tests {
                 result,
                 Err(RustormyError::MissingApiKey(Provider::WorldWeatherOnline))
             ),
-            "Expected MissingApiKey error got {:?}",
-            result
+            "Expected MissingApiKey error got {result:?}",
         );
     }
 
@@ -515,8 +511,7 @@ mod tests {
                 result,
                 Err(RustormyError::MissingApiKey(Provider::WeatherApi))
             ),
-            "Expected MissingApiKey error got {:?}",
-            result
+            "Expected MissingApiKey error got {result:?}",
         );
     }
 
@@ -533,8 +528,7 @@ mod tests {
                 result,
                 Err(RustormyError::MissingApiKey(Provider::WeatherBit))
             ),
-            "Expected MissingApiKey error got {:?}",
-            result
+            "Expected MissingApiKey error got {result:?}",
         );
     }
 
@@ -548,8 +542,7 @@ mod tests {
         let result = config.validate();
         assert!(
             matches!(result, Err(RustormyError::InvalidCoordinates { .. })),
-            "Expected InvalidCoordinates error got {:?}",
-            result
+            "Expected InvalidCoordinates error got {result:?}",
         );
     }
 
@@ -563,8 +556,7 @@ mod tests {
         let result = config.validate();
         assert!(
             matches!(result, Err(RustormyError::InvalidCoordinates { .. })),
-            "Expected InvalidCoordinates error got {:?}",
-            result
+            "Expected InvalidCoordinates error got {result:?}",
         );
     }
 
@@ -578,8 +570,7 @@ mod tests {
         let result = config.validate();
         assert!(
             result.is_ok(),
-            "Expected valid config, got error {:?}",
-            result
+            "Expected valid config, got error {result:?}",
         );
     }
 
@@ -597,8 +588,7 @@ mod tests {
         let result = config.validate();
         assert!(
             result.is_ok(),
-            "Expected valid config, got error {:?}",
-            result
+            "Expected valid config, got error {result:?}",
         );
     }
 
@@ -616,8 +606,7 @@ mod tests {
         let result = config.validate();
         assert!(
             result.is_ok(),
-            "Expected valid config, got error {:?}",
-            result
+            "Expected valid config, got error {result:?}",
         );
     }
 
@@ -635,8 +624,7 @@ mod tests {
         let result = config.validate();
         assert!(
             result.is_ok(),
-            "Expected valid config, got error {:?}",
-            result
+            "Expected valid config, got error {result:?}",
         );
     }
 
@@ -654,8 +642,7 @@ mod tests {
         let result = config.validate();
         assert!(
             result.is_ok(),
-            "Expected valid config, got error {:?}",
-            result
+            "Expected valid config, got error {result:?}",
         );
     }
 
@@ -680,8 +667,7 @@ mod tests {
         let result = config.validate();
         assert!(
             result.is_ok(),
-            "Expected valid config, got error {:?}",
-            result
+            "Expected valid config, got error {result:?}",
         );
     }
 
@@ -702,9 +688,11 @@ mod tests {
     // This test should be in legacy.rs, but uses too much of Config's private API to be there
     #[test]
     fn test_legacy_config_file_migration() {
-        let mut legacy_config = LegacyConfig::default();
-        legacy_config.api_key = Some("legacy_key".to_string());
-        legacy_config.provider = Some(Provider::OpenWeatherMap);
+        let legacy_config = LegacyConfig {
+            api_key: Some("legacy_key".to_string()),
+            provider: Some(Provider::OpenWeatherMap),
+            ..Default::default()
+        };
         let config_file_path = std::env::temp_dir().join("test_legacy_config_file_migration.toml");
         fs::write(
             &config_file_path,
@@ -788,25 +776,27 @@ mod tests {
 
     #[test]
     fn test_merge_cli_overrides() {
-        let mut config = Config::default();
-        config.city = Some("File City".to_string());
-        config.lat = Some(10.0);
-        config.lon = Some(20.0);
-        config.providers = vec![Provider::OpenMeteo];
-        config.live_mode = false;
-        config.live_mode_interval = 300;
-        config.use_geocoding_cache = true;
-        config.verbose = 1;
-        config.format = FormatterConfig {
-            output_format: OutputFormat::Text,
-            text_mode: TextMode::Full,
-            use_colors: false,
-            show_city_name: false,
-            align_right: false,
-            wind_in_degrees: false,
-            units: Units::Metric,
-            language: Language::English,
-            color_theme: ColorTheme::default(),
+        let mut config = Config {
+            city: Some("File City".to_string()),
+            lat: Some(10.0),
+            lon: Some(20.0),
+            providers: vec![Provider::OpenMeteo],
+            live_mode: false,
+            live_mode_interval: 300,
+            use_geocoding_cache: true,
+            verbose: 1,
+            format: FormatterConfig {
+                output_format: OutputFormat::Text,
+                text_mode: TextMode::Full,
+                use_colors: false,
+                show_city_name: false,
+                align_right: false,
+                wind_in_degrees: false,
+                units: Units::Metric,
+                language: Language::English,
+                color_theme: ColorTheme::default(),
+            },
+            ..Default::default()
         };
 
         let cli = Cli {

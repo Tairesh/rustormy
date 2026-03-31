@@ -533,8 +533,7 @@ mod tests {
         for line in &lines[1..6] {
             assert!(
                 line.contains("\x1b["),
-                "Expected ANSI color codes in line, got '{}'",
-                line
+                "Expected ANSI color codes in line, got '{line}'",
             );
         }
     }
@@ -666,23 +665,19 @@ mod tests {
 
         assert!(
             line.contains("Test City"),
-            "Expected 'Test City' in one-line output, got '{}'",
-            line
+            "Expected 'Test City' in one-line output, got '{line}'",
         );
         assert!(
             line.contains("⛅"),
-            "Expected weather icon in one-line output, got '{}'",
-            line
+            "Expected weather icon in one-line output, got '{line}'",
         );
         assert!(
             line.contains("22.5°C"),
-            "Expected temperature in one-line output, got '{}'",
-            line
+            "Expected temperature in one-line output, got '{line}'",
         );
         assert!(
             line.contains("5.0 m/s ←"),
-            "Expected wind info in one-line output, got '{}'",
-            line
+            "Expected wind info in one-line output, got '{line}'",
         );
     }
 
@@ -699,18 +694,15 @@ mod tests {
 
         assert!(
             !line.contains("Test City"),
-            "Did not expect 'Test City' in one-line output, got '{}'",
-            line
+            "Did not expect 'Test City' in one-line output, got '{line}'",
         );
         assert!(
             line.contains("⛅"),
-            "Expected weather icon in one-line output, got '{}'",
-            line
+            "Expected weather icon in one-line output, got '{line}'",
         );
         assert!(
             line.contains("22.5°C"),
-            "Expected temperature in one-line output, got '{}'",
-            line
+            "Expected temperature in one-line output, got '{line}'",
         );
     }
 
