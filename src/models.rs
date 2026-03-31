@@ -133,6 +133,13 @@ impl Language {
             Self::Korean => "ko",
         }
     }
+
+    pub fn label_width(self) -> usize {
+        match self {
+            Self::Korean => 4,
+            _ => 12,
+        }
+    }
 }
 
 impl Display for Language {
