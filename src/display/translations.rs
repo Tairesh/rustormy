@@ -214,6 +214,42 @@ static TRANSLATIONS: LazyLock<HashMap<&'static str, HashMap<&'static str, &'stat
         ["es"] => "Lluvia helada intensa",
         ["ko"] => "강한 얼음 비",
     },
+    "Light sleet showers" => {
+        ["en"] => "Light sleet showers",
+        ["ru"] => "Небольшой мокрый снег с ливнем",
+        ["es"] => "Chubascos de aguanieve ligeros",
+        ["ko"] => "약한 진눈깨비 소나기",
+    },
+    "Sleet showers" => {
+        ["en"] => "Sleet showers",
+        ["ru"] => "Мокрый снег с ливнем",
+        ["es"] => "Chubascos de aguanieve",
+        ["ko"] => "진눈깨비 소나기",
+    },
+    "Heavy sleet showers" => {
+        ["en"] => "Heavy sleet showers",
+        ["ru"] => "Сильный мокрый снег с ливнем",
+        ["es"] => "Chubascos de aguanieve intensos",
+        ["ko"] => "강한 진눈깨비 소나기",
+    },
+    "Light sleet" => {
+        ["en"] => "Light sleet",
+        ["ru"] => "Небольшой мокрый снег",
+        ["es"] => "Aguanieve ligera",
+        ["ko"] => "약한 진눈깨비",
+    },
+    "Sleet" => {
+        ["en"] => "Sleet",
+        ["ru"] => "Мокрый снег",
+        ["es"] => "Aguanieve",
+        ["ko"] => "진눈깨비",
+    },
+    "Heavy sleet" => {
+        ["en"] => "Heavy sleet",
+        ["ru"] => "Сильный мокрый снег",
+        ["es"] => "Aguanieve intensa",
+        ["ko"] => "강한 진눈깨비",
+    },
     "Snow" => {
         ["en"] => "Snow",
         ["ru"] => "Снег",
@@ -309,6 +345,12 @@ static TRANSLATIONS: LazyLock<HashMap<&'static str, HashMap<&'static str, &'stat
         ["ru"] => "Сильный снежный ливень",
         ["es"] => "Chubascos de nieve intensos",
         ["ko"] => "강한 눈 소나기",
+    },
+    "Snow showers" => {
+        ["en"] => "Snow showers",
+        ["ru"] => "Снежный ливень",
+        ["es"] => "Chubascos de nieve",
+        ["ko"] => "눈 소나기",
     },
     "Thunderstorm" => {
         ["en"] => "Thunderstorm",
