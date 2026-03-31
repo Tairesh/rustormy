@@ -239,6 +239,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_parse_weather() {
         const DATA: &str = r#"
 {
@@ -294,14 +295,9 @@ mod tests {
 }
         "#;
         let data: WeatherApiResponse = serde_json::from_str(DATA).unwrap();
-        assert!(
-            matches!(data, WeatherApiResponse::Ok(_)),
-            "Expected Ok variant, got {:?}",
-            data
-        );
         let weather = match data {
             WeatherApiResponse::Ok(data) => data.into_weather(&Config::default()),
-            _ => panic!("Expected Ok variant"),
+            WeatherApiResponse::Err { .. } => panic!("Expected Ok variant"),
         };
         assert_eq!(weather.location_name, "Batumi, Ajaria, Georgia");
         assert_eq!(weather.temperature, 25.3);
@@ -321,17 +317,12 @@ mod tests {
     fn test_parse_error() {
         const DATA: &str = r#"{"error":{"code":1006,"message":"No matching location found."}}"#;
         let data: WeatherApiResponse = serde_json::from_str(DATA).unwrap();
-        assert!(
-            matches!(data, WeatherApiResponse::Err { .. }),
-            "Expected Err variant, got {:?}",
-            data
-        );
         match data {
             WeatherApiResponse::Err { error } => {
                 assert_eq!(error.code, 1006);
                 assert_eq!(error.message, "No matching location found.");
             }
-            _ => panic!("Expected Err variant"),
+            WeatherApiResponse::Ok(_) => panic!("Expected Err variant"),
         }
     }
 }

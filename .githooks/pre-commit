@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-if [ $(command -v just) ]; then
+if command -v just > /dev/null 2>&1; then
     just before-commit
 else
     echo "Install just https://github.com/casey/just"

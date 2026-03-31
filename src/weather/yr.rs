@@ -199,6 +199,7 @@ mod test {
     const TEST_API_RESPONSE: &str = include_str!("../../tests/data/yr.json");
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_parse_yr_response() {
         let data: YrResponse =
             serde_json::from_str(TEST_API_RESPONSE).expect("Failed to parse JSON");

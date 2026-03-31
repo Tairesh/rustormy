@@ -198,14 +198,13 @@ mod tests {
             city: Some("TestCity".to_string()),
             providers: vec![Provider::OpenWeatherMap],
             api_key: Some("test_key".to_string()),
-            api_key_owm: "".to_string(),
+            api_key_owm: String::new(),
             ..Default::default()
         });
         let result = config.validate();
         assert!(
             result.is_ok(),
-            "Expected valid config, got error {:?}",
-            result
+            "Expected valid config, got error {result:?}",
         );
     }
 
@@ -242,8 +241,7 @@ mod tests {
         let valid = config.validate();
         assert!(
             valid.is_ok(),
-            "Expected valid config after migration, got {:?}",
-            valid
+            "Expected valid config after migration, got {valid:?}",
         );
     }
 
@@ -298,7 +296,7 @@ mod tests {
         "#;
         let legacy_config: LegacyConfig = toml::from_str(EXAMPLE).unwrap();
         let config = Config::from(legacy_config)
-            .merge_cli_test(Cli::parse_from(&["rustormy", "-c", "TestCity"]));
+            .merge_cli_test(Cli::parse_from(["rustormy", "-c", "TestCity"]));
         assert_eq!(config.city(), Some("TestCity"));
         assert_eq!(config.providers(), &vec![Provider::OpenMeteo]);
         assert_eq!(config.format().units, Units::Metric);
@@ -306,7 +304,7 @@ mod tests {
         assert!(config.format().show_city_name);
         assert!(config.format().use_colors);
         let valid = config.validate();
-        assert!(valid.is_ok(), "Expected valid config, got {:?}", valid);
+        assert!(valid.is_ok(), "Expected valid config, got {valid:?}");
     }
 
     #[test]
@@ -326,7 +324,7 @@ mod tests {
         "#;
         let legacy_config: LegacyConfig = toml::from_str(EXAMPLE).unwrap();
         let config = Config::from(legacy_config)
-            .merge_cli_test(Cli::parse_from(&["rustormy", "-c", "TestCity"]));
+            .merge_cli_test(Cli::parse_from(["rustormy", "-c", "TestCity"]));
         assert_eq!(config.city(), Some("TestCity"));
         assert_eq!(config.providers(), &vec![Provider::OpenWeatherMap]);
         assert_eq!(config.api_keys().open_weather_map, "test_key");
@@ -340,7 +338,7 @@ mod tests {
         assert!(!config.live_mode());
         assert_eq!(config.live_mode_interval(), 300); // should default to 300 if 0 is provided
         let valid = config.validate();
-        assert!(valid.is_ok(), "Expected valid config, got {:?}", valid);
+        assert!(valid.is_ok(), "Expected valid config, got {valid:?}");
     }
 
     #[test]
@@ -360,7 +358,7 @@ mod tests {
         "#;
         let legacy_config: LegacyConfig = toml::from_str(EXAMPLE).unwrap();
         let config = Config::from(legacy_config)
-            .merge_cli_test(Cli::parse_from(&["rustormy", "-c", "TestCity"]));
+            .merge_cli_test(Cli::parse_from(["rustormy", "-c", "TestCity"]));
         assert_eq!(config.city(), Some("TestCity"));
         assert_eq!(config.providers(), &vec![Provider::OpenWeatherMap]);
         assert_eq!(config.api_keys().open_weather_map, "test_key");
@@ -374,7 +372,7 @@ mod tests {
         assert!(!config.live_mode());
         assert_eq!(config.live_mode_interval(), 301);
         let valid = config.validate();
-        assert!(valid.is_ok(), "Expected valid config, got {:?}", valid);
+        assert!(valid.is_ok(), "Expected valid config, got {valid:?}");
     }
 
     #[test]
@@ -454,7 +452,7 @@ mod tests {
         "#;
         let legacy_config: LegacyConfig = toml::from_str(EXAMPLE).unwrap();
         let config = Config::from(legacy_config)
-            .merge_cli_test(Cli::parse_from(&["rustormy", "-c", "TestCity"]));
+            .merge_cli_test(Cli::parse_from(["rustormy", "-c", "TestCity"]));
         assert_eq!(config.city(), Some("TestCity"));
         assert_eq!(
             config.providers(),
@@ -479,7 +477,7 @@ mod tests {
         assert!(config.use_geocoding_cache());
         assert_eq!(config.verbose(), 1);
         let valid = config.validate();
-        assert!(valid.is_ok(), "Expected valid config, got {:?}", valid);
+        assert!(valid.is_ok(), "Expected valid config, got {valid:?}");
     }
 
     #[test]
@@ -575,7 +573,7 @@ mod tests {
         "#;
         let legacy_config: LegacyConfig = toml::from_str(EXAMPLE).unwrap();
         let config = Config::from(legacy_config)
-            .merge_cli_test(Cli::parse_from(&["rustormy", "-c", "TestCity"]));
+            .merge_cli_test(Cli::parse_from(["rustormy", "-c", "TestCity"]));
         assert_eq!(config.city(), Some("TestCity"));
         assert_eq!(
             config.providers(),
@@ -603,6 +601,6 @@ mod tests {
         assert_eq!(config.verbose(), 1);
         assert_eq!(config.connect_timeout(), 11);
         let valid = config.validate();
-        assert!(valid.is_ok(), "Expected valid config, got {:?}", valid);
+        assert!(valid.is_ok(), "Expected valid config, got {valid:?}");
     }
 }

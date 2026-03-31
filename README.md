@@ -295,7 +295,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 Contributions are welcome! Please open an issue or submit a pull request on GitHub.
 
-This project uses `just` for basic scripting. You can install it from cargo:
+This project uses [just](https://github.com/casey/just) for basic scripting. You can install it from cargo:
 
 ```sh
 cargo install just
@@ -306,6 +306,12 @@ Use the following commands to run tests and lint the code before committing:
 ```sh
 just check     # Run tests and clippy
 just before-commit  # Run commands before committing (lint and check)
+```
+
+To install git hooks that run these checks automatically before each commit:
+
+```sh
+just install-hooks
 ```
 
 To run the application in development mode with specific options, use:

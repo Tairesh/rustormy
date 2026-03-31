@@ -14,6 +14,7 @@ fn get_geocoding_cache_dir() -> Result<PathBuf, RustormyError> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unnecessary_wraps)]
 fn get_geocoding_cache_dir() -> Result<PathBuf, RustormyError> {
     Ok(std::env::temp_dir().join("rustormy_test_cache"))
 }
@@ -75,6 +76,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_cache_location_and_retrieve() {
         let city = "Test City";
         let location = Location {

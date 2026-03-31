@@ -217,6 +217,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_parse_city_lookup_response() {
         let json_data = r#"
         {
@@ -237,6 +238,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_parse_weather_api_response() {
         let json_data = r#"
         {

@@ -209,6 +209,7 @@ mod test {
     use super::*;
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_parse_data() {
         const EXAMPLE_DATA: &str = r#"
             {
@@ -270,10 +271,10 @@ mod test {
         let response: WeatherResponse = serde_json::from_str(EXAMPLE_DATA).unwrap();
         match response {
             WeatherResponse::Err { code, e_type, .. } => {
-                assert_eq!(code, 401001);
+                assert_eq!(code, 401_001);
                 assert_eq!(e_type, "Invalid Auth");
             }
-            _ => panic!("Expected error response"),
+            WeatherResponse::Ok { .. } => panic!("Expected error response"),
         }
     }
 }

@@ -18,7 +18,10 @@ test:
     cargo test --all --no-fail-fast
 
 clippy:
-    cargo clippy -- -D warnings -D clippy::pedantic -A clippy::cast_precision_loss -A clippy::cast_possible_truncation -A clippy::cast_possible_wrap -A clippy::cast_sign_loss --verbose --no-deps
+    cargo clippy --all-targets -- -D warnings -D clippy::pedantic -A clippy::cast_precision_loss -A clippy::cast_possible_truncation -A clippy::cast_possible_wrap -A clippy::cast_sign_loss --verbose --no-deps
+
+install-hooks:
+    git config core.hooksPath .githooks
 
 update:
     cargo update
