@@ -184,7 +184,7 @@ impl WeatherResponse {
                     pressure,
                     wind_speed: data.values.wind_speed,
                     wind_direction: data.values.wind_direction,
-                    uv_index: Some(data.values.uv_index),
+                    uv_index: Some((data.values.uv_index * 10.0).round() / 10.0),
                     icon: data.values.icon(),
                     description: data.values.description(config.language()).to_string(),
                     location_name: location.name(),
