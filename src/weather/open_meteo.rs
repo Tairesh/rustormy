@@ -13,23 +13,33 @@ const WEATHER_API_URL: &str = "https://api.open-meteo.com/v1/forecast";
 #[derive(Debug, Default)]
 pub struct OpenMeteo {}
 
-// TODO: refactor to enum Ok/Err
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum ApiResponse<T> {
+    Ok(T),
+    Err {
+        _error: bool,
+        reason: Option<String>,
+    },
+}
+
+impl<T> ApiResponse<T> {
+    fn into_result(self) -> Result<T, RustormyError> {
+        match self {
+            Self::Ok(data) => Ok(data),
+            Self::Err { reason, .. } => Err(RustormyError::ApiReturnedError(
+                reason.unwrap_or_else(|| "Unknown error".to_string()),
+            )),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct OpenMeteoResponse {
     current: CurrentWeather,
-    error: Option<bool>,
-    reason: Option<String>,
 }
 
 impl OpenMeteoResponse {
-    pub fn is_error(&self) -> bool {
-        self.error.unwrap_or(false)
-    }
-
-    pub fn into_error_reason(self) -> String {
-        self.reason.unwrap_or_else(|| "Unknown error".to_string())
-    }
-
     pub fn into_weather(
         self,
         client: &Client,
@@ -149,19 +159,9 @@ impl<'a> GeocodingRequest<'a> {
 #[derive(Debug, Deserialize)]
 struct GeocodingResponse {
     results: Option<Vec<GeocodingLocation>>,
-    error: Option<bool>,
-    reason: Option<String>,
 }
 
 impl GeocodingResponse {
-    pub fn is_error(&self) -> bool {
-        self.error.unwrap_or(false)
-    }
-
-    pub fn into_error_reason(self) -> String {
-        self.reason.unwrap_or_else(|| "Unknown error".to_string())
-    }
-
     pub fn into_location(self) -> Option<Location> {
         self.results
             .and_then(|mut results| results.pop())
@@ -221,11 +221,9 @@ impl LookUpCity for OpenMeteo {
 
         let request = GeocodingRequest::new(city, config.language());
         let response = client.get(GEO_API_URL).query(&request).send()?;
-        let data: GeocodingResponse = response.json()?;
-
-        if data.is_error() {
-            return Err(RustormyError::ApiReturnedError(data.into_error_reason()));
-        }
+        let data = response
+            .json::<ApiResponse<GeocodingResponse>>()?
+            .into_result()?;
 
         let location = data
             .into_location()
@@ -242,11 +240,9 @@ impl GetWeather for OpenMeteo {
             .get(WEATHER_API_URL)
             .query(&WeatherAPIRequest::new(&location, config))
             .send()?;
-        let data: OpenMeteoResponse = response.json()?;
-
-        if data.is_error() {
-            return Err(RustormyError::ApiReturnedError(data.into_error_reason()));
-        }
+        let data = response
+            .json::<ApiResponse<OpenMeteoResponse>>()?
+            .into_result()?;
 
         data.into_weather(client, config, &location)
     }
