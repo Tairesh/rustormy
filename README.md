@@ -171,7 +171,7 @@ You can obtain free API keys by signing up on their websites:
 - [WeatherAPI.com](https://www.weatherapi.com/signup.aspx)
 - [Weatherbit.io](https://www.weatherbit.io/account/create)
 - [Tomorrow.io](https://www.tomorrow.io/weather-api/)
-- [OpenUV](https://www.openuv.io/)
+- [OpenUV](https://www.openuv.io/) *
 
 ```toml
 [api_keys]
@@ -182,6 +182,10 @@ weather_bit = ""
 tomorrow_io = ""
 open_uv = ""
 ```
+
+(*) Note that OpenUV is not a standalone weather provider, but a supplemental module that fetches UV index data. If you
+provide an API key for OpenUV, it will be used to fetch UV index data and display it alongside other weather data even
+if the main weather provider does not provide UV index.
 
 ---
 

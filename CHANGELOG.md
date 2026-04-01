@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.4.3] - 2026-04-01
 
 ### Changed
 
@@ -13,7 +13,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - Improve code quality and maintainability by refactoring and adding prehooks with correct clippy --all-targets check.
-- Fixed Yr.no provider showing "Unknown" for many valid weather conditions (sleet, thunderstorms, showers, fair weather, etc.).
+- Fixed Yr.no provider showing "Unknown" for many valid weather conditions (sleet, thunderstorms, showers, fair weather,
+  etc.).
 
 ## [0.4.2] - 2026-02-18
 
