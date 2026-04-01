@@ -6,6 +6,10 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- UV index is now displayed with one decimal place of precision.
+
 ### Fixed
 
 - Improve code quality and maintainability by refactoring and adding prehooks with correct clippy --all-targets check.
