@@ -286,7 +286,7 @@ impl Config {
 
     /// Take the next provider from the front of the list to try
     pub fn take_next_provider(&mut self) -> Option<Provider> {
-        self.providers.drain(..1).next()
+        self.providers.drain(..self.providers.len().min(1)).next()
     }
 
     pub fn api_keys(&self) -> &ApiKeys {
