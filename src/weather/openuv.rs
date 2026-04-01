@@ -36,7 +36,7 @@ pub fn get_uv_index(
     client: &Client,
     config: &Config,
     location: &Location,
-) -> Result<Option<u8>, RustormyError> {
+) -> Result<Option<f64>, RustormyError> {
     if config.api_keys().open_uv.is_empty() {
         return Ok(None);
     }
@@ -48,7 +48,7 @@ pub fn get_uv_index(
         .send()?;
     let data: UvResponse = response.json()?;
     match data {
-        UvResponse::Ok { result } => Ok(Some(result.uv.round() as u8)),
+        UvResponse::Ok { result } => Ok(Some((result.uv * 10.).round() / 10.)),
         UvResponse::Err { message } => Err(RustormyError::ApiReturnedError(message)),
     }
 }

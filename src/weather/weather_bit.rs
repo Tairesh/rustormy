@@ -144,8 +144,8 @@ struct WeatherData {
 }
 
 impl WeatherData {
-    fn uv_index(&self) -> u8 {
-        self.uv.round() as u8
+    fn uv_index(&self) -> f64 {
+        (self.uv * 10.).round() / 10.
     }
 
     fn pressure(&self) -> u32 {
@@ -268,7 +268,7 @@ mod tests {
                 assert_eq!(weather.pressure, 1015);
                 assert_eq!(weather.wind_speed, 3.5);
                 assert_eq!(weather.wind_direction, 180);
-                assert_eq!(weather.uv_index, Some(5));
+                assert_eq!(weather.uv_index, Some(5.0));
                 assert_eq!(weather.icon, WeatherConditionIcon::PartlyCloudy);
                 assert_eq!(weather.description, "Partly cloudy");
                 assert_eq!(weather.location_name, "London");

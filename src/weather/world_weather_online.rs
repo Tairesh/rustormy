@@ -209,8 +209,8 @@ impl WwoCurrentCondition {
         })
     }
 
-    fn uv_index(&self) -> Result<Option<u8>, RustormyError> {
-        let uv_index = self.uv_index.parse::<u8>().map_err(|e| {
+    fn uv_index(&self) -> Result<Option<f64>, RustormyError> {
+        let uv_index = self.uv_index.parse::<f64>().map_err(|e| {
             RustormyError::ApiReturnedError(format!("Invalid UV index value: {e:?}"))
         })?;
         Ok(Some(uv_index))

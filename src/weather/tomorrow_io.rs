@@ -65,7 +65,7 @@ struct WeatherValues {
     pressure_surface_level: f64,
     wind_speed: f64,
     wind_direction: u16,
-    uv_index: u8,
+    uv_index: f64,
     weather_code: u16,
     dew_point: f64,
     // pressure_sea_level: f64,
@@ -184,7 +184,7 @@ impl WeatherResponse {
                     pressure,
                     wind_speed: data.values.wind_speed,
                     wind_direction: data.values.wind_direction,
-                    uv_index: Some(data.values.uv_index),
+                    uv_index: Some((data.values.uv_index * 10.0).round() / 10.0),
                     icon: data.values.icon(),
                     description: data.values.description(config.language()).to_string(),
                     location_name: location.name(),
@@ -259,7 +259,7 @@ mod test {
         assert_eq!(weather.pressure, 1012);
         assert_eq!(weather.wind_speed, 5.4);
         assert_eq!(weather.wind_direction, 219);
-        assert_eq!(weather.uv_index, Some(2));
+        assert_eq!(weather.uv_index, Some(2.));
         assert_eq!(weather.icon, WeatherConditionIcon::LightShowers);
         assert_eq!(weather.description, "Light rain");
         assert_eq!(weather.location_name, "ბათუმი, საქართველო"); // shortened name

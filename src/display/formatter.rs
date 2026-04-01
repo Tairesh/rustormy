@@ -168,7 +168,7 @@ impl WeatherFormatter {
             icon[1],
             "Condition",
             if let Some(uv) = weather.uv_index {
-                format!("{} ({} {uv})", weather.description, ll(lang, "UV index"))
+                format!("{} ({} {uv:.1})", weather.description, ll(lang, "UV index"))
             } else {
                 weather.description
             },
@@ -463,15 +463,15 @@ mod tests {
     #[test]
     fn test_uv_index() {
         let mut weather = sample_weather();
-        weather.uv_index = Some(7);
+        weather.uv_index = Some(7.2);
         let config = Config::default();
         let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
         assert_eq!(lines.len(), 7);
         assert!(
-            lines[1].contains("UV index 7"),
-            "Expected 'UV index 7' in condition line, got '{}'",
+            lines[1].contains("UV index 7.2"),
+            "Expected 'UV index 7.2' in condition line, got '{}'",
             lines[1]
         );
     }
@@ -721,15 +721,15 @@ mod tests {
     #[test]
     fn test_uv_index_display() {
         let mut weather = sample_weather();
-        weather.uv_index = Some(5);
+        weather.uv_index = Some(5.);
         let config = Config::default();
         let formatter = WeatherFormatter::new(&config);
         let lines = formatter.format_text(weather);
 
         assert_eq!(lines.len(), 7);
         assert!(
-            lines[1].contains("UV index 5"),
-            "Expected 'UV index 5' in condition line, got '{}'",
+            lines[1].contains("UV index 5.0"),
+            "Expected 'UV index 5.0' in condition line, got '{}'",
             lines[1]
         );
     }
