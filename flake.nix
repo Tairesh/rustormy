@@ -4,33 +4,29 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
     naersk.url = "github:nix-community/naersk";
-    home-manager.url = "github:nix-community/home-manager";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs = { nixpkgs, naersk, flake-utils, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-        };
 
-        naerskLib = pkgs.callPackage naersk { };
-
-        rustormyPkg = naerskLib.buildPackage {
+    let
+      mkPkg = system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+          naerskLib = pkgs.callPackage naersk { };
+        in
+        naerskLib.buildPackage {
           src = ./.;
-          buildInputs = [ pkgs.glibc ];
-          nativeBuildInputs = [ pkgs.pkg-config ];
+          # 3. Убрали pkgs.glibc из buildInputs
+          nativeBuildInputs = with pkgs; [ pkg-config ];
         };
+    in
+    (flake-utils.lib.eachDefaultSystem (system: {
+      packages.default = mkPkg system;
+      packages.rustormy = mkPkg system;
+    }))
+    // {
 
-        rustormyModule = import ./home-manager/home.nix;
-      in
-      {
-        packages.default = rustormyPkg;
-        packages.rustormy = rustormyPkg;
-
-        homeManagerModules.rustormy = rustormyModule;
-      }
-    );
+      homeManagerModules.rustormy = ./home-manager/home.nix;
+    };
 }
-
