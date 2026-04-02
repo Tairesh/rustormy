@@ -1,5 +1,4 @@
 #![cfg(test)]
-#![allow(clippy::duplicated_attributes)]
 use crate::models::Location;
 use crate::weather::{LookUpCity, tools};
 use crate::{
