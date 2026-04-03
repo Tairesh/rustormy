@@ -1,4 +1,3 @@
-#![cfg(test)]
 use crate::models::Location;
 use crate::weather::{LookUpCity, tools};
 use crate::{
