@@ -314,7 +314,10 @@ mod tests {
         assert_eq!(make_weather_response(weather_code).icon(), expected);
     }
 
-    #[test_case(r#"{"_error": true, "reason": "Parameter out of range"}"#, "Parameter out of range")]
+    #[test_case(
+        r#"{"_error": true, "reason": "Parameter out of range"}"#,
+        "Parameter out of range"
+    )]
     #[test_case(r#"{"_error": true}"#, "Unknown error")]
     fn test_api_response_error(json: &str, expected_msg: &str) {
         let data: ApiResponse<OpenMeteoResponse> = serde_json::from_str(json).unwrap();
