@@ -2,8 +2,6 @@ set dotenv-load := true
 
 check: fmt-check cargo-check test clippy
 
-before-commit: fix check
-
 fix:
     cargo fix --allow-dirty --allow-staged
     cargo fmt --

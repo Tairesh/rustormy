@@ -308,8 +308,8 @@ cargo install just
 Use the following commands to run tests and lint the code before committing:
 
 ```sh
-just check     # Run tests and clippy
-just before-commit  # Run commands before committing (lint and check)
+just fix    # Run cargo fix and cargo fmt to automatically fix code style issues
+just check  # Run tests and clippy
 ```
 
 To install git hooks that run these checks automatically before each commit:
