@@ -1,0 +1,20 @@
+{
+  "results": [
+    {
+      "id": 1583992,
+      "name": "Da Nang",
+      "latitude": 16.06778,
+      "longitude": 108.22083,
+      "elevation": 11.0,
+      "feature_code": "PPLA",
+      "country_code": "VN",
+      "admin1_id": 1905468,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "population": 988561,
+      "country_id": 1562822,
+      "country": "Vietnam",
+      "admin1": "Da Nang"
+    }
+  ],
+  "generationtime_ms": 0.42045116
+}

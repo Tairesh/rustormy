@@ -39,16 +39,6 @@ pub enum Units {
     Imperial,
 }
 
-impl Display for Units {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        let unit_str = match self {
-            Units::Metric => "metric",
-            Units::Imperial => "imperial",
-        };
-        write!(f, "{unit_str}")
-    }
-}
-
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq, Serialize, Deserialize, ValueEnum)]
 #[serde(rename_all = "snake_case")]
 #[clap(rename_all = "snake_case")]
@@ -139,12 +129,6 @@ impl Language {
             Self::Korean => 4,
             _ => 12,
         }
-    }
-}
-
-impl Display for Language {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        write!(f, "{}", self.code())
     }
 }
 

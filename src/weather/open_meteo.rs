@@ -174,6 +174,8 @@ struct GeocodingLocation {
     name: String,
     latitude: f64,
     longitude: f64,
+    // elevation: f64,
+    // timezone: String,
 }
 
 impl From<GeocodingLocation> for Location {
@@ -245,5 +247,80 @@ impl GetWeather for OpenMeteo {
             .into_result()?;
 
         data.into_weather(client, config, &location)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::Config;
+    use crate::models::WeatherConditionIcon;
+    use test_case::test_case;
+
+    const GEOCODING_RESPONSE: &str =
+        include_str!("../../tests/data/open_meteo_geocoding_response.json");
+    const WEATHER_RESPONSE: &str =
+        include_str!("../../tests/data/open_meteo_weather_response.json");
+
+    fn make_weather_response(weather_code: u8) -> OpenMeteoResponse {
+        let json = format!(
+            r#"{{"current":{{"temperature_2m":20.0,"apparent_temperature":18.0,"relative_humidity_2m":50,"precipitation":0.0,"surface_pressure":1013.0,"wind_speed_10m":5.0,"wind_direction_10m":180,"weather_code":{weather_code}}}}}"#
+        );
+        serde_json::from_str(&json).unwrap()
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn test_geocoding_into_location() {
+        let data: GeocodingResponse = serde_json::from_str(GEOCODING_RESPONSE).unwrap();
+        let location = data.into_location().unwrap();
+        assert_eq!(location.name, "Da Nang");
+        assert_eq!(location.latitude, 16.06778);
+        assert_eq!(location.longitude, 108.22083);
+    }
+
+    #[test]
+    fn test_geocoding_empty_results() {
+        let data: GeocodingResponse = serde_json::from_str(r#"{"results": []}"#).unwrap();
+        assert!(data.into_location().is_none());
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn test_parse_weather_response() {
+        let data: ApiResponse<OpenMeteoResponse> = serde_json::from_str(WEATHER_RESPONSE).unwrap();
+        let response = data.into_result().unwrap();
+        assert_eq!(response.current.temperature, 24.2);
+        assert_eq!(response.current.humidity, 67);
+        assert_eq!(response.current.wind_direction, 258);
+        assert_eq!(response.current.weather_code, 1);
+    }
+
+    #[test_case(0, "Clear")]
+    #[test_case(1, "Mostly clear")]
+    #[test_case(95, "Thunderstorm")]
+    fn test_description(weather_code: u8, expected: &str) {
+        assert_eq!(
+            make_weather_response(weather_code).description(Config::default().language()),
+            expected
+        );
+    }
+
+    #[test_case(0, WeatherConditionIcon::Clear)]
+    #[test_case(1, WeatherConditionIcon::PartlyCloudy)]
+    #[test_case(95, WeatherConditionIcon::Thunderstorm)]
+    #[test_case(100, WeatherConditionIcon::Unknown)]
+    fn test_icon(weather_code: u8, expected: WeatherConditionIcon) {
+        assert_eq!(make_weather_response(weather_code).icon(), expected);
+    }
+
+    #[test_case(r#"{"_error": true, "reason": "Parameter out of range"}"#, "Parameter out of range")]
+    #[test_case(r#"{"_error": true}"#, "Unknown error")]
+    fn test_api_response_error(json: &str, expected_msg: &str) {
+        let data: ApiResponse<OpenMeteoResponse> = serde_json::from_str(json).unwrap();
+        match data.into_result() {
+            Err(RustormyError::ApiReturnedError(msg)) => assert_eq!(msg, expected_msg),
+            _ => panic!("Expected ApiReturnedError"),
+        }
     }
 }
