@@ -23,7 +23,7 @@ jobs:
           components: clippy,rustfmt
 
       - name: "Set up Just"
-        uses: extractions/setup-just@v3
+        uses: extractions/setup-just@v4
 
       - name: "Run checks"
         run: just check
