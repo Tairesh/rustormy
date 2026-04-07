@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.4.4] - 2026-04-07
+
+### Fixed
+
+- Fixed a crash that could occur when all providers had been exhausted.
+- OpenUV rate limit and quota errors no longer cause a failure — UV index is simply omitted when the API quota is exceeded.
+
 ## [0.4.3] - 2026-04-01
 
 ### Changed
