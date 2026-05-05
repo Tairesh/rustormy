@@ -116,10 +116,10 @@ struct WeatherData {
     // ghi: f64,
     // gust: f64,
     // h_angle: f64,
-    // lat: f64,
-    // lon: f64,
+    lat: f64,
+    lon: f64,
     // ob_time: String,
-    // pod: String,
+    pod: String,
     precip: f64,
     pres: f64,
     rh: u8,
@@ -153,6 +153,7 @@ impl WeatherData {
     }
 
     pub fn into_weather(self) -> Weather {
+        let is_day = Some(self.pod == "d");
         Weather {
             temperature: self.temp,
             feels_like: self.app_temp,
@@ -163,9 +164,10 @@ impl WeatherData {
             wind_speed: self.wind_spd,
             wind_direction: self.wind_dir,
             uv_index: Some(self.uv_index()),
+            is_day,
             icon: self.weather.icon(),
             description: self.weather.description,
-            location_name: self.city_name,
+            location: Location::new(self.city_name, self.lat, self.lon),
         }
     }
 }
@@ -238,6 +240,9 @@ mod tests {
                     "aqi": 42,
                     "city_name": "London",
                     "dewpt": 10.0,
+                    "lat": 51.5,
+                    "lon": -0.13,
+                    "pod": "d",
                     "precip": 0.0,
                     "pres": 1015.0,
                     "rh": 70,
@@ -271,9 +276,50 @@ mod tests {
                 assert_eq!(weather.uv_index, Some(5.0));
                 assert_eq!(weather.icon, WeatherConditionIcon::PartlyCloudy);
                 assert_eq!(weather.description, "Partly cloudy");
-                assert_eq!(weather.location_name, "London");
+                assert_eq!(weather.location.name, "London");
+                assert_eq!(weather.is_day, Some(true));
             }
             WeatherApiResponse::Err { error } => panic!("Unexpected error: {error:?}"),
+        }
+    }
+
+    #[test]
+    fn test_weather_bit_is_day_from_pod_n() {
+        let json_data = r#"
+        {
+            "count": 1,
+            "data": [
+                {
+                    "app_temp": 15.0,
+                    "aqi": 42,
+                    "city_name": "London",
+                    "dewpt": 10.0,
+                    "lat": 51.5,
+                    "lon": -0.13,
+                    "pod": "n",
+                    "precip": 0.0,
+                    "pres": 1015.0,
+                    "rh": 70,
+                    "temp": 16.0,
+                    "uv": 5.0,
+                    "weather": {
+                        "description": "Clear",
+                        "icon": "c01n",
+                        "code": 800
+                    },
+                    "wind_dir": 180,
+                    "wind_spd": 3.5
+                }
+            ]
+        }
+        "#;
+        let response: WeatherApiResponse = serde_json::from_str(json_data).unwrap();
+        match response {
+            WeatherApiResponse::Ok { data, .. } => {
+                let weather = data.into_iter().next().unwrap().into_weather();
+                assert_eq!(weather.is_day, Some(false));
+            }
+            WeatherApiResponse::Err { .. } => panic!("expected Ok"),
         }
     }
 

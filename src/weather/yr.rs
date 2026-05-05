@@ -4,7 +4,6 @@ use crate::errors::RustormyError;
 use crate::models::{Language, Weather, WeatherConditionIcon};
 use crate::weather::Location;
 use crate::weather::open_meteo::OpenMeteo;
-use crate::weather::openuv::get_uv_index;
 use crate::weather::tools::{apparent_temperature, dew_point};
 use crate::weather::{GetWeather, LookUpCity};
 use reqwest::blocking::Client;
@@ -89,7 +88,6 @@ pub struct YrPrecipitationDetails {
 impl YrResponse {
     pub fn into_weather(
         self,
-        client: &Client,
         config: &Config,
         location: &Location,
     ) -> Result<Weather, RustormyError> {
@@ -107,9 +105,10 @@ impl YrResponse {
                 .ok_or(RustormyError::ApiReturnedError(
                     "No forecast data returned".to_string(),
                 ))?;
-        let description =
-            symbol_code_to_description(&next_hours.summary.symbol_code, config.language());
-        let icon = symbol_code_to_icon(&next_hours.summary.symbol_code);
+        let symbol_code = &next_hours.summary.symbol_code;
+        let description = symbol_code_to_description(symbol_code, config.language());
+        let icon = symbol_code_to_icon(symbol_code);
+        let is_day = symbol_code_to_is_day(symbol_code);
 
         Ok(Weather {
             temperature: details.air_temperature,
@@ -120,7 +119,8 @@ impl YrResponse {
                     "No wind direction returned".to_string(),
                 ))?
                 .round() as u16,
-            uv_index: get_uv_index(client, config, location)?,
+            uv_index: None,
+            is_day,
             description,
             icon,
             humidity: details.relative_humidity.round() as u8,
@@ -138,7 +138,7 @@ impl YrResponse {
             precipitation: details
                 .precipitation_amount
                 .unwrap_or_else(|| next_hours.details.precipitation_amount.unwrap_or(0.0)),
-            location_name: location.name.clone(),
+            location: location.clone(),
         })
     }
 
@@ -157,7 +157,7 @@ impl GetWeather for Yr {
             .header("User-Agent", YR_USER_AGENT)
             .send()?;
         let data: YrResponse = response.json()?;
-        data.into_weather(client, config, &location)
+        data.into_weather(config, &location)
     }
 }
 
@@ -298,12 +298,15 @@ impl YrWeatherCode {
     }
 }
 
-fn yr_weather_code(code: &str) -> Option<YrWeatherCode> {
-    let base = code
-        .strip_suffix("_day")
-        .or_else(|| code.strip_suffix("_night"))
-        .unwrap_or(code);
-    match base {
+fn yr_weather_code(code: &str) -> Option<(YrWeatherCode, Option<bool>)> {
+    let (base, is_day) = if let Some(stripped) = code.strip_suffix("_day") {
+        (stripped, Some(true))
+    } else if let Some(stripped) = code.strip_suffix("_night") {
+        (stripped, Some(false))
+    } else {
+        (code, None)
+    };
+    let parsed = match base {
         "clearsky" => Some(YrWeatherCode::ClearSky),
         "fair" => Some(YrWeatherCode::Fair),
         "partlycloudy" => Some(YrWeatherCode::PartlyCloudy),
@@ -352,18 +355,23 @@ fn yr_weather_code(code: &str) -> Option<YrWeatherCode> {
         "heavysnowandthunder" => Some(YrWeatherCode::HeavySnowAndThunder),
         "fog" => Some(YrWeatherCode::Fog),
         _ => None,
-    }
+    };
+    parsed.map(|p| (p, is_day))
 }
 
 fn symbol_code_to_description(code: &str, lang: Language) -> String {
     yr_weather_code(code).map_or_else(
         || format!("{} ({code})", ll(lang, "Unknown")),
-        |c| c.description(lang),
+        |(c, _)| c.description(lang),
     )
 }
 
 fn symbol_code_to_icon(code: &str) -> WeatherConditionIcon {
-    yr_weather_code(code).map_or(WeatherConditionIcon::Unknown, YrWeatherCode::to_icon)
+    yr_weather_code(code).map_or(WeatherConditionIcon::Unknown, |(c, _)| c.to_icon())
+}
+
+fn symbol_code_to_is_day(code: &str) -> Option<bool> {
+    yr_weather_code(code).and_then(|(_, is_day)| is_day)
 }
 
 fn get_location(client: &Client, config: &Config) -> Result<Location, RustormyError> {
@@ -386,24 +394,44 @@ mod test {
 
     #[test]
     fn test_yr_weather_code_known() {
-        assert_eq!(yr_weather_code("clearsky"), Some(YrWeatherCode::ClearSky));
+        assert_eq!(
+            yr_weather_code("clearsky"),
+            Some((YrWeatherCode::ClearSky, None))
+        );
         assert_eq!(
             yr_weather_code("clearsky_day"),
-            Some(YrWeatherCode::ClearSky)
+            Some((YrWeatherCode::ClearSky, Some(true)))
         );
         assert_eq!(
             yr_weather_code("clearsky_night"),
-            Some(YrWeatherCode::ClearSky)
+            Some((YrWeatherCode::ClearSky, Some(false)))
         );
-        assert_eq!(yr_weather_code("fair"), Some(YrWeatherCode::Fair));
-        assert_eq!(yr_weather_code("fair_day"), Some(YrWeatherCode::Fair));
-        assert_eq!(yr_weather_code("fair_night"), Some(YrWeatherCode::Fair));
-        assert_eq!(yr_weather_code("fog"), Some(YrWeatherCode::Fog));
-        assert_eq!(yr_weather_code("heavyrain"), Some(YrWeatherCode::HeavyRain));
+        assert_eq!(yr_weather_code("fair"), Some((YrWeatherCode::Fair, None)));
+        assert_eq!(
+            yr_weather_code("fair_day"),
+            Some((YrWeatherCode::Fair, Some(true)))
+        );
+        assert_eq!(
+            yr_weather_code("fair_night"),
+            Some((YrWeatherCode::Fair, Some(false)))
+        );
+        assert_eq!(yr_weather_code("fog"), Some((YrWeatherCode::Fog, None)));
+        assert_eq!(
+            yr_weather_code("heavyrain"),
+            Some((YrWeatherCode::HeavyRain, None))
+        );
         assert_eq!(
             yr_weather_code("snowandthunder"),
-            Some(YrWeatherCode::SnowAndThunder)
+            Some((YrWeatherCode::SnowAndThunder, None))
         );
+    }
+
+    #[test]
+    fn test_symbol_code_to_is_day() {
+        assert_eq!(symbol_code_to_is_day("clearsky_day"), Some(true));
+        assert_eq!(symbol_code_to_is_day("clearsky_night"), Some(false));
+        assert_eq!(symbol_code_to_is_day("clearsky"), None);
+        assert_eq!(symbol_code_to_is_day("xyzzy"), None);
     }
 
     #[test]
@@ -416,11 +444,11 @@ mod test {
     fn test_yr_weather_code_csv_typos() {
         assert_eq!(
             yr_weather_code("lightssleetshowersandthunder"),
-            Some(YrWeatherCode::LightSleetShowersAndThunder)
+            Some((YrWeatherCode::LightSleetShowersAndThunder, None))
         );
         assert_eq!(
             yr_weather_code("lightssnowshowersandthunder"),
-            Some(YrWeatherCode::LightSnowShowersAndThunder)
+            Some((YrWeatherCode::LightSnowShowersAndThunder, None))
         );
     }
 
@@ -452,7 +480,6 @@ mod test {
             serde_json::from_str(TEST_API_RESPONSE).expect("Failed to parse JSON");
         let weather = data
             .into_weather(
-                &Client::new(),
                 &Config::default(),
                 &Location {
                     name: "Test Location".to_string(),

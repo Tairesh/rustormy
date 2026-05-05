@@ -84,9 +84,10 @@ pub struct Weather {
     pub wind_speed: f64,
     pub wind_direction: u16,
     pub uv_index: Option<f64>,
+    pub is_day: Option<bool>,
     pub description: String,
     pub icon: WeatherConditionIcon,
-    pub location_name: String,
+    pub location: Location,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -94,6 +95,16 @@ pub struct Location {
     pub name: String,
     pub latitude: f64,
     pub longitude: f64,
+}
+
+impl Location {
+    pub fn new(name: String, latitude: f64, longitude: f64) -> Self {
+        Self {
+            name,
+            latitude,
+            longitude,
+        }
+    }
 }
 
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq, ValueEnum, Serialize, Deserialize)]

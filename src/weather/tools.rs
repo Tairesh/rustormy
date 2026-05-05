@@ -62,3 +62,63 @@ pub fn owm_code_to_icon(code: u32) -> WeatherConditionIcon {
         _ => WeatherConditionIcon::Unknown,
     }
 }
+
+/// Shorten a comma-separated location name to "city, country" form.
+/// If the city portion is longer than 20 chars, returns just the city.
+/// If there are fewer than 2 comma-separated parts, returns the input
+/// unchanged.
+pub fn shorten_location_name(name: String) -> String {
+    let parts: Vec<&str> = name.split(',').map(str::trim).collect();
+    if parts.len() >= 2 {
+        let city = parts[0];
+        let country = parts.last().unwrap_or(&"");
+        if city.len() <= 20 {
+            format!("{city}, {country}")
+        } else {
+            city.to_string()
+        }
+    } else {
+        name
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn shorten_passthrough_for_single_segment() {
+        assert_eq!(shorten_location_name("London".to_string()), "London");
+    }
+
+    #[test]
+    fn shorten_two_segments_returns_city_country() {
+        assert_eq!(
+            shorten_location_name("London, United Kingdom".to_string()),
+            "London, United Kingdom"
+        );
+    }
+
+    #[test]
+    fn shorten_many_segments_returns_first_and_last() {
+        assert_eq!(
+            shorten_location_name("ბათუმი, აჭარის ავტონომიური რესპუბლიკა, საქართველო".to_string()),
+            "ბათუმი, საქართველო"
+        );
+    }
+
+    #[test]
+    fn shorten_long_city_returns_just_city() {
+        let long_city = "VeryLongCityNameThatExceedsTwentyChars";
+        assert!(long_city.len() > 20);
+        assert_eq!(
+            shorten_location_name(format!("{long_city}, Country")),
+            long_city
+        );
+    }
+
+    #[test]
+    fn shorten_empty_string() {
+        assert_eq!(shorten_location_name(String::new()), "");
+    }
+}

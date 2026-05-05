@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::errors::RustormyError;
-use crate::models::{Language, Units, Weather, WeatherConditionIcon};
+use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
 use crate::weather::{GetWeather, tools};
 use reqwest::blocking::Client;
 
@@ -14,6 +14,7 @@ struct WwoRequestParams<'a> {
     format: &'a str,
     fx: &'a str,
     mca: &'a str,
+    includelocation: &'a str,
 }
 
 impl<'a> WwoRequestParams<'a> {
@@ -28,6 +29,7 @@ impl<'a> WwoRequestParams<'a> {
             format: "json",
             fx: "no",
             mca: "no",
+            includelocation: "yes",
         }
     }
 }
@@ -41,13 +43,14 @@ enum WwoResponse {
 
 #[derive(Debug, serde::Deserialize)]
 struct WwoWeatherData {
-    request: Vec<WwoRequestInfo>,
     current_condition: Vec<WwoCurrentCondition>,
+    #[serde(default)]
+    nearest_area: Vec<WwoNearestArea>,
 }
 
 impl WwoWeatherData {
     fn into_weather(self, config: &Config) -> Result<Weather, RustormyError> {
-        let location_name = self.location_name()?.to_string();
+        let location = self.location()?;
         let condition = self.current_condition.into_iter().next().ok_or_else(|| {
             RustormyError::ApiReturnedError("No current condition data".to_string())
         })?;
@@ -62,28 +65,39 @@ impl WwoWeatherData {
             wind_speed: condition.wind_speed(config.units())?,
             wind_direction: condition.wind_direction()?,
             uv_index: condition.uv_index()?,
+            is_day: None,
             description: condition.desc(config.language())?.to_string(),
             icon: condition.icon()?,
-            location_name,
+            location,
         })
     }
 
-    fn location_name(&self) -> Result<&str, RustormyError> {
-        self.request
+    fn location(&self) -> Result<Location, RustormyError> {
+        self.nearest_area
             .first()
-            .map(|r| r.query.as_str())
-            .ok_or_else(|| {
-                RustormyError::ApiReturnedError("No location name available".to_string())
+            .and_then(|a| {
+                let lat = a.latitude.parse::<f64>().ok()?;
+                let lon = a.longitude.parse::<f64>().ok()?;
+                let city = a.area_name.first()?.value.as_str();
+                let country = a.country.first().map_or("", |c| c.value.as_str());
+                let name = if country.is_empty() {
+                    city.to_string()
+                } else {
+                    tools::shorten_location_name(format!("{city}, {country}"))
+                };
+                Some(Location::new(name, lat, lon))
             })
+            .ok_or_else(|| RustormyError::ApiReturnedError("No location data".to_string()))
     }
 }
 
 #[derive(Debug, serde::Deserialize)]
-struct WwoRequestInfo {
-    #[allow(dead_code)]
-    #[serde(rename = "type")]
-    req_type: String,
-    query: String,
+#[serde(rename_all = "camelCase")]
+struct WwoNearestArea {
+    area_name: Vec<WwoWeatherDesc>,
+    country: Vec<WwoWeatherDesc>,
+    latitude: String,
+    longitude: String,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -131,7 +145,7 @@ impl WwoCurrentCondition {
             )
         })?;
 
-        Ok(&desc.value)
+        Ok(desc.value.trim())
     }
 
     fn temperature(&self, units: Units) -> Result<f64, RustormyError> {
@@ -284,5 +298,36 @@ impl GetWeather for WorldWeatherOnline {
             WwoResponse::Ok { data } => data.into_weather(config),
             WwoResponse::Err { data } => Err(RustormyError::ApiReturnedError(data.get_message())),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::Config;
+
+    const TEST_API_RESPONSE: &str = include_str!("../../tests/data/wwo_response.json");
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn test_parse_wwo_response() {
+        let response: WwoResponse =
+            serde_json::from_str(TEST_API_RESPONSE).expect("Failed to parse JSON");
+        let WwoResponse::Ok { data } = response else {
+            panic!("Expected Ok variant");
+        };
+
+        let weather = data
+            .into_weather(&Config::default())
+            .expect("into_weather should succeed");
+
+        assert_eq!(weather.location.name, "London, United Kingdom");
+        assert_eq!(weather.location.latitude, 51.517);
+        assert_eq!(weather.location.longitude, -0.106);
+        assert_eq!(weather.is_day, None);
+        assert_eq!(weather.temperature, 14.0);
+        assert_eq!(weather.humidity, 63);
+        assert_eq!(weather.icon, WeatherConditionIcon::Cloudy);
+        assert_eq!(weather.description, "Cloudy");
     }
 }

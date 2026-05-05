@@ -2,7 +2,6 @@ use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
 use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
-use crate::weather::openuv::get_uv_index;
 use crate::weather::{GetWeather, LookUpCity, tools};
 use capitalize::Capitalize;
 use reqwest::blocking::Client;
@@ -102,6 +101,17 @@ impl WeatherResponseData {
             })
     }
 
+    pub fn is_day(&self) -> Option<bool> {
+        self.weather
+            .first()
+            .and_then(|w| w.icon.chars().last())
+            .and_then(|c| match c {
+                'd' => Some(true),
+                'n' => Some(false),
+                _ => None,
+            })
+    }
+
     fn dew_point(&self, units: Units) -> f64 {
         let t = self.main.temp;
         let h = self.main.humidity.into();
@@ -109,13 +119,13 @@ impl WeatherResponseData {
         tools::dew_point(t, h, units)
     }
 
-    pub fn into_weather(
-        self,
-        client: &Client,
-        config: &Config,
-        location: Location,
-    ) -> Result<Weather, RustormyError> {
-        Ok(Weather {
+    pub fn into_weather(mut self, config: &Config, location: &Location) -> Weather {
+        let location = Location::new(
+            self.name.take().unwrap_or_else(|| location.name.clone()),
+            location.latitude,
+            location.longitude,
+        );
+        Weather {
             temperature: self.main.temp,
             feels_like: self.main.feels_like,
             humidity: self.main.humidity,
@@ -124,13 +134,14 @@ impl WeatherResponseData {
             pressure: self.main.pressure,
             wind_speed: self.wind.speed,
             wind_direction: self.wind.deg,
-            uv_index: get_uv_index(client, config, &location)?,
+            uv_index: None,
+            is_day: self.is_day(),
             description: self
                 .description()
                 .unwrap_or_else(|| ll(config.language(), "Unknown").to_string()),
             icon: self.icon(),
-            location_name: self.name.unwrap_or(location.name),
-        })
+            location,
+        }
     }
 }
 
@@ -138,6 +149,7 @@ impl WeatherResponseData {
 struct WeatherInfo {
     id: u32,
     description: String,
+    icon: String,
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -210,7 +222,26 @@ impl GetWeather for OpenWeatherMap {
         let response: WeatherApiResponse = response.json()?;
         match response {
             WeatherApiResponse::Err { message } => Err(RustormyError::ApiReturnedError(message)),
-            WeatherApiResponse::Ok(data) => Ok(data.into_weather(client, config, location)?),
+            WeatherApiResponse::Ok(data) => Ok(data.into_weather(config, &location)),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_owm_is_day_from_icon_d_suffix() {
+        let json = r#"{"weather":[{"id":800,"description":"clear","icon":"01d"}],"main":{"temp":20.0,"feels_like":19.0,"humidity":50,"pressure":1013},"wind":{"speed":3.0,"deg":90}}"#;
+        let data: WeatherResponseData = serde_json::from_str(json).unwrap();
+        assert_eq!(data.is_day(), Some(true));
+    }
+
+    #[test]
+    fn test_owm_is_day_from_icon_n_suffix() {
+        let json = r#"{"weather":[{"id":800,"description":"clear","icon":"01n"}],"main":{"temp":20.0,"feels_like":19.0,"humidity":50,"pressure":1013},"wind":{"speed":3.0,"deg":90}}"#;
+        let data: WeatherResponseData = serde_json::from_str(json).unwrap();
+        assert_eq!(data.is_day(), Some(false));
     }
 }

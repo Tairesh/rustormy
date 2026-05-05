@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
-use crate::models::{Language, Units, Weather, WeatherConditionIcon};
+use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
 use crate::weather::GetWeather;
 use reqwest::blocking::Client;
 
@@ -130,8 +130,8 @@ impl WeatherValues {
 
 #[derive(Debug, serde::Deserialize)]
 struct LocationData {
-    // lat: f64,
-    // lon: f64,
+    lat: f64,
+    lon: f64,
     name: String,
     // #[serde(rename = "type")]
     // loc_type: String,
@@ -139,22 +139,15 @@ struct LocationData {
 
 impl LocationData {
     pub fn name(self) -> String {
-        // Name comes in the local language and can be VERY long
-        // e.g. "ბათუმი, აჭარის ავტონომიური რესპუბლიკა, საქართველო"
-        // Let's hope that it's at least somewhat standardized like "{city}, [{some}, {regional}, {stuff}, ..] {country}"
-        // And return only the city name and country name (if city name isn't too long)
-        let parts: Vec<&str> = self.name.split(',').map(str::trim).collect();
-        if parts.len() >= 2 {
-            let city = parts[0];
-            let country = parts.last().unwrap_or(&"");
-            if city.len() <= 20 {
-                format!("{city}, {country}")
-            } else {
-                city.to_string()
-            }
-        } else {
-            self.name
-        }
+        crate::weather::tools::shorten_location_name(self.name)
+    }
+}
+
+impl From<LocationData> for Location {
+    fn from(data: LocationData) -> Self {
+        let lat = data.lat;
+        let lon = data.lon;
+        Self::new(data.name(), lat, lon)
     }
 }
 
@@ -185,9 +178,10 @@ impl WeatherResponse {
                     wind_speed: data.values.wind_speed,
                     wind_direction: data.values.wind_direction,
                     uv_index: Some((data.values.uv_index * 10.0).round() / 10.0),
+                    is_day: None,
                     icon: data.values.icon(),
                     description: data.values.description(config.language()).to_string(),
-                    location_name: location.name(),
+                    location: location.into(),
                 })
             }
         }
@@ -262,7 +256,10 @@ mod test {
         assert_eq!(weather.uv_index, Some(2.));
         assert_eq!(weather.icon, WeatherConditionIcon::LightShowers);
         assert_eq!(weather.description, "Light rain");
-        assert_eq!(weather.location_name, "ბათუმი, საქართველო"); // shortened name
+        assert_eq!(weather.location.name, "ბათუმი, საქართველო"); // shortened name
+        assert_eq!(weather.location.latitude, 41.650_951_385_498_1);
+        assert_eq!(weather.location.longitude, 41.636_009_216_308_6);
+        assert_eq!(weather.is_day, None);
     }
 
     #[test]

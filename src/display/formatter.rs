@@ -110,7 +110,7 @@ impl WeatherFormatter {
     fn format_one_line(&self, weather: &Weather) -> String {
         let color_theme = &self.config.color_theme;
         let (temp_unit, wind_unit, _) = unit_strings(self.config.units, self.config.language);
-        let emoji = weather.icon.emoji();
+        let emoji = weather.icon.emoji(weather.is_day.unwrap_or(true));
         let mut temperature = format!("{:.1}{}", weather.temperature, temp_unit);
         if self.config.use_colors {
             temperature = colored_text(temperature, color_theme.temperature);
@@ -130,9 +130,9 @@ impl WeatherFormatter {
 
         if self.config.show_city_name {
             let location = if self.config.use_colors {
-                colored_text(&weather.location_name, color_theme.location)
+                colored_text(&weather.location.name, color_theme.location)
             } else {
-                weather.location_name.clone()
+                weather.location.name.clone()
             };
             format!("{location}: {value}")
         } else {
@@ -148,10 +148,11 @@ impl WeatherFormatter {
             self.config.language,
         );
         let (temp_unit, wind_unit, precip_unit) = unit_strings(self.config.units, lang);
+        let is_day = weather.is_day.unwrap_or(true);
         let icon = if colors {
-            weather.icon.colored_icon()
+            weather.icon.colored_icon(is_day)
         } else {
-            weather.icon.icon()
+            weather.icon.icon(is_day)
         };
         let color_theme = &self.config.color_theme;
 
@@ -161,7 +162,7 @@ impl WeatherFormatter {
             output.push(make_line(
                 icon[0],
                 "Location",
-                &weather.location_name,
+                &weather.location.name,
                 color_theme.location,
                 &self.config,
             ));
@@ -251,7 +252,7 @@ impl WeatherFormatter {
 mod tests {
     use super::*;
     use crate::config::Config;
-    use crate::models::{Language, TextMode, Units, WeatherConditionIcon};
+    use crate::models::{Language, Location, TextMode, Units, WeatherConditionIcon};
 
     fn sample_weather() -> Weather {
         Weather {
@@ -264,9 +265,10 @@ mod tests {
             wind_speed: 5.0,
             wind_direction: 90,
             uv_index: None,
+            is_day: Some(true),
             description: "Partly cloudy".to_string(),
             icon: WeatherConditionIcon::PartlyCloudy,
-            location_name: "Test City".to_string(),
+            location: Location::new("Test City".to_string(), 0.0, 0.0),
         }
     }
 
@@ -760,6 +762,42 @@ mod tests {
             lines[1].contains("UV index 5.0"),
             "Expected 'UV index 5.0' in condition line, got '{}'",
             lines[1]
+        );
+    }
+
+    #[test]
+    fn test_night_clear_uses_moon_emoji() {
+        let mut weather = sample_weather();
+        weather.icon = WeatherConditionIcon::Clear;
+        weather.is_day = Some(false);
+        let mut config = Config::default();
+        config.set_format(FormatterConfig {
+            text_mode: TextMode::OneLine,
+            ..Default::default()
+        });
+        let formatter = WeatherFormatter::new(&config);
+        let line = formatter.format_one_line(&weather);
+        assert!(
+            line.contains("🌙"),
+            "expected moon emoji in night clear output, got '{line}'"
+        );
+    }
+
+    #[test]
+    fn test_day_clear_uses_sun_emoji() {
+        let mut weather = sample_weather();
+        weather.icon = WeatherConditionIcon::Clear;
+        weather.is_day = Some(true);
+        let mut config = Config::default();
+        config.set_format(FormatterConfig {
+            text_mode: TextMode::OneLine,
+            ..Default::default()
+        });
+        let formatter = WeatherFormatter::new(&config);
+        let line = formatter.format_one_line(&weather);
+        assert!(
+            line.contains("☀"),
+            "expected sun emoji in day clear output, got '{line}'"
         );
     }
 }

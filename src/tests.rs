@@ -33,9 +33,10 @@ impl TestProvider {
             wind_speed: 5.0,
             wind_direction: 180,
             uv_index: None,
+            is_day: Some(true),
             description: "Clear sky".to_string(),
             icon: WeatherConditionIcon::Clear,
-            location_name: location.name,
+            location,
         }
     }
 }
@@ -78,7 +79,7 @@ fn test_valid_city_lookup() {
 
     let weather = result.unwrap();
     assert_eq!(weather.temperature, 20.0);
-    assert_eq!(weather.location_name, "Test City".to_string());
+    assert_eq!(weather.location.name, "Test City".to_string());
 }
 
 #[test]

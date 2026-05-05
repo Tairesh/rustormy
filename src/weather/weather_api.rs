@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::errors::RustormyError;
-use crate::models::{Units, Weather, WeatherConditionIcon};
+use crate::models::{Location, Units, Weather, WeatherConditionIcon};
 use crate::weather::{GetWeather, tools};
 use reqwest::blocking::Client;
 
@@ -56,11 +56,11 @@ struct WeatherApiData {
 
 impl WeatherApiData {
     fn into_weather(self, config: &Config) -> Weather {
-        let location_name = self.location.location_name();
+        let location = self.location.into();
         let current = self.current;
+        let is_day = Some(current.is_day == 1);
 
         Weather {
-            location_name,
             temperature: current.temperature(config.units()),
             feels_like: current.feels_like(config.units()),
             humidity: current.humidity,
@@ -69,9 +69,11 @@ impl WeatherApiData {
             wind_speed: current.wind_speed(config.units()),
             wind_direction: current.wind_degree,
             uv_index: Some(current.uv_index()),
+            is_day,
             dew_point: current.dew_point(config.units()),
             description: current.description().to_string(),
             icon: current.icon(),
+            location,
         }
     }
 }
@@ -101,11 +103,19 @@ impl WeatherApiLocation {
     }
 }
 
+impl From<WeatherApiLocation> for Location {
+    fn from(location: WeatherApiLocation) -> Self {
+        let lat = location.lat;
+        let lon = location.lon;
+        Self::new(location.location_name(), lat, lon)
+    }
+}
+
 #[derive(Debug, serde::Deserialize)]
 struct WeatherApiCurrent {
     temp_c: f64,
     temp_f: f64,
-    // is_day: u8,
+    is_day: u8,
     condition: WeatherApiCondition,
     wind_mph: f64,
     wind_kph: f64,
@@ -296,7 +306,7 @@ mod tests {
             WeatherApiResponse::Ok(data) => data.into_weather(&Config::default()),
             WeatherApiResponse::Err { .. } => panic!("Expected Ok variant"),
         };
-        assert_eq!(weather.location_name, "Batumi, Ajaria, Georgia");
+        assert_eq!(weather.location.name, "Batumi, Ajaria, Georgia");
         assert_eq!(weather.temperature, 25.3);
         assert_eq!(weather.feels_like, 27.4);
         assert_eq!(weather.humidity, 74);
@@ -308,6 +318,14 @@ mod tests {
         assert_eq!(weather.uv_index, Some(5.3));
         assert_eq!(weather.description, "Переменная облачность");
         assert_eq!(weather.icon, WeatherConditionIcon::PartlyCloudy);
+        assert_eq!(weather.is_day, Some(true));
+    }
+
+    #[test]
+    fn test_weather_api_is_day_zero_means_night() {
+        let json = r#"{"is_day":0,"temp_c":10.0,"temp_f":50.0,"condition":{"text":"Clear","code":1000},"wind_mph":5.0,"wind_kph":8.0,"wind_degree":180,"pressure_mb":1013.0,"pressure_in":29.9,"precip_mm":0.0,"precip_in":0.0,"humidity":50,"feelslike_c":9.0,"feelslike_f":48.0,"dewpoint_c":4.0,"dewpoint_f":39.0,"uv":3.0}"#;
+        let current: WeatherApiCurrent = serde_json::from_str(json).unwrap();
+        assert_eq!(current.is_day, 0);
     }
 
     #[test]
