@@ -4,12 +4,26 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Live mode key bindings: `q` / `Esc` / `Ctrl+C` quit immediately, `r` forces an immediate refresh.
+- Optional one-line footer in live mode showing key hints and the last-update timestamp.
+  Toggle via `live_mode_footer = true|false` in the config file or `--no-footer` on the CLI.
+
+### Fixed
+
+- Live mode now uses the terminal's alternate screen buffer, so your existing terminal contents are preserved on exit
+  ([#28](https://github.com/Tairesh/rustormy/pull/28)).
+
 ## [0.4.4] - 2026-04-07
 
 ### Fixed
 
 - Fixed a crash that could occur when all providers had been exhausted.
-- OpenUV rate limit and quota errors no longer cause a failure — UV index is simply omitted when the API quota is exceeded.
+- OpenUV rate limit and quota errors no longer cause a failure — UV index is simply omitted when the API quota is
+  exceeded.
 
 ## [0.4.3] - 2026-04-01
 
