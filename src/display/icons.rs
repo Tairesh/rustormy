@@ -26,8 +26,8 @@ impl WeatherConditionIcon {
             ],
             Self::Clear => [
                 "     .  *    ",
-                "       .-.   ",
-                "   . (   )   ",
+                "      .-.    ",
+                "   . ( (  *  ",
                 "      `-’    ",
                 "   *   .     ",
                 "             ",
@@ -141,7 +141,7 @@ impl WeatherConditionIcon {
             Self::Clear => [
                 "\x1b[38;5;111;1m     .  *    \x1b[0m",
                 "\x1b[38;5;230;1m      .-.    \x1b[0m",
-                "\x1b[38;5;111;1m   . \x1b[38;5;230;1m(   )   \x1b[0m",
+                "\x1b[38;5;111;1m   . \x1b[38;5;230;1m( (\x1b[38;5;111;1m  *  \x1b[0m",
                 "\x1b[38;5;230;1m      `-’    \x1b[0m",
                 "\x1b[38;5;111;1m   *   .     \x1b[0m",
                 "             ",
@@ -174,6 +174,7 @@ impl WeatherConditionIcon {
                 "             ",
                 "             ",
             ],
+            // TODO: add night variant
             Self::LightShowers => [
                 "             ",
                 "\x1b[38;5;226m _`/\"\"\x1b[38;5;250m.-.    \x1b[0m",

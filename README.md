@@ -5,8 +5,10 @@ various output modes.
 
 [![Tests](https://github.com/Tairesh/rustormy/actions/workflows/tests.yml/badge.svg)](https://github.com/Tairesh/rustormy/actions/workflows/tests.yml)
 [![Crates.io](https://img.shields.io/crates/v/rustormy.svg)](https://crates.io/crates/rustormy)
+[![AUR package](https://repology.org/badge/version-for-repo/aur/rustormy.svg?minversion=0.5.0)](https://repology.org/project/rustormy/versions)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/tairesh/rustormy)](https://github.com/Tairesh/rustormy/commits/main)
-[![Lines of code](https://tokei.rs/b1/github/Tairesh/rustormy?category=code)](https://github.com/Tairesh/rustormy/tree/main)
+
+[// Tokei.rs is gone for a long time but I hope we will have this badge back some day]: # ([![Lines of code]&#40;https://tokei.rs/b1/github/Tairesh/rustormy?category=code&#41;]&#40;https://github.com/Tairesh/rustormy/tree/main&#41;)
 
 ![Screenshot](.github/assets/live.png)
 
@@ -297,6 +299,7 @@ Options:
 ![Imperial units: `rustormy -c Austin --colors -u imperial`](.github/assets/imperial.png)
 ![Spanish translation: `rustormy -c Valparaiso -g es --name --colors`](.github/assets/spanish.png)
 ![Compact and one-line modes](.github/assets/compact.png)
+![Night mode icons](.github/assets/night.png)
 ![JSON output: `rustormy -c Ajax -o json`](.github/assets/json.png)
 
 ## License
