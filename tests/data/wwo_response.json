@@ -1,0 +1,64 @@
+{
+  "data": {
+    "request": [
+      {
+        "type": "City",
+        "query": "London, United Kingdom"
+      }
+    ],
+    "nearest_area": [
+      {
+        "areaName": [
+          {
+            "value": "London"
+          }
+        ],
+        "country": [
+          {
+            "value": "United Kingdom"
+          }
+        ],
+        "region": [
+          {
+            "value": "City of London, Greater London"
+          }
+        ],
+        "latitude": "51.517",
+        "longitude": "-0.106"
+      }
+    ],
+    "current_condition": [
+      {
+        "observation_time": "08:01 PM",
+        "temp_C": "14",
+        "temp_F": "58",
+        "weatherCode": "119",
+        "weatherIconUrl": [
+          {
+            "value": "https://cdn.worldweatheronline.com/images/wsymbols01_png_64/wsymbol_0004_black_low_cloud.png"
+          }
+        ],
+        "weatherDesc": [
+          {
+            "value": "Cloudy"
+          }
+        ],
+        "windspeedMiles": "8",
+        "windspeedKmph": "13",
+        "winddirDegree": "38",
+        "winddir16Point": "NE",
+        "precipMM": "0.0",
+        "precipInches": "0.0",
+        "humidity": "63",
+        "visibility": "10",
+        "visibilityMiles": "6",
+        "pressure": "1011",
+        "pressureInches": "30",
+        "cloudcover": "0",
+        "FeelsLikeC": "13",
+        "FeelsLikeF": "56",
+        "uvIndex": "0"
+      }
+    ]
+  }
+}

@@ -310,6 +310,11 @@ impl Config {
         &self.api_keys
     }
 
+    #[cfg(test)]
+    pub fn api_keys_mut(&mut self) -> &mut ApiKeys {
+        &mut self.api_keys
+    }
+
     pub fn city(&self) -> Option<&str> {
         self.city.as_deref()
     }

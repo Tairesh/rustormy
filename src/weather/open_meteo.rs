@@ -2,7 +2,6 @@ use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
 use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
-use crate::weather::openuv::get_uv_index;
 use crate::weather::{GetWeather, LookUpCity, tools};
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
@@ -40,13 +39,8 @@ struct OpenMeteoResponse {
 }
 
 impl OpenMeteoResponse {
-    pub fn into_weather(
-        self,
-        client: &Client,
-        config: &Config,
-        location: &Location,
-    ) -> Result<Weather, RustormyError> {
-        Ok(Weather {
+    pub fn into_weather(self, config: &Config, location: &Location) -> Weather {
+        Weather {
             temperature: self.current.temperature,
             feels_like: self.current.apparent_temperature,
             humidity: self.current.humidity,
@@ -55,11 +49,12 @@ impl OpenMeteoResponse {
             pressure: self.current.pressure as u32,
             wind_speed: self.current.wind_speed,
             wind_direction: self.current.wind_direction,
-            uv_index: get_uv_index(client, config, location)?,
+            uv_index: None,
+            is_day: Some(self.current.is_day == 1),
             description: self.description(config.language()).to_string(),
             icon: self.icon(),
-            location_name: location.name.clone(),
-        })
+            location: location.clone(),
+        }
     }
 
     fn description(&self, lang: Language) -> &'static str {
@@ -137,6 +132,7 @@ struct CurrentWeather {
     #[serde(rename = "wind_direction_10m")]
     wind_direction: u16,
     weather_code: u8,
+    is_day: u8,
 }
 
 #[derive(Debug, Serialize)]
@@ -200,7 +196,7 @@ struct WeatherAPIRequest<'a> {
 
 impl<'a> WeatherAPIRequest<'a> {
     pub fn new(location: &Location, config: &'a Config) -> Self {
-        const CURRENT: &str = "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,surface_pressure,wind_speed_10m,wind_direction_10m,weather_code";
+        const CURRENT: &str = "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,surface_pressure,wind_speed_10m,wind_direction_10m,weather_code,is_day";
         let (temperature_unit, wind_speed_unit, precipitation_unit) = match config.units() {
             Units::Metric => ("celsius", "ms", "mm"),
             Units::Imperial => ("fahrenheit", "mph", "inch"),
@@ -246,7 +242,7 @@ impl GetWeather for OpenMeteo {
             .json::<ApiResponse<OpenMeteoResponse>>()?
             .into_result()?;
 
-        data.into_weather(client, config, &location)
+        Ok(data.into_weather(config, &location))
     }
 }
 
@@ -264,7 +260,7 @@ mod tests {
 
     fn make_weather_response(weather_code: u8) -> OpenMeteoResponse {
         let json = format!(
-            r#"{{"current":{{"temperature_2m":20.0,"apparent_temperature":18.0,"relative_humidity_2m":50,"precipitation":0.0,"surface_pressure":1013.0,"wind_speed_10m":5.0,"wind_direction_10m":180,"weather_code":{weather_code}}}}}"#
+            r#"{{"current":{{"temperature_2m":20.0,"apparent_temperature":18.0,"relative_humidity_2m":50,"precipitation":0.0,"surface_pressure":1013.0,"wind_speed_10m":5.0,"wind_direction_10m":180,"weather_code":{weather_code},"is_day":1}}}}"#
         );
         serde_json::from_str(&json).unwrap()
     }
@@ -294,6 +290,14 @@ mod tests {
         assert_eq!(response.current.humidity, 67);
         assert_eq!(response.current.wind_direction, 258);
         assert_eq!(response.current.weather_code, 1);
+        assert_eq!(response.current.is_day, 1);
+    }
+
+    #[test]
+    fn test_is_day_zero_means_night() {
+        let json = r#"{"current":{"temperature_2m":20.0,"apparent_temperature":18.0,"relative_humidity_2m":50,"precipitation":0.0,"surface_pressure":1013.0,"wind_speed_10m":5.0,"wind_direction_10m":180,"weather_code":0,"is_day":0}}"#;
+        let response: OpenMeteoResponse = serde_json::from_str(json).unwrap();
+        assert_eq!(response.current.is_day, 0);
     }
 
     #[test_case(0, "Clear")]

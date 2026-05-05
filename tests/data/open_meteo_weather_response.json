@@ -28,6 +28,7 @@
     "surface_pressure": 1004.1,
     "wind_speed_10m": 7.0,
     "wind_direction_10m": 258,
-    "weather_code": 1
+    "weather_code": 1,
+    "is_day": 1
   }
 }

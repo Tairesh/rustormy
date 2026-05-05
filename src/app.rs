@@ -3,7 +3,7 @@ use crate::display::formatter::WeatherFormatter;
 use crate::errors::RustormyError;
 use crate::live::run as run_live;
 use crate::models::{Provider, Weather};
-use crate::weather::{GetWeather, GetWeatherProvider};
+use crate::weather::{GetWeather, GetWeatherProvider, enrich};
 use reqwest::blocking::Client;
 use std::time::Duration;
 
@@ -42,7 +42,10 @@ impl App {
     pub fn fetch_with_fallback(&mut self) -> Result<Weather, RustormyError> {
         loop {
             match self.provider.get_weather(&self.client, &self.config) {
-                Ok(weather) => return Ok(weather),
+                Ok(mut weather) => {
+                    enrich(&mut weather, &self.client, &self.config)?;
+                    return Ok(weather);
+                }
                 Err(error) => match error {
                     RustormyError::ApiReturnedError(_) | RustormyError::HttpRequestFailed(_) => {
                         let p: Provider = (&self.provider).into();
