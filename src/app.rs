@@ -1,15 +1,11 @@
 use crate::config::{Cli, Config};
 use crate::display::formatter::WeatherFormatter;
 use crate::errors::RustormyError;
-use crate::models::Provider;
+use crate::live::run as run_live;
+use crate::models::{Provider, Weather};
 use crate::weather::{GetWeather, GetWeatherProvider};
 use reqwest::blocking::Client;
 use std::time::Duration;
-
-fn clear_screen() {
-    print!("\x1B[2J\x1B[1;1H\x1B[?25l");
-    std::io::Write::flush(&mut std::io::stdout()).ok();
-}
 
 pub struct App {
     client: Client,
@@ -35,38 +31,46 @@ impl App {
         })
     }
 
-    pub fn run(&mut self) {
+    pub fn config(&self) -> &Config {
+        &self.config
+    }
+
+    pub fn formatter(&self) -> &WeatherFormatter {
+        &self.formatter
+    }
+
+    pub fn fetch_with_fallback(&mut self) -> Result<Weather, RustormyError> {
         loop {
             match self.provider.get_weather(&self.client, &self.config) {
-                Ok(weather) => {
-                    if self.config.live_mode() {
-                        clear_screen();
-                    }
-                    self.formatter.display(weather);
-                }
+                Ok(weather) => return Ok(weather),
                 Err(error) => match error {
                     RustormyError::ApiReturnedError(_) | RustormyError::HttpRequestFailed(_) => {
                         let p: Provider = (&self.provider).into();
                         if self.config.verbose() >= 1 {
-                            // TODO: Log this instead of printing to stderr
                             eprintln!("Provider {p:?} failed: {error:?}");
                         }
                         let Some(next) = self.config.take_next_provider() else {
-                            self.formatter.display_error(&error);
+                            return Err(error);
                         };
                         self.provider = GetWeatherProvider::new(next);
-                        continue;
                     }
-                    _ => {
-                        self.formatter.display_error(&error);
-                    }
+                    _ => return Err(error),
                 },
             }
-            if !self.config.live_mode() {
-                break;
+        }
+    }
+
+    pub fn run(&mut self) {
+        if self.config.live_mode() {
+            if let Err(error) = run_live(self) {
+                self.formatter.display_error(&error);
             }
-            let sleep_duration = Duration::from_secs(self.config.live_mode_interval());
-            std::thread::sleep(sleep_duration);
+            return;
+        }
+
+        match self.fetch_with_fallback() {
+            Ok(weather) => self.formatter.display(&weather),
+            Err(error) => self.formatter.display_error(&error),
         }
     }
 }

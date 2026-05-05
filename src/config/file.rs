@@ -75,6 +75,10 @@ pub struct Config {
     #[serde(default = "default_live_mode_interval")]
     live_mode_interval: u64, // in seconds, default to 300 (5 minutes)
 
+    /// Show key-hint footer in live mode (default: true)
+    #[serde(default = "default_live_mode_footer")]
+    live_mode_footer: bool,
+
     /// Use geocoding cache (`true` or `false`)
     /// (if enabled, previously looked up cities will be cached locally to avoid repeated API calls)
     #[serde(default)]
@@ -92,6 +96,9 @@ pub struct Config {
 fn default_live_mode_interval() -> u64 {
     300
 }
+fn default_live_mode_footer() -> bool {
+    true
+}
 fn default_connect_timeout() -> u64 {
     10
 }
@@ -107,6 +114,7 @@ impl Default for Config {
             format: FormatterConfig::default(),
             live_mode: false,
             live_mode_interval: default_live_mode_interval(),
+            live_mode_footer: default_live_mode_footer(),
             use_geocoding_cache: false,
             verbose: 0,
             connect_timeout: default_connect_timeout(),
@@ -218,6 +226,9 @@ impl Config {
         self.format.use_colors |= cli.use_colors;
         self.format.wind_in_degrees |= cli.use_degrees_for_wind;
         self.format.align_right |= cli.align_right;
+        if cli.no_footer {
+            self.live_mode_footer = false;
+        }
         self.live_mode |= cli.live_mode;
         self.use_geocoding_cache &= !cli.no_cache;
         if cli.verbose > 0 {
@@ -333,6 +344,9 @@ impl Config {
             self.live_mode_interval
         }
     }
+    pub fn live_mode_footer(&self) -> bool {
+        self.live_mode_footer
+    }
     pub fn format(&self) -> &FormatterConfig {
         &self.format
     }
@@ -427,6 +441,7 @@ impl From<LegacyConfig> for Config {
             format,
             live_mode: value.live_mode,
             live_mode_interval: value.live_mode_interval,
+            live_mode_footer: default_live_mode_footer(),
             use_geocoding_cache: value.use_geocoding_cache,
             verbose: value.verbose,
             connect_timeout: value.connect_timeout,
@@ -724,6 +739,59 @@ mod tests {
     }
 
     #[test]
+    fn test_no_footer_cli_overrides_true() {
+        let mut config = Config {
+            live_mode_footer: true,
+            ..Default::default()
+        };
+        let cli = Cli {
+            no_footer: true,
+            ..base_cli()
+        };
+        config.merge_cli(cli).unwrap();
+        assert!(!config.live_mode_footer);
+    }
+
+    #[test]
+    fn test_no_footer_absent_preserves_false() {
+        let mut config = Config {
+            live_mode_footer: false,
+            ..Default::default()
+        };
+        let cli = Cli {
+            no_footer: false,
+            ..base_cli()
+        };
+        config.merge_cli(cli).unwrap();
+        assert!(!config.live_mode_footer);
+    }
+
+    #[test]
+    fn test_live_mode_footer_default_when_missing() {
+        let toml = r#"
+providers = ["open_meteo"]
+city = "Test City"
+[api_keys]
+"#;
+        let (config, migrated) = Config::parse_config(toml).unwrap();
+        assert!(!migrated, "expected modern parse path");
+        assert!(config.live_mode_footer());
+    }
+
+    #[test]
+    fn test_live_mode_footer_explicit_false() {
+        let toml = r#"
+providers = ["open_meteo"]
+city = "Test City"
+live_mode_footer = false
+[api_keys]
+"#;
+        let (config, migrated) = Config::parse_config(toml).unwrap();
+        assert!(!migrated, "expected modern parse path");
+        assert!(!config.live_mode_footer());
+    }
+
+    #[test]
     fn test_load_incorrect_config_file() {
         let config_file_path = std::env::temp_dir().join("test_load_incorrect_config_file.toml");
         fs::write(&config_file_path, "this is not valid toml").unwrap();
@@ -785,6 +853,7 @@ mod tests {
             providers: vec![Provider::OpenMeteo],
             live_mode: false,
             live_mode_interval: 300,
+            live_mode_footer: true,
             use_geocoding_cache: true,
             verbose: 1,
             format: FormatterConfig {
@@ -816,6 +885,7 @@ mod tests {
             one_line_mode: false,
             text_mode: None,
             align_right: true,
+            no_footer: false,
             live_mode: true,
             live_mode_interval: Some(600),
             no_cache: true,
@@ -856,6 +926,7 @@ mod tests {
             one_line_mode: false,
             text_mode: None,
             align_right: false,
+            no_footer: false,
             live_mode: false,
             live_mode_interval: None,
             no_cache: false,
