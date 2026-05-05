@@ -74,13 +74,13 @@ impl WeatherFormatter {
         }
     }
 
-    pub fn display(&self, weather: Weather) {
+    pub fn display(&self, weather: &Weather) {
         print!("{}", self.render_to_string(weather));
     }
 
-    pub fn render_to_string(&self, weather: Weather) -> String {
+    pub fn render_to_string(&self, weather: &Weather) -> String {
         match self.config.output_format {
-            OutputFormat::Json => self.render_json(&weather),
+            OutputFormat::Json => self.render_json(weather),
             OutputFormat::Text => self.render_text(weather),
         }
     }
@@ -95,7 +95,7 @@ impl WeatherFormatter {
         std::process::exit(1);
     }
 
-    fn render_text(&self, weather: Weather) -> String {
+    fn render_text(&self, weather: &Weather) -> String {
         if self.config.text_mode == TextMode::OneLine {
             return format!("{}\n", self.format_one_line(weather));
         }
@@ -107,7 +107,7 @@ impl WeatherFormatter {
         s
     }
 
-    fn format_one_line(&self, weather: Weather) -> String {
+    fn format_one_line(&self, weather: &Weather) -> String {
         let color_theme = &self.config.color_theme;
         let (temp_unit, wind_unit, _) = unit_strings(self.config.units, self.config.language);
         let emoji = weather.icon.emoji();
@@ -130,9 +130,9 @@ impl WeatherFormatter {
 
         if self.config.show_city_name {
             let location = if self.config.use_colors {
-                colored_text(weather.location_name, color_theme.location)
+                colored_text(&weather.location_name, color_theme.location)
             } else {
-                weather.location_name
+                weather.location_name.clone()
             };
             format!("{location}: {value}")
         } else {
@@ -140,7 +140,7 @@ impl WeatherFormatter {
         }
     }
 
-    fn format_text(&self, weather: Weather) -> Vec<String> {
+    fn format_text(&self, weather: &Weather) -> Vec<String> {
         let (compact, colors, name, lang) = (
             self.config.text_mode == TextMode::Compact,
             self.config.use_colors,
@@ -161,7 +161,7 @@ impl WeatherFormatter {
             output.push(make_line(
                 icon[0],
                 "Location",
-                weather.location_name,
+                &weather.location_name,
                 color_theme.location,
                 &self.config,
             ));
@@ -175,7 +175,7 @@ impl WeatherFormatter {
             if let Some(uv) = weather.uv_index {
                 format!("{} ({} {uv:.1})", weather.description, ll(lang, "UV index"))
             } else {
-                weather.description
+                weather.description.clone()
             },
             condition_color(weather.icon),
             &self.config,
@@ -273,7 +273,7 @@ mod tests {
     #[test]
     fn test_render_to_string_full_text_has_seven_lines() {
         let formatter = WeatherFormatter::new(&Config::default());
-        let s = formatter.render_to_string(sample_weather());
+        let s = formatter.render_to_string(&sample_weather());
         let line_count = s.lines().count();
         assert_eq!(line_count, 7, "rendered text:\n{s}");
         assert!(
@@ -289,7 +289,7 @@ mod tests {
         format.text_mode = TextMode::OneLine;
         config.set_format(format);
         let formatter = WeatherFormatter::new(&config);
-        let s = formatter.render_to_string(sample_weather());
+        let s = formatter.render_to_string(&sample_weather());
         assert_eq!(s.lines().count(), 1, "rendered text:\n{s}");
         assert!(s.ends_with('\n'));
     }
@@ -299,7 +299,7 @@ mod tests {
         let weather = sample_weather();
         let config = Config::default();
         let formatter = WeatherFormatter::new(&config);
-        let lines = formatter.format_text(weather);
+        let lines = formatter.format_text(&weather);
 
         assert_eq!(lines.len(), 7);
         assert_eq!(
@@ -399,7 +399,7 @@ mod tests {
             ..Default::default()
         });
         let formatter = WeatherFormatter::new(&config);
-        let lines = formatter.format_text(weather);
+        let lines = formatter.format_text(&weather);
 
         assert_eq!(lines.len(), 6);
         assert!(
@@ -495,7 +495,7 @@ mod tests {
         weather.uv_index = Some(7.2);
         let config = Config::default();
         let formatter = WeatherFormatter::new(&config);
-        let lines = formatter.format_text(weather);
+        let lines = formatter.format_text(&weather);
 
         assert_eq!(lines.len(), 7);
         assert!(
@@ -514,7 +514,7 @@ mod tests {
             ..Default::default()
         });
         let formatter = WeatherFormatter::new(&config);
-        let lines = formatter.format_text(weather);
+        let lines = formatter.format_text(&weather);
 
         assert_eq!(lines.len(), 7);
         assert!(
@@ -538,7 +538,7 @@ mod tests {
             ..Default::default()
         });
         let formatter = WeatherFormatter::new(&config);
-        let lines = formatter.format_text(weather);
+        let lines = formatter.format_text(&weather);
 
         assert_eq!(lines.len(), 7);
         // Check colors in every line except the first and the last one
@@ -559,7 +559,7 @@ mod tests {
             ..Default::default()
         });
         let formatter = WeatherFormatter::new(&config);
-        let lines = formatter.format_text(weather);
+        let lines = formatter.format_text(&weather);
 
         assert_eq!(lines.len(), 7);
         assert!(
@@ -588,7 +588,7 @@ mod tests {
             ..Default::default()
         });
         let formatter = WeatherFormatter::new(&config);
-        let lines = formatter.format_text(weather);
+        let lines = formatter.format_text(&weather);
 
         assert_eq!(lines.len(), 7);
         assert!(
@@ -627,7 +627,7 @@ mod tests {
                 ..Default::default()
             });
             let formatter = WeatherFormatter::new(&config);
-            let lines = formatter.format_text(weather);
+            let lines = formatter.format_text(&weather);
 
             assert_eq!(lines.len(), 7);
             assert!(
@@ -653,7 +653,7 @@ mod tests {
             ..Default::default()
         });
         let formatter = WeatherFormatter::new(&config);
-        let lines = formatter.format_text(weather);
+        let lines = formatter.format_text(&weather);
 
         assert_eq!(lines.len(), 7);
         assert!(
@@ -673,7 +673,7 @@ mod tests {
             ..Default::default()
         });
         let formatter = WeatherFormatter::new(&config);
-        let line = formatter.format_one_line(weather);
+        let line = formatter.format_one_line(&weather);
 
         assert!(
             line.contains("Test City"),
@@ -702,7 +702,7 @@ mod tests {
             ..Default::default()
         });
         let formatter = WeatherFormatter::new(&config);
-        let line = formatter.format_one_line(weather);
+        let line = formatter.format_one_line(&weather);
 
         assert!(
             !line.contains("Test City"),
@@ -727,7 +727,7 @@ mod tests {
             ..Default::default()
         });
         let formatter = WeatherFormatter::new(&config);
-        let lines = formatter.format_text(weather);
+        let lines = formatter.format_text(&weather);
 
         // Check if there are no extra spaces between the label and the value
         assert!(
@@ -753,7 +753,7 @@ mod tests {
         weather.uv_index = Some(5.);
         let config = Config::default();
         let formatter = WeatherFormatter::new(&config);
-        let lines = formatter.format_text(weather);
+        let lines = formatter.format_text(&weather);
 
         assert_eq!(lines.len(), 7);
         assert!(

@@ -44,7 +44,7 @@ impl Drop for TerminalGuard {
 pub fn render(
     stdout: &mut io::Stdout,
     formatter: &WeatherFormatter,
-    weather: Weather,
+    weather: &Weather,
     timestamp: DateTime<Local>,
     show_footer: bool,
     use_colors: bool,
@@ -80,7 +80,7 @@ pub fn run(app: &mut App) -> Result<(), RustormyError> {
         render(
             &mut stdout,
             app.formatter(),
-            weather,
+            &weather,
             now,
             show_footer,
             use_colors,
@@ -94,18 +94,29 @@ pub fn run(app: &mut App) -> Result<(), RustormyError> {
             if remaining_wait.is_zero() {
                 break;
             }
-            if event::poll(remaining_wait)?
-                && let Event::Key(KeyEvent {
-                    code,
-                    modifiers,
-                    kind: KeyEventKind::Press,
-                    ..
-                }) = event::read()?
-            {
-                match (code, modifiers) {
-                    (KeyCode::Char('q') | KeyCode::Esc, _)
-                    | (KeyCode::Char('c'), KeyModifiers::CONTROL) => return Ok(()),
-                    (KeyCode::Char('r'), _) => break,
+            if event::poll(remaining_wait)? {
+                match event::read()? {
+                    Event::Key(KeyEvent {
+                        code,
+                        modifiers,
+                        kind: KeyEventKind::Press,
+                        ..
+                    }) => match (code, modifiers) {
+                        (KeyCode::Char('q') | KeyCode::Esc, _)
+                        | (KeyCode::Char('c'), KeyModifiers::CONTROL) => return Ok(()),
+                        (KeyCode::Char('r'), _) => break,
+                        _ => {}
+                    },
+                    Event::Resize(_, _) => {
+                        render(
+                            &mut stdout,
+                            app.formatter(),
+                            &weather,
+                            now,
+                            show_footer,
+                            use_colors,
+                        )?;
+                    }
                     _ => {}
                 }
             }

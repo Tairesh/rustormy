@@ -69,7 +69,7 @@ impl App {
         }
 
         match self.fetch_with_fallback() {
-            Ok(weather) => self.formatter.display(weather),
+            Ok(weather) => self.formatter.display(&weather),
             Err(error) => self.formatter.display_error(&error),
         }
     }
