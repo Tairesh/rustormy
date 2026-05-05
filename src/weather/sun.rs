@@ -40,7 +40,7 @@ fn solar_altitude_deg(lat_deg: f64, lon_deg: f64, now: DateTime<Utc>) -> f64 {
     let h = hour_angle_deg.to_radians();
 
     let sin_alt = lat.sin() * decl.sin() + lat.cos() * decl.cos() * h.cos();
-    sin_alt.asin().to_degrees()
+    sin_alt.clamp(-1.0, 1.0).asin().to_degrees()
 }
 
 #[cfg(test)]
