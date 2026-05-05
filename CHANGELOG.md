@@ -11,11 +11,22 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 - Live mode key bindings: `q` / `Esc` / `Ctrl+C` quit immediately, `r` forces an immediate refresh.
 - Optional one-line footer in live mode showing key hints and the last-update timestamp.
   Toggle via `live_mode_footer = true|false` in the config file or `--no-footer` on the CLI.
+- Distinct night-time icons and ASCII art for Clear and Partly Cloudy conditions. The moon (🌙) replaces the sun
+  (☀️) at night, and Partly Cloudy switches to a moon-and-cloud combination. Day/night is detected automatically
+  per location and updates live as the sun crosses the horizon
+  ([#29](https://github.com/Tairesh/rustormy/pull/29)).
+- `is_day`, `latitude`, and `longitude` fields in JSON output.
+
+### Changed
+
+- JSON output: `location_name` is now nested as `location.name`, alongside `location.latitude` and
+  `location.longitude`. Scripts parsing JSON output should switch from `location_name` to `location.name`.
 
 ### Fixed
 
 - Live mode now uses the terminal's alternate screen buffer, so your existing terminal contents are preserved on exit
   ([#28](https://github.com/Tairesh/rustormy/pull/28)).
+- World Weather Online: trailing whitespace in weather descriptions (e.g. `"Cloudy "`) is now trimmed.
 
 ## [0.4.4] - 2026-04-07
 
