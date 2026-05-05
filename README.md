@@ -119,11 +119,17 @@ lon = -0.1278
 #### Live mode
 
 Live mode can be enabled with `live_mode = true` to update weather data every `live_mode_interval` seconds
-(default is 300 seconds, i.e., 5 minutes)
+(default is 300 seconds, i.e., 5 minutes). It uses the terminal's alternate screen buffer, so the original
+screen is restored on exit. While in live mode, press `q`, `Esc`, or `Ctrl+C` to quit, or `r` to force an
+immediate refresh.
+
+A footer with key hints and the last-update timestamp is shown by default. Set `live_mode_footer = false`
+(or pass `--no-footer` on the command line) to hide it.
 
 ```toml
 live_mode = false
 live_mode_interval = 300
+live_mode_footer = true
 ```
 
 ---
@@ -270,6 +276,8 @@ Options:
           Live mode - continuously update weather data every 5 minutes (or specified interval)
   -i, --interval <LIVE_MODE_INTERVAL>
           Live mode update interval in seconds (default: 300)
+      --no-footer
+          Hide the live-mode footer (key hints + last-update time)
       --no-cache
           Disable caching of geocoding results
       --clear-cache

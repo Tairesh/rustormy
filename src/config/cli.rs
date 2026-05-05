@@ -75,6 +75,10 @@ pub struct Cli {
     )]
     pub live_mode_interval: Option<u64>, // in seconds, default to 300 (5 minutes)
 
+    /// Hide the live-mode footer (key hints + last-update time)
+    #[arg(long="no-footer", requires = "live_mode", action = ArgAction::SetTrue)]
+    pub no_footer: bool,
+
     /// Disable caching of geocoding results
     #[arg(long, action = ArgAction::SetTrue)]
     pub no_cache: bool,

@@ -75,9 +75,13 @@ impl WeatherFormatter {
     }
 
     pub fn display(&self, weather: Weather) {
+        print!("{}", self.render_to_string(weather));
+    }
+
+    pub fn render_to_string(&self, weather: Weather) -> String {
         match self.config.output_format {
-            OutputFormat::Json => self.display_json(&weather),
-            OutputFormat::Text => self.display_text(weather),
+            OutputFormat::Json => self.render_json(&weather),
+            OutputFormat::Text => self.render_text(weather),
         }
     }
 
@@ -91,15 +95,16 @@ impl WeatherFormatter {
         std::process::exit(1);
     }
 
-    fn display_text(&self, weather: Weather) {
+    fn render_text(&self, weather: Weather) -> String {
         if self.config.text_mode == TextMode::OneLine {
-            println!("{}", self.format_one_line(weather));
-            return;
+            return format!("{}\n", self.format_one_line(weather));
         }
-
-        self.format_text(weather)
-            .iter()
-            .for_each(|line| println!("{line}"));
+        let mut s = String::new();
+        for line in self.format_text(weather) {
+            s.push_str(&line);
+            s.push('\n');
+        }
+        s
     }
 
     fn format_one_line(&self, weather: Weather) -> String {
@@ -234,11 +239,11 @@ impl WeatherFormatter {
         output
     }
 
-    fn display_json(&self, weather: &Weather) {
+    fn render_json(&self, weather: &Weather) -> String {
         let json = serde_json::to_string_pretty(weather).unwrap_or_else(|e| {
             self.display_error(&RustormyError::JsonSerializeError(e));
         });
-        println!("{json}");
+        format!("{json}\n")
     }
 }
 
@@ -263,6 +268,30 @@ mod tests {
             icon: WeatherConditionIcon::PartlyCloudy,
             location_name: "Test City".to_string(),
         }
+    }
+
+    #[test]
+    fn test_render_to_string_full_text_has_seven_lines() {
+        let formatter = WeatherFormatter::new(&Config::default());
+        let s = formatter.render_to_string(sample_weather());
+        let line_count = s.lines().count();
+        assert_eq!(line_count, 7, "rendered text:\n{s}");
+        assert!(
+            s.ends_with('\n'),
+            "render_to_string output must end with newline"
+        );
+    }
+
+    #[test]
+    fn test_render_to_string_one_line() {
+        let mut config = Config::default();
+        let mut format = config.format().clone();
+        format.text_mode = TextMode::OneLine;
+        config.set_format(format);
+        let formatter = WeatherFormatter::new(&config);
+        let s = formatter.render_to_string(sample_weather());
+        assert_eq!(s.lines().count(), 1, "rendered text:\n{s}");
+        assert!(s.ends_with('\n'));
     }
 
     #[test]
