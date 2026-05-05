@@ -1,9 +1,8 @@
+use super::open_meteo::OpenMeteo;
 use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
-use crate::models::{Language, Weather, WeatherConditionIcon};
-use crate::weather::Location;
-use crate::weather::open_meteo::OpenMeteo;
+use crate::models::{Language, Location, Weather, WeatherConditionIcon};
 use crate::weather::tools::{apparent_temperature, dew_point};
 use crate::weather::{GetWeather, LookUpCity};
 use reqwest::blocking::Client;
@@ -390,7 +389,7 @@ fn get_location(client: &Client, config: &Config) -> Result<Location, RustormyEr
 mod test {
     use super::*;
 
-    const TEST_API_RESPONSE: &str = include_str!("../../tests/data/yr.json");
+    const TEST_API_RESPONSE: &str = include_str!("../../../tests/data/yr.json");
 
     #[test]
     fn test_yr_weather_code_known() {

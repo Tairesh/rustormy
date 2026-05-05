@@ -254,9 +254,9 @@ mod tests {
     use test_case::test_case;
 
     const GEOCODING_RESPONSE: &str =
-        include_str!("../../tests/data/open_meteo_geocoding_response.json");
+        include_str!("../../../tests/data/open_meteo_geocoding_response.json");
     const WEATHER_RESPONSE: &str =
-        include_str!("../../tests/data/open_meteo_weather_response.json");
+        include_str!("../../../tests/data/open_meteo_weather_response.json");
 
     fn make_weather_response(weather_code: u8) -> OpenMeteoResponse {
         let json = format!(

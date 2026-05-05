@@ -306,7 +306,7 @@ mod tests {
     use super::*;
     use crate::config::Config;
 
-    const TEST_API_RESPONSE: &str = include_str!("../../tests/data/wwo_response.json");
+    const TEST_API_RESPONSE: &str = include_str!("../../../tests/data/wwo_response.json");
 
     #[test]
     #[allow(clippy::float_cmp)]
