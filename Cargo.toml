@@ -22,7 +22,7 @@ thiserror = "2.0"
 directories = "6.0"
 capitalize = "0.3"
 enum_dispatch = "0.3"
-crossterm = "0.28"
+crossterm = "0.29"
 
 [dev-dependencies]
 test-case = "3"
