@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Tiered diagnostic logging via `-v` / `-vv` / `-vvv` (or `verbose = 0..=3` in the config file). All logs go to stderr,
+  so they don't pollute `--format=json` output piped through `jq` or similar tools.
+    - `-v` shows warnings: when a provider fails and we fall back to the next one, when OpenUV is unavailable, or when
+      a translation key is missing.
+    - `-vv` adds one-line summaries of every HTTP request (provider, operation, status, latency) and geocoding cache
+      hits/misses. URLs and API keys are not shown at this level.
+    - `-vvv` adds full request URLs and truncated response bodies for debugging. URLs at this level include API keys —
+      don't share captured output verbatim.
+- In live mode, log lines produced inside the alternate screen are buffered and flushed to stderr after you exit, so
+  the UI stays clean during the session and you still see what happened on quit.
+
+### Fixed
+
+- A transient OpenUV failure no longer aborts the weather fetch. UV index is silently omitted (with a `-v` warning if
+  enabled) and the rest of the data still displays normally.
+
 ## [0.5.0] - 2026-05-06
 
 ### Added

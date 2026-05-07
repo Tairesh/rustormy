@@ -1,8 +1,8 @@
 use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
-use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
-use crate::weather::GetWeather;
+use crate::models::{Language, Location, Provider, Units, Weather, WeatherConditionIcon};
+use crate::weather::{GetWeather, http};
 use reqwest::blocking::Client;
 
 const REALTIME_API_URL: &str = "https://api.tomorrow.io/v4/weather/realtime";
@@ -191,8 +191,10 @@ impl WeatherResponse {
 impl GetWeather for TomorrowIo {
     fn get_weather(&self, client: &Client, config: &Config) -> Result<Weather, RustormyError> {
         let request = WeatherRequestParams::new(config);
-        let response = client.get(REALTIME_API_URL).query(&request).send()?;
-        let data: WeatherResponse = response.json()?;
+        let data: WeatherResponse = http::get_json(
+            client.get(REALTIME_API_URL).query(&request),
+            http::Op::weather_for(Provider::TomorrowIo, config),
+        )?;
 
         data.into_weather(config)
     }

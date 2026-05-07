@@ -39,8 +39,10 @@ pub fn get_cached_location(
 
     if cache_path.exists() {
         let location: Location = serde_json::from_reader(File::open(cache_path)?)?;
+        crate::info!("cache hit \"{city}\"");
         Ok(Some(location))
     } else {
+        crate::info!("cache miss \"{city}\"");
         Ok(None)
     }
 }

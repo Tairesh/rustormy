@@ -1,8 +1,8 @@
 use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
-use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
-use crate::weather::{GetWeather, LookUpCity, tools};
+use crate::models::{Language, Location, Provider, Units, Weather, WeatherConditionIcon};
+use crate::weather::{GetWeather, LookUpCity, http, tools};
 use capitalize::Capitalize;
 use reqwest::blocking::Client;
 
@@ -198,8 +198,10 @@ impl LookUpCity for OpenWeatherMap {
         let city = config.city().ok_or(RustormyError::NoLocationProvided)?;
 
         let request = GeocodingApiRequest::new(city, config);
-        let response = client.get(GEO_API_URL).query(&request).send()?;
-        let data: GeocodingApiResponse = response.json()?;
+        let data: GeocodingApiResponse = http::get_json(
+            client.get(GEO_API_URL).query(&request),
+            http::Op::geocode(Provider::OpenWeatherMap, city),
+        )?;
 
         if let GeocodingApiResponse::Err { message } = data {
             return Err(RustormyError::ApiReturnedError(message));
@@ -217,9 +219,10 @@ impl GetWeather for OpenWeatherMap {
         let location = self.get_location(client, config)?;
 
         let request = WeatherAPIRequest::new(&location, config);
-        let response = client.get(WEATHER_API_URL).query(&request).send()?;
-
-        let response: WeatherApiResponse = response.json()?;
+        let response: WeatherApiResponse = http::get_json(
+            client.get(WEATHER_API_URL).query(&request),
+            http::Op::weather_at(Provider::OpenWeatherMap, &location),
+        )?;
         match response {
             WeatherApiResponse::Err { message } => Err(RustormyError::ApiReturnedError(message)),
             WeatherApiResponse::Ok(data) => Ok(data.into_weather(config, &location)),

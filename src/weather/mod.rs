@@ -2,7 +2,6 @@ use crate::config::Config;
 use crate::errors::RustormyError;
 use crate::models::{Location, Weather};
 use enum_dispatch::enum_dispatch;
-pub use providers::GetWeatherProvider;
 use reqwest::blocking::Client;
 
 #[enum_dispatch]
@@ -46,9 +45,11 @@ pub trait LookUpCity {
 }
 
 mod enrich;
+pub(crate) mod http;
 mod openuv;
 mod providers;
 mod sun;
 pub mod tools;
 
 pub use enrich::enrich;
+pub use providers::GetWeatherProvider;

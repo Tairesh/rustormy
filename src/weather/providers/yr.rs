@@ -2,9 +2,9 @@ use super::open_meteo::OpenMeteo;
 use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
-use crate::models::{Language, Location, Weather, WeatherConditionIcon};
+use crate::models::{Language, Location, Provider, Weather, WeatherConditionIcon};
 use crate::weather::tools::{apparent_temperature, dew_point};
-use crate::weather::{GetWeather, LookUpCity};
+use crate::weather::{GetWeather, LookUpCity, http};
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 
@@ -150,12 +150,13 @@ impl YrResponse {
 impl GetWeather for Yr {
     fn get_weather(&self, client: &Client, config: &Config) -> Result<Weather, RustormyError> {
         let location = get_location(client, config)?;
-        let response = client
-            .get(YR_API_URL)
-            .query(&YrRequest::new(&location))
-            .header("User-Agent", YR_USER_AGENT)
-            .send()?;
-        let data: YrResponse = response.json()?;
+        let data: YrResponse = http::get_json(
+            client
+                .get(YR_API_URL)
+                .query(&YrRequest::new(&location))
+                .header("User-Agent", YR_USER_AGENT),
+            http::Op::weather_at(Provider::Yr, &location),
+        )?;
         data.into_weather(config, &location)
     }
 }

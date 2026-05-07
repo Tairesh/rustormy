@@ -1,8 +1,8 @@
 use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
-use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
-use crate::weather::{GetWeather, LookUpCity, tools};
+use crate::models::{Language, Location, Provider, Units, Weather, WeatherConditionIcon};
+use crate::weather::{GetWeather, LookUpCity, http, tools};
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 
@@ -218,29 +218,26 @@ impl LookUpCity for OpenMeteo {
         let city = config.city().ok_or(RustormyError::NoLocationProvided)?;
 
         let request = GeocodingRequest::new(city, config.language());
-        let response = client.get(GEO_API_URL).query(&request).send()?;
-        let data = response
-            .json::<ApiResponse<GeocodingResponse>>()?
-            .into_result()?;
+        let data = http::get_json::<ApiResponse<GeocodingResponse>>(
+            client.get(GEO_API_URL).query(&request),
+            http::Op::geocode(Provider::OpenMeteo, city),
+        )?
+        .into_result()?;
 
-        let location = data
-            .into_location()
-            .ok_or_else(|| RustormyError::CityNotFound(city.to_string()))?;
-
-        Ok(location)
+        data.into_location()
+            .ok_or_else(|| RustormyError::CityNotFound(city.to_string()))
     }
 }
 
 impl GetWeather for OpenMeteo {
     fn get_weather(&self, client: &Client, config: &Config) -> Result<Weather, RustormyError> {
         let location = self.get_location(client, config)?;
-        let response = client
-            .get(WEATHER_API_URL)
-            .query(&WeatherAPIRequest::new(&location, config))
-            .send()?;
-        let data = response
-            .json::<ApiResponse<OpenMeteoResponse>>()?
-            .into_result()?;
+        let request = WeatherAPIRequest::new(&location, config);
+        let data = http::get_json::<ApiResponse<OpenMeteoResponse>>(
+            client.get(WEATHER_API_URL).query(&request),
+            http::Op::weather_at(Provider::OpenMeteo, &location),
+        )?
+        .into_result()?;
 
         Ok(data.into_weather(config, &location))
     }

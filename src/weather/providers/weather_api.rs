@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::errors::RustormyError;
-use crate::models::{Location, Units, Weather, WeatherConditionIcon};
-use crate::weather::{GetWeather, tools};
+use crate::models::{Location, Provider, Units, Weather, WeatherConditionIcon};
+use crate::weather::{GetWeather, http, tools};
 use reqwest::blocking::Client;
 
 const WEATHER_API_URL: &str = "https://api.weatherapi.com/v1/current.json";
@@ -229,8 +229,10 @@ struct WeatherApiCondition {
 impl GetWeather for WeatherApi {
     fn get_weather(&self, client: &Client, config: &Config) -> Result<Weather, RustormyError> {
         let request = WeatherApiRequest::new(config);
-        let response = client.get(WEATHER_API_URL).query(&request).send()?;
-        let data: WeatherApiResponse = response.json()?;
+        let data: WeatherApiResponse = http::get_json(
+            client.get(WEATHER_API_URL).query(&request),
+            http::Op::weather_for(Provider::WeatherApi, config),
+        )?;
         match data {
             WeatherApiResponse::Ok(data) => Ok(data.into_weather(config)),
             WeatherApiResponse::Err { error } => Err(RustormyError::ApiReturnedError(format!(

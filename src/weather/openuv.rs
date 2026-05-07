@@ -1,3 +1,4 @@
+use super::http;
 use crate::config::Config;
 use crate::errors::RustormyError;
 use crate::models::Location;
@@ -93,15 +94,11 @@ enum UvResponse {
 }
 
 impl UvResponse {
-    fn into_uv_index(self, config: &Config) -> Option<f64> {
+    fn into_uv_index(self) -> Option<f64> {
         match self {
             Self::Ok { result } => Some((result.uv * 10.).round() / 10.),
             Self::Err { message } => {
-                if config.verbose() >= 1 {
-                    // TODO: proper logging
-                    eprintln!("OpenUV API error: {message}");
-                }
-
+                crate::warn!("OpenUV API error: {message}");
                 None
             }
         }
@@ -130,18 +127,19 @@ pub fn get_uv_index(
         return Ok(None);
     }
     let params = UvRequestParams::new(location);
-    let response = client
-        .get(OPEN_UV_API_URL)
-        .query(&params)
-        .header("x-access-token", &config.api_keys().open_uv)
-        .send()?;
-    Ok(response.json::<UvResponse>()?.into_uv_index(config))
+    let response: UvResponse = http::get_json(
+        client
+            .get(OPEN_UV_API_URL)
+            .query(&params)
+            .header("x-access-token", &config.api_keys().open_uv),
+        http::Op::uv_at(location),
+    )?;
+    Ok(response.into_uv_index())
 }
 
 #[cfg(test)]
 mod tests {
     use super::UvResponse;
-    use crate::config::Config;
 
     const TEST_API_RESPONSE: &str = include_str!("../../tests/data/openuv_response.json");
 
@@ -149,18 +147,14 @@ mod tests {
     fn test_openuv_error_response_returns_no_uv_index() {
         let response: UvResponse = serde_json::from_str(r#"{"error":"Daily API quota exceeded."}"#)
             .expect("OpenUV error payload should deserialize");
-        let config = Config::default();
-
-        assert_eq!(response.into_uv_index(&config), None);
+        assert_eq!(response.into_uv_index(), None);
     }
 
     #[test]
     fn test_openuv_valid_response_returns_uv_index() {
         let response: UvResponse =
             serde_json::from_str(TEST_API_RESPONSE).expect("Failed to parse JSON");
-        let config = Config::default();
-
-        assert_eq!(response.into_uv_index(&config), Some(4.4));
+        assert_eq!(response.into_uv_index(), Some(4.4));
     }
 
     #[test]

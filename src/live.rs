@@ -66,12 +66,20 @@ pub fn render(
 }
 
 pub fn run(app: &mut App) -> Result<(), RustormyError> {
+    let level = app.config().verbose();
+    let use_colors = app.config().format().use_colors;
+    let _capture = crate::logging::init_with_capture(level, use_colors);
+
     // First fetch runs before entering the alt screen so the user's
     // existing terminal contents stay visible during the initial API call.
     let mut weather = app.fetch_with_fallback()?;
     let mut now = Local::now();
 
-    let _guard = TerminalGuard::enter()?;
+    // Drain any logs produced during the first fetch directly to stderr
+    // so they remain in the user's scrollback after the alt-screen exits.
+    crate::logging::flush_capture();
+
+    let _terminal = TerminalGuard::enter()?;
     let mut stdout = io::stdout();
 
     loop {
