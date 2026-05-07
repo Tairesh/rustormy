@@ -427,10 +427,9 @@ pub fn ll(lang: Language, key: &'static str) -> &'static str {
     {
         return translated;
     }
-    let mut seen = match missing_keys_set().lock() {
-        Ok(g) => g,
-        Err(p) => p.into_inner(),
-    };
+    let mut seen = missing_keys_set()
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if seen.insert(key) {
         crate::warn!("missing translation for key: {key}");
     }
@@ -439,10 +438,7 @@ pub fn ll(lang: Language, key: &'static str) -> &'static str {
 
 #[cfg(test)]
 pub(crate) fn missing_keys_seen(key: &'static str) -> bool {
-    missing_keys_set()
-        .lock()
-        .map(|s| s.contains(key))
-        .unwrap_or(false)
+    missing_keys_set().lock().is_ok_and(|s| s.contains(key))
 }
 
 #[cfg(test)]
