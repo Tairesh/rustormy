@@ -4,6 +4,7 @@ mod config;
 mod display;
 mod errors;
 mod live;
+mod logging;
 mod models;
 #[cfg(test)]
 mod tests;

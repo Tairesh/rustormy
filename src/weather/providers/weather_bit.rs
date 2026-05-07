@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::errors::RustormyError;
-use crate::models::{Location, Units, Weather, WeatherConditionIcon};
-use crate::weather::{GetWeather, LookUpCity, tools};
+use crate::models::{Location, Provider, Units, Weather, WeatherConditionIcon};
+use crate::weather::{GetWeather, LookUpCity, http, tools};
 use reqwest::blocking::Client;
 
 const GEOCODING_API_URL: &str = "https://api.weatherbit.io/v2.0/geocode";
@@ -58,8 +58,10 @@ impl LookUpCity for WeatherBit {
         config: &Config,
     ) -> Result<Location, RustormyError> {
         let request = GeocodingApiRequest::new(config)?;
-        let response = client.get(GEOCODING_API_URL).query(&request).send()?;
-        let data: GeocodingApiResponse = response.json()?;
+        let data: GeocodingApiResponse = http::get_json(
+            client.get(GEOCODING_API_URL).query(&request),
+            http::Op::geocode(Provider::WeatherBit, config.city().unwrap_or("")),
+        )?;
         match data {
             GeocodingApiResponse::Err { error } => Err(RustormyError::ApiReturnedError(error)),
             GeocodingApiResponse::Ok(data) => Ok(data.into_location()),
@@ -189,8 +191,10 @@ impl GetWeather for WeatherBit {
     fn get_weather(&self, client: &Client, config: &Config) -> Result<Weather, RustormyError> {
         let location = self.get_location(client, config)?;
         let request = WeatherAPIRequest::new(&location, config);
-        let response = client.get(WEATHER_API_URL).query(&request).send()?;
-        let data: WeatherApiResponse = response.json()?;
+        let data: WeatherApiResponse = http::get_json(
+            client.get(WEATHER_API_URL).query(&request),
+            http::Op::weather_at(Provider::WeatherBit, &location),
+        )?;
         match data {
             WeatherApiResponse::Err { error } => Err(RustormyError::ApiReturnedError(error)),
             WeatherApiResponse::Ok { count, data } => {

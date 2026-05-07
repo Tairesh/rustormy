@@ -151,7 +151,18 @@ use_geocoding_cache = false
 
 #### Verbosity level
 
-Verbosity level can be set with `verbose` option (0 - no verbose, 1 - show errors)
+`rustormy` writes diagnostic logs to stderr. The level is set via `verbose` in the config file or by repeating `-v`
+on the command line:
+
+| Level | Flag    | What you'll see                                                              |
+|-------|---------|------------------------------------------------------------------------------|
+| 0     | (none)  | Silent (only fatal errors).                                                  |
+| 1     | `-v`    | Warnings: provider fallback, OpenUV failures, missing translations.          |
+| 2     | `-vv`   | + Per-request summaries (provider, operation, HTTP status, latency) and cache hits/misses. |
+| 3     | `-vvv`  | + Full request URLs (including API keys) and truncated response bodies.      |
+
+Logs always go to stderr, so `2>/dev/null` keeps stdout clean for piping. In live mode, logs produced inside the
+alternate screen are buffered and flushed to stderr after you exit, so the UI stays clean during the session.
 
 ```toml
 verbose = 0
@@ -301,6 +312,15 @@ Options:
 ![Compact and one-line modes](.github/assets/compact.png)
 ![Night mode icons](.github/assets/night.png)
 ![JSON output: `rustormy -c Ajax -o json`](.github/assets/json.png)
+
+### Diagnostic output
+
+```sh
+rustormy -c London -v          # warnings only (e.g. when a provider fails and we fall back)
+rustormy -c London -vv         # one-line per-request summaries and cache hits/misses
+rustormy -c London -vvv        # full request URLs and response bodies (for debugging only)
+rustormy -c London -o json -vv 2>/dev/null | jq .   # logs go to stderr; stdout stays pure JSON
+```
 
 ## License
 

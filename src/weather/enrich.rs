@@ -1,23 +1,33 @@
 use crate::config::Config;
-use crate::errors::RustormyError;
 use crate::models::Weather;
 use crate::weather::openuv::get_uv_index;
 use crate::weather::sun;
 use chrono::Utc;
 use reqwest::blocking::Client;
 
-pub fn enrich(
-    weather: &mut Weather,
-    client: &Client,
-    config: &Config,
-) -> Result<(), RustormyError> {
+pub fn enrich(weather: &mut Weather, client: &Client, config: &Config) {
     if weather.is_day.is_none() {
         weather.is_day = Some(sun::is_daytime(&weather.location, Utc::now()));
+        crate::info!("enrich: filled is_day from solar altitude");
     }
-    if weather.uv_index.is_none() && !config.api_keys().open_uv.is_empty() {
-        weather.uv_index = get_uv_index(client, config, &weather.location)?;
+    if weather.uv_index.is_none() {
+        if config.api_keys().open_uv.is_empty() {
+            crate::info!("enrich: OpenUV skipped (no api key)");
+        } else {
+            match get_uv_index(client, config, &weather.location) {
+                Ok(Some(uv)) => {
+                    weather.uv_index = Some(uv);
+                    crate::info!("enrich: fetched UV index from OpenUV");
+                }
+                Ok(None) => {
+                    crate::info!("enrich: OpenUV returned no UV value");
+                }
+                Err(error) => {
+                    crate::warn!("Failed to fetch UV index: {error}");
+                }
+            }
+        }
     }
-    Ok(())
 }
 
 #[cfg(test)]
@@ -53,7 +63,7 @@ mod tests {
         assert!(weather.is_day.is_none());
         let client = Client::new();
         let config = Config::default();
-        enrich(&mut weather, &client, &config).expect("enrich should succeed");
+        enrich(&mut weather, &client, &config);
         assert!(weather.is_day.is_some(), "is_day should be populated");
     }
 
@@ -63,7 +73,7 @@ mod tests {
         weather.is_day = Some(false);
         let client = Client::new();
         let config = Config::default();
-        enrich(&mut weather, &client, &config).expect("enrich should succeed");
+        enrich(&mut weather, &client, &config);
         assert_eq!(
             weather.is_day,
             Some(false),
@@ -77,7 +87,7 @@ mod tests {
         weather.is_day = Some(true);
         let client = Client::new();
         let config = Config::default();
-        enrich(&mut weather, &client, &config).expect("enrich should succeed");
+        enrich(&mut weather, &client, &config);
         assert_eq!(
             weather.is_day,
             Some(true),
@@ -90,8 +100,21 @@ mod tests {
         let mut weather = make_weather();
         let client = Client::new();
         let config = Config::default();
-        enrich(&mut weather, &client, &config).expect("enrich should succeed");
+        enrich(&mut weather, &client, &config);
         assert_eq!(weather.uv_index, None, "no UV when key is empty");
+    }
+
+    #[test]
+    fn openuv_failure_does_not_break_enrich() {
+        let mut weather = make_weather();
+        let client = Client::builder()
+            .timeout(std::time::Duration::from_millis(50))
+            .build()
+            .unwrap();
+        let mut config = Config::default();
+        config.api_keys_mut().open_uv = "definitely-not-a-real-key".to_string();
+        enrich(&mut weather, &client, &config);
+        assert!(weather.uv_index.is_none());
     }
 
     #[test]
@@ -100,12 +123,8 @@ mod tests {
         weather.uv_index = Some(4.2);
         let client = Client::new();
         let mut config = Config::default();
-        // Set a non-empty OpenUV key so the empty-key short-circuit does
-        // not fire. The is_none() guard on uv_index should prevent the
-        // OpenUV HTTP call from happening — if it did fire, the fake key
-        // would produce an error and this test would fail.
         config.api_keys_mut().open_uv = "fake-key".to_string();
-        enrich(&mut weather, &client, &config).expect("enrich should succeed");
+        enrich(&mut weather, &client, &config);
         assert_eq!(weather.uv_index, Some(4.2));
     }
 }

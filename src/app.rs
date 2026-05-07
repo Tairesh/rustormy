@@ -17,6 +17,9 @@ pub struct App {
 impl App {
     pub fn new() -> Result<App, RustormyError> {
         let mut config = Config::new(Cli::new())?;
+        if !config.live_mode() {
+            crate::logging::init(config.verbose(), config.format().use_colors);
+        }
         let client = Client::builder()
             .user_agent(concat!("rustormy/", env!("CARGO_PKG_VERSION")))
             .timeout(Duration::from_secs(config.connect_timeout()))
@@ -43,15 +46,13 @@ impl App {
         loop {
             match self.provider.get_weather(&self.client, &self.config) {
                 Ok(mut weather) => {
-                    enrich(&mut weather, &self.client, &self.config)?;
+                    enrich(&mut weather, &self.client, &self.config);
                     return Ok(weather);
                 }
                 Err(error) => match error {
                     RustormyError::ApiReturnedError(_) | RustormyError::HttpRequestFailed(_) => {
                         let p: Provider = (&self.provider).into();
-                        if self.config.verbose() >= 1 {
-                            eprintln!("Provider {p:?} failed: {error:?}");
-                        }
+                        crate::warn!("Provider {p:?} failed: {error}");
                         let Some(next) = self.config.take_next_provider() else {
                             return Err(error);
                         };

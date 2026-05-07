@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::errors::RustormyError;
-use crate::models::{Language, Location, Units, Weather, WeatherConditionIcon};
-use crate::weather::{GetWeather, tools};
+use crate::models::{Language, Location, Provider, Units, Weather, WeatherConditionIcon};
+use crate::weather::{GetWeather, http, tools};
 use reqwest::blocking::Client;
 
 const WWO_API_URL: &str = "https://api.worldweatheronline.com/premium/v1/weather.ashx";
@@ -291,8 +291,10 @@ pub struct WorldWeatherOnline {}
 impl GetWeather for WorldWeatherOnline {
     fn get_weather(&self, client: &Client, config: &Config) -> Result<Weather, RustormyError> {
         let params = WwoRequestParams::new(config);
-        let response = client.get(WWO_API_URL).query(&params).send()?;
-        let response: WwoResponse = response.json()?;
+        let response: WwoResponse = http::get_json(
+            client.get(WWO_API_URL).query(&params),
+            http::Op::weather_for(Provider::WorldWeatherOnline, config),
+        )?;
 
         match response {
             WwoResponse::Ok { data } => data.into_weather(config),

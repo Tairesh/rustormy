@@ -1,6 +1,6 @@
 use crate::models::Language;
-use std::collections::HashMap;
-use std::sync::LazyLock;
+use std::collections::{HashMap, HashSet};
+use std::sync::{LazyLock, Mutex, OnceLock};
 
 macro_rules! translations {
     ($($key:expr => {
@@ -415,10 +415,53 @@ static TRANSLATIONS: LazyLock<HashMap<&'static str, HashMap<&'static str, &'stat
     },
 };
 
+fn missing_keys_set() -> &'static Mutex<HashSet<&'static str>> {
+    static SET: OnceLock<Mutex<HashSet<&'static str>>> = OnceLock::new();
+    SET.get_or_init(|| Mutex::new(HashSet::new()))
+}
+
 pub fn ll(lang: Language, key: &'static str) -> &'static str {
-    TRANSLATIONS
+    if let Some(translated) = TRANSLATIONS
         .get(lang.code())
         .and_then(|translations| translations.get(key))
-        // TODO: Add logging for missing translations
-        .unwrap_or(&key)
+    {
+        return translated;
+    }
+    let mut seen = match missing_keys_set().lock() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
+    };
+    if seen.insert(key) {
+        crate::warn!("missing translation for key: {key}");
+    }
+    key
+}
+
+#[cfg(test)]
+pub(crate) fn missing_keys_seen(key: &'static str) -> bool {
+    missing_keys_set()
+        .lock()
+        .map(|s| s.contains(key))
+        .unwrap_or(false)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn missing_keys_are_logged_only_once() {
+        let key = "test_missing_key_dedup";
+        let _ = ll(Language::English, key);
+        let _ = ll(Language::English, key);
+        let _ = ll(Language::English, key);
+        assert!(super::missing_keys_seen(key));
+    }
+
+    #[test]
+    fn known_keys_do_not_register_as_missing() {
+        let key = "Clear";
+        let _ = ll(Language::English, key);
+        assert!(!super::missing_keys_seen(key));
+    }
 }
