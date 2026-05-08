@@ -451,13 +451,13 @@ mod tests {
         let _ = ll(Language::English, key);
         let _ = ll(Language::English, key);
         let _ = ll(Language::English, key);
-        assert!(super::missing_keys_seen(key));
+        assert!(missing_keys_seen(key));
     }
 
     #[test]
     fn known_keys_do_not_register_as_missing() {
         let key = "Clear";
         let _ = ll(Language::English, key);
-        assert!(!super::missing_keys_seen(key));
+        assert!(!missing_keys_seen(key));
     }
 }
