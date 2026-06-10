@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.5.1] - 2026-06-10
 
 ### Added
 
@@ -18,6 +18,8 @@ This project adheres to [Semantic Versioning](https://semver.org/).
       don't share captured output verbatim.
 - In live mode, log lines produced inside the alternate screen are buffered and flushed to stderr after you exit, so
   the UI stays clean during the session and you still see what happened on quit.
+- Distinct night-time icons and ASCII art for Light Showers and Heavy Showers, completing the day/night icon set
+  started in 0.5.0.
 
 ### Fixed
 
