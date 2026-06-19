@@ -2,8 +2,8 @@ use super::open_meteo::OpenMeteo;
 use crate::config::Config;
 use crate::display::translations::ll;
 use crate::errors::RustormyError;
-use crate::models::{Language, Location, Provider, Weather, WeatherConditionIcon};
-use crate::weather::tools::{apparent_temperature, dew_point};
+use crate::models::{Language, Location, Provider, Units, Weather, WeatherConditionIcon};
+use crate::weather::tools::{apparent_temperature, c_to_f, dew_point, mm_to_inch, ms_to_mph};
 use crate::weather::{GetWeather, LookUpCity, http};
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
@@ -90,6 +90,7 @@ impl YrResponse {
         config: &Config,
         location: &Location,
     ) -> Result<Weather, RustormyError> {
+        let units = config.units();
         let timeseries = self
             .first_timeseries()
             .ok_or(RustormyError::ApiReturnedError(
@@ -109,9 +110,33 @@ impl YrResponse {
         let icon = symbol_code_to_icon(symbol_code);
         let is_day = symbol_code_to_is_day(symbol_code);
 
+        let feels_like_c = apparent_temperature(
+            details.air_temperature,
+            details.wind_speed,
+            details.relative_humidity,
+        );
+        let precipitation_mm = details
+            .precipitation_amount
+            .unwrap_or_else(|| next_hours.details.precipitation_amount.unwrap_or(0.0));
+
+        let (temperature, feels_like, wind_speed, precipitation) = match units {
+            Units::Metric => (
+                details.air_temperature,
+                feels_like_c,
+                details.wind_speed,
+                precipitation_mm,
+            ),
+            Units::Imperial => (
+                c_to_f(details.air_temperature),
+                c_to_f(feels_like_c),
+                ms_to_mph(details.wind_speed),
+                mm_to_inch(precipitation_mm),
+            ),
+        };
+
         Ok(Weather {
-            temperature: details.air_temperature,
-            wind_speed: details.wind_speed,
+            temperature,
+            wind_speed,
             wind_direction: details
                 .wind_from_direction
                 .ok_or(RustormyError::ApiReturnedError(
@@ -124,19 +149,9 @@ impl YrResponse {
             icon,
             humidity: details.relative_humidity.round() as u8,
             pressure: details.air_pressure_at_sea_level.round() as u32,
-            dew_point: dew_point(
-                details.air_temperature,
-                details.relative_humidity,
-                config.units(),
-            ),
-            feels_like: apparent_temperature(
-                details.air_temperature,
-                details.wind_speed,
-                details.relative_humidity,
-            ),
-            precipitation: details
-                .precipitation_amount
-                .unwrap_or_else(|| next_hours.details.precipitation_amount.unwrap_or(0.0)),
+            dew_point: dew_point(temperature, details.relative_humidity, units),
+            feels_like,
+            precipitation,
             location: location.clone(),
         })
     }
@@ -495,5 +510,59 @@ mod test {
         assert_eq!(weather.icon, WeatherConditionIcon::HeavyShowers);
         assert_eq!(weather.dew_point, 5.4);
         assert_eq!(weather.precipitation, 1.2);
+    }
+
+    #[test]
+    fn test_parse_yr_response_imperial() {
+        use crate::config::FormatterConfig;
+        use crate::models::Units;
+
+        let data: YrResponse =
+            serde_json::from_str(TEST_API_RESPONSE).expect("Failed to parse JSON");
+        let mut config = Config::default();
+        config.set_format(FormatterConfig {
+            units: Units::Imperial,
+            ..Default::default()
+        });
+        let weather = data
+            .into_weather(
+                &config,
+                &Location {
+                    name: "Test Location".to_string(),
+                    latitude: 0.0,
+                    longitude: 0.0,
+                },
+            )
+            .expect("Failed to convert to Weather");
+
+        // Fixture is 6.4 °C, 7.3 m/s, 1.2 mm precip — all must be converted to imperial.
+        assert!(
+            (weather.temperature - 43.52).abs() < 0.01,
+            "temperature: {}",
+            weather.temperature
+        );
+        assert!(
+            (weather.feels_like - 32.54).abs() < 0.05,
+            "feels_like: {}",
+            weather.feels_like
+        );
+        assert!(
+            (weather.dew_point - 41.8).abs() < 0.05,
+            "dew_point: {}",
+            weather.dew_point
+        );
+        assert!(
+            (weather.wind_speed - 16.3).abs() < 0.05,
+            "wind_speed: {}",
+            weather.wind_speed
+        );
+        assert!(
+            (weather.precipitation - 0.05).abs() < 0.001,
+            "precipitation: {}",
+            weather.precipitation
+        );
+        // Humidity and pressure are unit-independent.
+        assert_eq!(weather.humidity, 94);
+        assert_eq!(weather.pressure, 985);
     }
 }

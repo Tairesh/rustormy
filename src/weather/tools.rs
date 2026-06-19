@@ -46,6 +46,16 @@ pub fn kph_to_ms(kph: f64) -> f64 {
     (kph / 3.6 * 10.0).round() / 10.0
 }
 
+/// Convert m/s to mph, rounded to 1 decimal place
+pub fn ms_to_mph(ms: f64) -> f64 {
+    (ms * 2.236_936 * 10.0).round() / 10.0
+}
+
+/// Convert mm to inches, rounded to 2 decimal places
+pub fn mm_to_inch(mm: f64) -> f64 {
+    (mm / 25.4 * 100.0).round() / 100.0
+}
+
 /// Map OpenWeatherMap-style weather codes to icons.
 /// Used by `OpenWeatherMap` and `WeatherBit` (same code scheme).
 pub fn owm_code_to_icon(code: u32) -> WeatherConditionIcon {
