@@ -5,7 +5,7 @@ various output modes.
 
 [![Tests](https://github.com/Tairesh/rustormy/actions/workflows/tests.yml/badge.svg)](https://github.com/Tairesh/rustormy/actions/workflows/tests.yml)
 [![Crates.io](https://img.shields.io/crates/v/rustormy.svg)](https://crates.io/crates/rustormy)
-[![AUR package](https://repology.org/badge/version-for-repo/aur/rustormy.svg?minversion=0.5.1)](https://repology.org/project/rustormy/versions)
+[![AUR package](https://repology.org/badge/version-for-repo/aur/rustormy.svg?minversion=0.5.2)](https://repology.org/project/rustormy/versions)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/tairesh/rustormy)](https://github.com/Tairesh/rustormy/commits/main)
 
 [// Tokei.rs is gone for a long time but I hope we will have this badge back some day]: # ([![Lines of code]&#40;https://tokei.rs/b1/github/Tairesh/rustormy?category=code&#41;]&#40;https://github.com/Tairesh/rustormy/tree/main&#41;)
@@ -154,12 +154,12 @@ use_geocoding_cache = false
 `rustormy` writes diagnostic logs to stderr. The level is set via `verbose` in the config file or by repeating `-v`
 on the command line:
 
-| Level | Flag    | What you'll see                                                              |
-|-------|---------|------------------------------------------------------------------------------|
-| 0     | (none)  | Silent (only fatal errors).                                                  |
-| 1     | `-v`    | Warnings: provider fallback, OpenUV failures, missing translations.          |
-| 2     | `-vv`   | + Per-request summaries (provider, operation, HTTP status, latency) and cache hits/misses. |
-| 3     | `-vvv`  | + Full request URLs (including API keys) and truncated response bodies.      |
+| Level | Flag   | What you'll see                                                                            |
+|-------|--------|--------------------------------------------------------------------------------------------|
+| 0     | (none) | Silent (only fatal errors).                                                                |
+| 1     | `-v`   | Warnings: provider fallback, OpenUV failures, missing translations.                        |
+| 2     | `-vv`  | + Per-request summaries (provider, operation, HTTP status, latency) and cache hits/misses. |
+| 3     | `-vvv` | + Full request URLs (including API keys) and truncated response bodies.                    |
 
 Logs always go to stderr, so `2>/dev/null` keeps stdout clean for piping. In live mode, logs produced inside the
 alternate screen are buffered and flushed to stderr after you exit, so the UI stays clean during the session.

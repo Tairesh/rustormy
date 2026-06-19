@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.2] - 2026-06-19
+
+### Fixed
+
+- Fixed a bug [#36 Yr/met.no provider doesn't convert units to imperial](https://github.com/Tairesh/rustormy/issues/36).
+
 ## [0.5.1] - 2026-06-10
 
 ### Added
