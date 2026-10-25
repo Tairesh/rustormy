@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Security
+
+- rustormy masks API keys as `***` in `-vvv` request URLs and in HTTP error messages. Before this fix, a timeout or
+  connection error printed your key to stderr even without `-v`.
+
 ## [0.5.3] - 2026-10-26
 
 ### Fixed
