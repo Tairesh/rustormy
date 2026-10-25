@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 See [Keep a Changelog](https://keepachangelog.com/) for details.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- Live mode keeps running when a refresh fails. You keep the last reading on screen, the footer shows `(stale)`, and
+  rustormy tries again after the regular interval.
+- Every fetch starts from the first configured provider, so rustormy goes back to your primary provider once it
+  recovers.
+
+### Changed
+
+- Updated dependencies to their latest versions.
+
 ## [0.5.2] - 2026-06-19
 
 ### Fixed
