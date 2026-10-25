@@ -50,7 +50,7 @@ pub struct Cli {
     #[arg(long="compact", action = ArgAction::SetTrue)]
     pub compact_mode: bool,
 
-    /// One-line mode for text output (short for `--text-mode one-line`)
+    /// One-line mode for text output (short for `--text-mode one_line`)
     #[arg(long="one-line", action = ArgAction::SetTrue)]
     pub one_line_mode: bool,
 

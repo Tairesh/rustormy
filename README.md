@@ -32,7 +32,7 @@ various output modes.
 - Support ANSI colors in terminal output
 - Provide geocoding by city name or latitude/longitude input
 - Cache geocoding results to reduce API calls (optional)
-- Support multiple languages (English, Russian, Spanish; more to come)
+- Support multiple languages (English, Russian and some auto-generated translations to other languages)
 - Support automatic conversion between imperial and metric units
 - Provide various text output modes (full, compact, one-line) and JSON output
 - Support live mode for periodically updating weather data
@@ -159,7 +159,7 @@ on the command line:
 | 0     | (none) | Silent (only fatal errors).                                                                |
 | 1     | `-v`   | Warnings: provider fallback, OpenUV failures, missing translations.                        |
 | 2     | `-vv`  | + Per-request summaries (provider, operation, HTTP status, latency) and cache hits/misses. |
-| 3     | `-vvv` | + Full request URLs (including API keys) and truncated response bodies.                    |
+| 3     | `-vvv` | + Full request URLs (API keys redacted) and truncated response bodies.                     |
 
 Logs always go to stderr, so `2>/dev/null` keeps stdout clean for piping. In live mode, logs produced inside the
 alternate screen are buffered and flushed to stderr after you exit, so the UI stays clean during the session.
@@ -228,7 +228,7 @@ align_right = false
 wind_in_degrees = false
 # Units can be `metric` (Celsius, m/s, mm) or `imperial` (Fahrenheit, mph, inches)
 units = "metric"
-# Language codes: `en` (English), `es` (Spanish), `ru` (Russian)
+# Language codes: see `rustormy --help` for available codes
 language = "en"
 ```
 
@@ -270,7 +270,7 @@ Options:
   -o, --format <OUTPUT_FORMAT>
           Output format [possible values: text, json]
   -g, --lang <LANGUAGE>
-          Language for weather output [possible values: en, ru, es]
+          Language for weather output [possible values: en, ru, es, ko]
       --name
           Show city name in output
       --colors

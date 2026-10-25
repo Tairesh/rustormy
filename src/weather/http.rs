@@ -9,6 +9,8 @@ use std::time::Instant;
 
 const BODY_LOG_LIMIT: usize = 1024;
 const TRUNCATED_MARKER: &str = "…[truncated]";
+/// Query parameters that carry provider API keys.
+const SECRET_QUERY_PARAMS: &[&str] = &["appid", "key", "apikey"];
 
 /// Describes the HTTP call for logging purposes.
 ///
@@ -130,7 +132,30 @@ fn extract_url_for_log(request: &RequestBuilder) -> Option<String> {
     request
         .try_clone()
         .and_then(|c| c.build().ok())
-        .map(|r| r.url().to_string())
+        .map(|mut r| {
+            redact_url(r.url_mut());
+            r.url().to_string()
+        })
+}
+
+/// Replaces the values of [`SECRET_QUERY_PARAMS`] in `url` with `***`.
+pub(crate) fn redact_url(url: &mut reqwest::Url) {
+    let is_secret = |name: &str| SECRET_QUERY_PARAMS.contains(&name);
+    if !url.query_pairs().any(|(name, _)| is_secret(&name)) {
+        return;
+    }
+    let pairs: Vec<(String, String)> = url
+        .query_pairs()
+        .map(|(name, value)| {
+            let value = if is_secret(&name) {
+                "***".to_string()
+            } else {
+                value.into_owned()
+            };
+            (name.into_owned(), value)
+        })
+        .collect();
+    url.query_pairs_mut().clear().extend_pairs(pairs);
 }
 
 fn truncate_for_log(s: &str, byte_limit: usize) -> String {
@@ -199,5 +224,66 @@ mod tests {
         };
         let op = Op::uv_at(&location);
         assert_eq!(op.to_string(), "provider:OpenUV uv 38.72,-9.14");
+    }
+
+    fn redacted(url: &str) -> String {
+        let mut url = reqwest::Url::parse(url).unwrap();
+        redact_url(&mut url);
+        url.to_string()
+    }
+
+    #[test]
+    fn redact_url_masks_each_secret_param() {
+        for param in ["appid", "key", "apikey"] {
+            let out = redacted(&format!(
+                "https://api.example.com/v1?q=London&{param}=SECRET"
+            ));
+            assert_eq!(
+                out,
+                format!("https://api.example.com/v1?q=London&{param}=***")
+            );
+        }
+    }
+
+    #[test]
+    fn redact_url_leaves_url_without_secrets_unchanged() {
+        let url = "https://api.example.com/v1?q=New%20York&units=metric";
+        assert_eq!(redacted(url), url);
+    }
+
+    #[test]
+    fn redact_url_leaves_url_without_query_unchanged() {
+        let url = "https://api.example.com/v1/current";
+        assert_eq!(redacted(url), url);
+    }
+
+    #[test]
+    fn extract_url_for_log_redacts_key() {
+        let request = reqwest::blocking::Client::new()
+            .get("https://api.example.com/v1")
+            .query(&[("q", "London"), ("key", "SECRET")]);
+        let url = extract_url_for_log(&request).unwrap();
+        assert!(url.contains("q=London"), "{url}");
+        assert!(url.contains("key=***"), "{url}");
+        assert!(!url.contains("SECRET"), "{url}");
+    }
+
+    #[test]
+    fn http_error_does_not_leak_key() {
+        let client = reqwest::blocking::Client::builder()
+            .timeout(std::time::Duration::from_secs(2))
+            .build()
+            .unwrap();
+        let request = client.get("http://127.0.0.1:1/?q=London&key=SECRET");
+        let err =
+            get_json::<serde_json::Value>(request, Op::geocode(Provider::OpenMeteo, "London"))
+                .unwrap_err();
+        assert!(
+            matches!(err, RustormyError::HttpRequestFailed(_)),
+            "{err:?}"
+        );
+        let message = err.to_string();
+        assert!(message.contains("key=***"), "{message}");
+        assert!(!message.contains("SECRET"), "{message}");
     }
 }

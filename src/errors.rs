@@ -23,7 +23,7 @@ pub enum RustormyError {
     #[error("Invalid configuration: {0}")]
     InvalidConfiguration(&'static str),
     #[error("HTTP request failed: {0}")]
-    HttpRequestFailed(#[from] reqwest::Error),
+    HttpRequestFailed(reqwest::Error),
     #[error("City not found: {0}")]
     CityNotFound(String),
     #[error("API returned an error: {0}")]
@@ -33,4 +33,13 @@ pub enum RustormyError {
     #[cfg(not(test))]
     #[error("Failed to locate cache file: {0}")]
     CacheFindError(&'static str),
+}
+
+impl From<reqwest::Error> for RustormyError {
+    fn from(mut error: reqwest::Error) -> Self {
+        if let Some(url) = error.url_mut() {
+            crate::weather::http::redact_url(url);
+        }
+        Self::HttpRequestFailed(error)
+    }
 }
