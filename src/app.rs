@@ -2,7 +2,7 @@ use crate::config::{Cli, Config};
 use crate::display::formatter::WeatherFormatter;
 use crate::errors::RustormyError;
 use crate::live::run as run_live;
-use crate::models::{Provider, Weather};
+use crate::models::Weather;
 use crate::weather::{GetWeather, GetWeatherProvider, enrich};
 use reqwest::blocking::Client;
 use std::time::Duration;
@@ -10,13 +10,12 @@ use std::time::Duration;
 pub struct App {
     client: Client,
     config: Config,
-    provider: GetWeatherProvider,
     formatter: WeatherFormatter,
 }
 
 impl App {
     pub fn new() -> Result<App, RustormyError> {
-        let mut config = Config::new(Cli::new())?;
+        let config = Config::new(Cli::new())?;
         if !config.live_mode() {
             crate::logging::init(config.verbose(), config.format().use_colors);
         }
@@ -24,12 +23,10 @@ impl App {
             .user_agent(concat!("rustormy/", env!("CARGO_PKG_VERSION")))
             .timeout(Duration::from_secs(config.connect_timeout()))
             .build()?;
-        let provider = GetWeatherProvider::new(config.take_next_provider().unwrap_or_default());
         let formatter = WeatherFormatter::new(&config);
         Ok(Self {
             client,
             config,
-            provider,
             formatter,
         })
     }
@@ -42,26 +39,25 @@ impl App {
         &self.formatter
     }
 
-    pub fn fetch_with_fallback(&mut self) -> Result<Weather, RustormyError> {
-        loop {
-            match self.provider.get_weather(&self.client, &self.config) {
+    pub fn fetch_with_fallback(&self) -> Result<Weather, RustormyError> {
+        let mut last_error = RustormyError::InvalidConfiguration("No weather providers configured");
+        for &p in self.config.providers() {
+            match GetWeatherProvider::new(p).get_weather(&self.client, &self.config) {
                 Ok(mut weather) => {
                     enrich(&mut weather, &self.client, &self.config);
                     return Ok(weather);
                 }
-                Err(error) => match error {
-                    RustormyError::ApiReturnedError(_) | RustormyError::HttpRequestFailed(_) => {
-                        let p: Provider = (&self.provider).into();
-                        crate::warn!("Provider {p:?} failed: {error}");
-                        let Some(next) = self.config.take_next_provider() else {
-                            return Err(error);
-                        };
-                        self.provider = GetWeatherProvider::new(next);
-                    }
-                    _ => return Err(error),
-                },
+                Err(
+                    error @ (RustormyError::ApiReturnedError(_)
+                    | RustormyError::HttpRequestFailed(_)),
+                ) => {
+                    crate::warn!("Provider {p:?} failed: {error}");
+                    last_error = error;
+                }
+                Err(error) => return Err(error),
             }
         }
+        Err(last_error)
     }
 
     pub fn run(&mut self) {

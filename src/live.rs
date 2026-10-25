@@ -48,6 +48,7 @@ pub fn render(
     timestamp: DateTime<Local>,
     show_footer: bool,
     use_colors: bool,
+    stale: bool,
 ) -> io::Result<()> {
     execute!(
         stdout,
@@ -57,7 +58,7 @@ pub fn render(
     let body = formatter.render_to_string(weather);
     write_payload(stdout, &body)?;
     if show_footer {
-        let footer = format_footer(timestamp, use_colors);
+        let footer = format_footer(timestamp, use_colors, stale);
         stdout.write_all(footer.as_bytes())?;
         stdout.write_all(b"\r\n")?;
     }
@@ -74,6 +75,7 @@ pub fn run(app: &mut App) -> Result<(), RustormyError> {
     // existing terminal contents stay visible during the initial API call.
     let mut weather = app.fetch_with_fallback()?;
     let mut now = Local::now();
+    let mut stale = false;
 
     // Drain any logs produced during the first fetch directly to stderr
     // so they remain in the user's scrollback after the alt-screen exits.
@@ -92,6 +94,7 @@ pub fn run(app: &mut App) -> Result<(), RustormyError> {
             now,
             show_footer,
             use_colors,
+            stale,
         )?;
 
         let interval = Duration::from_secs(app.config().live_mode_interval());
@@ -123,6 +126,7 @@ pub fn run(app: &mut App) -> Result<(), RustormyError> {
                             now,
                             show_footer,
                             use_colors,
+                            stale,
                         )?;
                     }
                     _ => {}
@@ -130,8 +134,17 @@ pub fn run(app: &mut App) -> Result<(), RustormyError> {
             }
         }
 
-        weather = app.fetch_with_fallback()?;
-        now = Local::now();
+        match app.fetch_with_fallback() {
+            Ok(w) => {
+                weather = w;
+                now = Local::now();
+                stale = false;
+            }
+            Err(e) => {
+                crate::warn!("Refresh failed: {e}");
+                stale = true;
+            }
+        }
     }
 }
 

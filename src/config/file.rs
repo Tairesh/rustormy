@@ -290,20 +290,8 @@ impl Config {
         Ok(())
     }
 
-    #[cfg(test)]
     pub fn providers(&self) -> &Vec<Provider> {
         &self.providers
-    }
-
-    #[cfg(test)]
-    pub fn with_providers(mut self, providers: Vec<Provider>) -> Self {
-        self.providers = providers;
-        self
-    }
-
-    /// Take the next provider from the front of the list to try
-    pub fn take_next_provider(&mut self) -> Option<Provider> {
-        self.providers.drain(..self.providers.len().min(1)).next()
     }
 
     pub fn api_keys(&self) -> &ApiKeys {
@@ -1023,16 +1011,5 @@ live_mode_footer = false
         let mut config = Config::default();
         config.merge_cli(base_cli()).unwrap();
         assert_eq!(config.format.text_mode, TextMode::default());
-    }
-
-    #[test]
-    fn test_take_next_provider_returns_none_when_empty() {
-        let mut config = Config::default().with_providers(vec![Provider::OpenMeteo]);
-        let provider = config.take_next_provider();
-        assert!(provider.is_some(), "Expected to take a provider, got None");
-        assert!(
-            config.take_next_provider().is_none(),
-            "Expected no more providers, but got one"
-        );
     }
 }
