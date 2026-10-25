@@ -349,6 +349,11 @@ impl Config {
         self.format = format;
     }
 
+    #[cfg(test)]
+    pub fn set_providers(&mut self, providers: Vec<Provider>) {
+        self.providers = providers;
+    }
+
     pub fn language(&self) -> Language {
         self.format.language
     }

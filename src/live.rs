@@ -66,6 +66,36 @@ pub fn render(
     Ok(())
 }
 
+struct LiveState {
+    weather: Weather,
+    updated_at: DateTime<Local>,
+    stale: bool,
+}
+
+impl LiveState {
+    fn new(weather: Weather, updated_at: DateTime<Local>) -> Self {
+        Self {
+            weather,
+            updated_at,
+            stale: false,
+        }
+    }
+
+    fn refresh(&mut self, result: Result<Weather, RustormyError>, now: DateTime<Local>) {
+        match result {
+            Ok(weather) => {
+                self.weather = weather;
+                self.updated_at = now;
+                self.stale = false;
+            }
+            Err(e) => {
+                crate::warn!("Refresh failed: {e}");
+                self.stale = true;
+            }
+        }
+    }
+}
+
 pub fn run(app: &mut App) -> Result<(), RustormyError> {
     let level = app.config().verbose();
     let use_colors = app.config().format().use_colors;
@@ -73,9 +103,7 @@ pub fn run(app: &mut App) -> Result<(), RustormyError> {
 
     // First fetch runs before entering the alt screen so the user's
     // existing terminal contents stay visible during the initial API call.
-    let mut weather = app.fetch_with_fallback()?;
-    let mut now = Local::now();
-    let mut stale = false;
+    let mut state = LiveState::new(app.fetch_with_fallback()?, Local::now());
 
     // Drain any logs produced during the first fetch directly to stderr
     // so they remain in the user's scrollback after the alt-screen exits.
@@ -90,11 +118,11 @@ pub fn run(app: &mut App) -> Result<(), RustormyError> {
         render(
             &mut stdout,
             app.formatter(),
-            &weather,
-            now,
+            &state.weather,
+            state.updated_at,
             show_footer,
             use_colors,
-            stale,
+            state.stale,
         )?;
 
         let interval = Duration::from_secs(app.config().live_mode_interval());
@@ -122,11 +150,11 @@ pub fn run(app: &mut App) -> Result<(), RustormyError> {
                         render(
                             &mut stdout,
                             app.formatter(),
-                            &weather,
-                            now,
+                            &state.weather,
+                            state.updated_at,
                             show_footer,
                             use_colors,
-                            stale,
+                            state.stale,
                         )?;
                     }
                     _ => {}
@@ -134,23 +162,72 @@ pub fn run(app: &mut App) -> Result<(), RustormyError> {
             }
         }
 
-        match app.fetch_with_fallback() {
-            Ok(w) => {
-                weather = w;
-                now = Local::now();
-                stale = false;
-            }
-            Err(e) => {
-                crate::warn!("Refresh failed: {e}");
-                stale = true;
-            }
-        }
+        state.refresh(app.fetch_with_fallback(), Local::now());
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tests::sample_weather;
+    use chrono::TimeZone;
+
+    #[test]
+    fn refresh_retains_last_success_through_failures_and_recovers() {
+        let initial = Local.timestamp_opt(1_800_000_000, 0).unwrap();
+        let updated = initial + chrono::Duration::seconds(300);
+        let recovered = updated + chrono::Duration::seconds(900);
+        let mut state = LiveState::new(sample_weather(), initial);
+        assert!(!state.stale);
+
+        let mut next_weather = sample_weather();
+        next_weather.description = "Latest successful reading".to_string();
+        next_weather.humidity = 80;
+        let expected = serde_json::to_value(&next_weather).unwrap();
+        state.refresh(Ok(next_weather), updated);
+        assert_eq!(serde_json::to_value(&state.weather).unwrap(), expected);
+        assert_eq!(state.updated_at, updated);
+        assert!(!state.stale);
+        assert!(!format_footer(state.updated_at, false, state.stale).contains("(stale)"));
+
+        // Both transient and other refresh errors must leave live mode usable.
+        let http_error = reqwest::blocking::Client::new()
+            .get("://invalid")
+            .build()
+            .unwrap_err();
+        for error in [
+            RustormyError::ApiReturnedError("provider unavailable".to_string()),
+            RustormyError::HttpRequestFailed(http_error),
+            RustormyError::NoLocationProvided,
+        ] {
+            state.refresh(Err(error), recovered);
+            assert_eq!(serde_json::to_value(&state.weather).unwrap(), expected);
+            assert_eq!(state.updated_at, updated);
+            assert!(state.stale);
+            assert_eq!(
+                format_footer(state.updated_at, false, state.stale),
+                format!(
+                    "[q] quit  [r] refresh  •  last update: {} (stale)",
+                    updated.format("%H:%M:%S")
+                )
+            );
+        }
+
+        let mut recovered_weather = sample_weather();
+        recovered_weather.description = "Recovered reading".to_string();
+        let expected = serde_json::to_value(&recovered_weather).unwrap();
+        state.refresh(Ok(recovered_weather), recovered);
+        assert_eq!(serde_json::to_value(&state.weather).unwrap(), expected);
+        assert_eq!(state.updated_at, recovered);
+        assert!(!state.stale);
+        assert_eq!(
+            format_footer(state.updated_at, false, state.stale),
+            format!(
+                "[q] quit  [r] refresh  •  last update: {}",
+                recovered.format("%H:%M:%S")
+            )
+        );
+    }
 
     fn capture(text: &str) -> Vec<u8> {
         let mut buf = Vec::new();

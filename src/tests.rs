@@ -11,6 +11,13 @@ use reqwest::blocking::Client;
 
 struct TestProvider;
 
+pub(crate) fn sample_weather() -> Weather {
+    TestProvider::mock_weather(
+        &Config::default(),
+        Location::new("Test City".to_string(), 51.5074, -0.1278),
+    )
+}
+
 impl TestProvider {
     pub fn new() -> Self {
         Self
